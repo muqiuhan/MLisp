@@ -4,6 +4,8 @@
 
 <p align="center"> OCamLisp is a Lisp implementation in OCaml5 </p>
 
+---
+
 # Introduction
 This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
 
@@ -11,21 +13,25 @@ This is a Lisp interpreter project implemented using OCaml5, not only that, but 
 
 __Please note that this is a learning project and should not be used in a production environment!!!__
 
+---
+
 # Build
 
-# From source
-## Dependencies
+## From source
+### Dependencies
 - Since this project is developed using OCaml5, you need to install the OCaml5 environment. The current latest OCaml5 Release version is OCaml5.0.0~alpha1.You can install this version via `opam update && opam switch create 5.0.0~alpha1 --repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git` to install this version of OCaml environment.
 
 - This project is built with dune, you can install it with `opam install dune`
 
 - The unit test set for this project is written using alcotest, which currently supports OCaml5.0.0~alpha1 and can be installed via `opam install alcotest`.
 
-## Run Build
+### Run Build
 
 - Run `dune build` to build from source
 - Run `dune test` to run all test cases
 - Run `dune exec ocamlisp` to run the executable
+
+---
 
 # License
 Copyright (C) 2022 Muqiu Han
