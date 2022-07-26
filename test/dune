@@ -1,0 +1,3 @@
+(test
+ (name ocamlisp)
+ (libraries ocamlisp alcotest))
