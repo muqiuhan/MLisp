@@ -41,38 +41,63 @@ let read_char a_stream =
 (** Use for backtracking *)
 let unread_char a_stream a_char = a_stream.chrs <- a_char :: a_stream.chrs
 
+let is_whitespace a_char =
+  match a_char with ' ' | '\t' | '\n' -> true | _ -> false
+
 (** This will read whitespace characters and ignore then until it hits a non-whitespace character. *)
 let rec eat_whitespace a_stream =
-  let is_whitespace a_char =
-    match a_char with ' ' | '\t' | '\n' -> true | _ -> false
-  in
   let a_char = read_char a_stream in
   if is_whitespace a_char then eat_whitespace a_stream
   else unread_char a_stream a_char
 
-(** Read in a whole number *)
-let rec read_sexp a_stream =
-  let is_digit a_char =
-    let code = Char.code a_char in
-    code >= Char.code '0' && code <= Char.code '9'
-  in
-  let rec read_fixnum acc =
+let string_of_char a_char = String.make 1 a_char
+
+let is_digit a_char =
+  let code = Char.code a_char in
+  code >= Char.code '0' && code <= Char.code '9'
+
+let rec read_fixnum a_stream acc =
+  let rec loop acc =
     let num_char = read_char a_stream in
-    if is_digit num_char then
-      num_char |> Char.escaped |> ( ^ ) acc |> read_fixnum
+    if is_digit num_char then num_char |> Char.escaped |> ( ^ ) acc |> loop
     else
       let _ = unread_char a_stream num_char in
       Object.Fixnum (int_of_string acc)
   in
+  loop acc
+
+let is_symbol_start_char =
+  let is_alpha = function 'A' .. 'Z' | 'a' .. 'z' -> true | _ -> false in
+  function
+  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' -> true
+  | a_char -> is_alpha a_char
+
+let rec read_symbol a_stream =
+  let literal_quote = '"' in
+  let is_delimiter = function
+    | '(' | ')' | '{' | '}' | ';' -> true
+    | a_char when a_char = literal_quote -> true
+    | a_char -> is_whitespace a_char
+  in
+  let next_char = read_char a_stream in
+  if is_delimiter next_char then
+    let _ = unread_char a_stream next_char in
+    ""
+  else string_of_char next_char ^ read_symbol a_stream
+
+(** Read in a whole number *)
+let rec read_sexp a_stream =
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
-  if is_digit a_char || Char.equal a_char '~' then
+  if is_symbol_start_char a_char then
+    Object.Symbol (string_of_char a_char ^ read_symbol a_stream)
+  else if is_digit a_char || Char.equal a_char '~' then
     (if Char.equal '~' a_char then '-' else a_char)
-    |> Char.escaped |> read_fixnum
+    |> Char.escaped |> read_fixnum a_stream
   else if Char.equal a_char '#' then
     match read_char a_stream with
-    | 't' -> Boolean true
-    | 'f' -> Boolean false
+    | 't' -> Object.Boolean true
+    | 'f' -> Object.Boolean false
     | x ->
-        raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
+      raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
