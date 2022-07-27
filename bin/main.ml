@@ -22,7 +22,6 @@ let rec repl a_stream =
   print_string "> ";
   flush stdout;
   let sexp = read_sexp a_stream in
-  print_string "Your int: ";
   print_sexp sexp;
   print_newline ();
   repl a_stream

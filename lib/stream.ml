@@ -108,6 +108,12 @@ let rec read_boolean a_stream =
   | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
 ;;
 
+let rec pair_to_list pair =
+  match pair with
+  | Object.Nil -> []
+  | Object.Pair (a, b) -> a :: (pair_to_list b)
+  | _ -> failwith "pair_to_list"
+
 (** Read in a whole number *)
 let rec read_sexp a_stream =
   let _ = eat_whitespace a_stream in
@@ -121,5 +127,16 @@ let rec read_sexp a_stream =
     |> read_fixnum a_stream
   else if is_boolean a_char
   then read_boolean a_stream
+  else if Char.equal a_char '('
+  then read_list a_stream
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
-;;
+and read_list a_stream =
+  eat_whitespace a_stream;
+  let a_char = read_char a_stream in
+  if a_char = ')' then
+    Object.Nil
+  else
+    let _ = unread_char a_stream a_char in
+    let car = read_sexp a_stream in
+    let cdr = read_list a_stream in
+    Object.Pair (car, cdr)
