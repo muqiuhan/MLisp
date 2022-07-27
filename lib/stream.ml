@@ -66,7 +66,9 @@ let rec read_sexp a_stream =
   in
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
-  if is_digit a_char then a_char |> Char.escaped |> read_fixnum
+  if is_digit a_char || Char.equal a_char '~' then
+    (if Char.equal '~' a_char then '-' else a_char)
+    |> Char.escaped |> read_fixnum
   else if Char.equal a_char '#' then
     match read_char a_stream with
     | 't' -> Boolean true
