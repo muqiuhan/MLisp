@@ -1,2 +1,3 @@
 (library
- (name ocamlisp))
+ (name ocamlisp)
+ (flags (:standard -w -39)))
