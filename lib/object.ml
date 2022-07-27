@@ -15,4 +15,9 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-type lobject = Fixnum of int
+type lobject = Fixnum of int | Boolean of bool
+
+let rec print_sexp sexp =
+  match sexp with
+  | Fixnum v -> print_int v
+  | Boolean b -> print_string (if b then "#t" else "#f")

@@ -67,4 +67,10 @@ let rec read_sexp a_stream =
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
   if is_digit a_char then a_char |> Char.escaped |> read_fixnum
+  else if Char.equal a_char '#' then
+    match read_char a_stream with
+    | 't' -> Boolean true
+    | 'f' -> Boolean false
+    | x ->
+        raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))

@@ -21,14 +21,12 @@ open Ocamlisp.Object
 let rec repl a_stream =
   print_string "> ";
   flush stdout;
-  let (Fixnum v) = read_sexp a_stream in
+  let sexp = read_sexp a_stream in
   print_string "Your int: ";
-  print_int v;
+  print_sexp sexp;
   print_newline ();
   repl a_stream
 
 let () =
-  try
-    repl { chrs = []; line_num = 1; chan = stdin }
-  with
-  | End_of_file -> print_endline "Goodbye!"
+  try repl { chrs = []; line_num = 1; chan = stdin }
+  with End_of_file -> print_endline "Goodbye!"
