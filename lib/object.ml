@@ -1,4 +1,5 @@
 (****************************************************************************)
+(* OCamLisp                                                                 *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
 (* This program is free software: you can redistribute it and/or modify     *)
@@ -21,6 +22,8 @@ type lobject =
   | Symbol of string
   | Nil
   | Pair of lobject * lobject
+
+type t = lobject
 
 exception This_can't_happen_exn
 
