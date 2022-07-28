@@ -20,17 +20,15 @@ open Ocamlisp.Stream
 open Ocamlisp.Object
 open Ocamlisp.Environment
 
-let rec repl a_stream env=
+let rec repl a_stream env =
   print_string "> ";
   flush stdout;
   let sexp = read_sexp a_stream in
-  let (result, env') = eval_sexp sexp env in
+  let result, env' = eval_sexp sexp env in
   print_sexp result;
   print_newline ();
   repl a_stream env'
-;;
 
 let () =
-  try repl { chrs = []; line_num = 1; chan = stdin }  Nil with
-  | End_of_file -> print_endline "Goodbye!"
-;;
+  try repl { chrs = []; line_num = 1; chan = stdin } Nil
+  with End_of_file -> print_endline "Goodbye!"

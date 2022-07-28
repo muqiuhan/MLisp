@@ -27,11 +27,7 @@ type t = lobject
 
 exception This_can't_happen_exn
 
-let rec is_list = function
-  | Nil -> true
-  | Pair (_, b) -> is_list b
-  | _ -> false
-;;
+let rec is_list = function Nil -> true | Pair (_, b) -> is_list b | _ -> false
 
 let rec print_sexp sexp =
   match sexp with
@@ -39,25 +35,30 @@ let rec print_sexp sexp =
   | Boolean b -> print_string (if b then "#t" else "#f")
   | Symbol s -> print_string s
   | Nil -> print_string "nil"
-  | Pair (_, _) ->
-    print_string "(";
-    if is_list sexp then print_list sexp else print_pair sexp;
-    print_string ")"
+  | Pair (_, _) ->  
+      print_string "(";
+      if is_list sexp then print_list sexp else print_pair sexp;
+      print_string ")"
 
 and print_list lst =
   match lst with
   | Pair (a, Nil) -> print_sexp a
   | Pair (a, b) ->
-    print_sexp a;
-    print_string " ";
-    print_list b
+      print_sexp a;
+      print_string " ";
+      print_list b
   | _ -> raise This_can't_happen_exn
 
 and print_pair pair =
   match pair with
   | Pair (a, b) ->
-    print_sexp a;
-    print_string " ";
-    print_sexp b
+      print_sexp a;
+      print_string " . ";
+      print_sexp b
   | _ -> raise This_can't_happen_exn
-;;
+
+let rec pair_to_list pair =
+  match pair with
+  | Nil -> []
+  | Pair (a, b) -> a :: pair_to_list b
+  | _ -> failwith "pair_to_list"
