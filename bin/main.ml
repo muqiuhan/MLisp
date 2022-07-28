@@ -18,6 +18,7 @@
 
 open Ocamlisp.Stream
 open Ocamlisp.Object
+open Ocamlisp.Environment
 
 let rec repl a_stream env=
   print_string "> ";
