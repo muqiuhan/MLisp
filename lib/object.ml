@@ -61,3 +61,23 @@ and print_pair pair =
     print_sexp b
   | _ -> raise This_can't_happen_exn
 ;;
+
+exception Type_error_exn of string
+
+let rec eval_sexp sexp env =
+  let eval_if cond if_true if_false =
+    let condval, _ = eval_sexp cond env in
+    match condval with
+    | Boolean true -> if_true
+    | Boolean false -> if_false
+    | _ -> raise (Type_error_exn "(if bool e1 e2)")
+  in
+  match sexp with
+  | Fixnum v -> Fixnum v, env
+  | Boolean v -> Boolean v, env
+  | Symbol v -> Symbol v, env
+  | Nil -> Nil, env
+  | Pair (Symbol "if", Pair (cond, Pair (if_true, Pair (if_false, Nil)))) ->
+    eval_sexp (eval_if cond if_true if_false) env
+  | _ -> sexp, env
+;;
