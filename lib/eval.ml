@@ -56,6 +56,7 @@ let eval_expr expr env =
     | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args")
   in
   let rec eval_ast = function
+    | Literal Quote expr -> expr
     | Literal l -> l
     | Var name -> Environment.lookup (name, env)
     | If (cond, if_true, _) when eval_ast cond = Boolean true ->

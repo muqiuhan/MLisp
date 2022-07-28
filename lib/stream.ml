@@ -105,6 +105,7 @@ let rec read_sexpr a_stream =
     |> Char.escaped |> read_fixnum a_stream
   else if is_boolean a_char then read_boolean a_stream
   else if Char.equal a_char '(' then read_list a_stream
+  else if Char.equal a_char '\'' then Object.Quote (read_sexpr a_stream)
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
 
 and read_list a_stream =

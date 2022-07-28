@@ -26,8 +26,7 @@ let rec repl a_stream env =
   flush stdout;
   let ast = build_ast (read_sexpr a_stream) in
   let result, env' = eval ast env in
-  let () = print_string (string_val result) in
-  print_newline ();
+  print_endline (string_val result);
   repl a_stream env'
 
 let () =

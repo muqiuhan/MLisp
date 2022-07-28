@@ -39,10 +39,11 @@ exception Parse_error_exn of string
 let rec build_ast sexprr =
   match sexprr with
   | Primitive _ -> raise This_can't_happen_exn
-  | Fixnum _ | Boolean _ | Nil -> Literal sexprr
+  | Fixnum _ | Boolean _ | Quote _ | Nil -> Literal sexprr
   | Symbol s -> Var s
   | Pair _ when is_list sexprr -> (
       match pair_to_list sexprr with
+      | [ Symbol "quote"; expr] -> Literal (Quote expr)
       | [ Symbol "if"; cond; if_true; if_false ] ->
           If (build_ast cond, build_ast if_true, build_ast if_false)
       | [ Symbol "and"; c1; c2 ] -> And (build_ast c1, build_ast c2)
@@ -89,3 +90,4 @@ and string_val e =
   | Pair (_, _) ->
       "(" ^ (if is_list e then string_list e else string_pair e) ^ ")"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
+  | Quote expr -> "'" ^ string_val expr
