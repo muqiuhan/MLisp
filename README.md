@@ -4,16 +4,41 @@
 
 <p align="center"> OCamLisp is a Lisp implementation in OCaml5 </p>
 
----
+```lisp
+$ dune exec ocamlisp
+> (env)
+((pair . #<primitive:pair>) (+ . #<primitive:+>) (list . #<primitive:list>))
+> (+ 3 5)
+8
+> (and #t #f)
+#f
+> (and #f #f)
+#f
+> (or #f #t)
+#t
+> (or #f #f)
+#f
+> (if (and #t #f) 3 4)
+4
+> (if (or #t #f) 3 4)
+3
+> (define x 3)
+3
+> (env)
+((x . 3) (pair . #<primitive:pair>) (+ . #<primitive:+>) (list . #<primitive:list>))
+> (+ x 7)
+10
+> (apply pair (list 3 4))
+(3 . 4)
+> (pair 5 6)
+(5 . 6)
+> Goodbye!
+```
 
 # Introduction
 This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
 
 - This project is developed entirely in OCaml 5.0 (Current is OCaml5.0.0~alpha1)
-
-__Please note that this is a learning project and should not be used in a production environment!!!__
-
----
 
 # Build
 
@@ -30,8 +55,6 @@ __Please note that this is a learning project and should not be used in a produc
 - Run `dune build` to build from source
 - Run `dune test` to run all test cases
 - Run `dune exec ocamlisp` to run the executable
-
----
 
 # License
 Copyright (C) 2022 Muqiu Han
