@@ -103,8 +103,8 @@ let rec read_sexpr a_stream =
   else if is_digit a_char || Char.equal a_char '~' then
     (if Char.equal '~' a_char then '-' else a_char)
     |> Char.escaped |> read_fixnum a_stream
-  else if is_boolean a_char then read_boolean a_stream
   else if Char.equal a_char '(' then read_list a_stream
+  else if is_boolean a_char then read_boolean a_stream
   else if Char.equal a_char '\'' then Object.Quote (read_sexpr a_stream)
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
 

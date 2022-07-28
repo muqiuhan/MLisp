@@ -43,4 +43,8 @@ let basis =
   in
   let newprim acc (name, func) = bind (name, Primitive (name, func), acc) in
   List.fold_left newprim Nil
-    [ ("list", prim_list); ("+", prim_plus); ("pair", prim_pair) ]
+    [
+      ("list", prim_list);
+      ("+", prim_plus);
+      ("pair", prim_pair)
+    ]

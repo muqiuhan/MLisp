@@ -1,4 +1,5 @@
 (executable
  (public_name ocamlisp)
  (name main)
+ (modes byte native)
  (libraries ocamlisp))

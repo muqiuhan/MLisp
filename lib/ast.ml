@@ -1,4 +1,5 @@
 (****************************************************************************)
+
 (* OCamLisp                                                                 *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
@@ -18,8 +19,7 @@
 
 include Object
 
-type t = Object.t
-and value = lobject
+type value = lobject
 and name = string
 
 and expr =
@@ -33,28 +33,28 @@ and expr =
   | Defexpr of def
 
 and def = Define of name * expr | Expr of expr
-
+    
 exception Parse_error_exn of string
 
-let rec build_ast sexprr =
-  match sexprr with
+let rec build_ast sexpr =
+  match sexpr with
   | Primitive _ -> raise This_can't_happen_exn
-  | Fixnum _ | Boolean _ | Quote _ | Nil -> Literal sexprr
+  | Fixnum _ | Boolean _ | Quote _ | Nil -> Literal sexpr
   | Symbol s -> Var s
-  | Pair _ when is_list sexprr -> (
-      match pair_to_list sexprr with
-      | [ Symbol "quote"; expr] -> Literal (Quote expr)
+  | Pair _ when is_list sexpr -> (
+      match pair_to_list sexpr with
       | [ Symbol "if"; cond; if_true; if_false ] ->
           If (build_ast cond, build_ast if_true, build_ast if_false)
       | [ Symbol "and"; c1; c2 ] -> And (build_ast c1, build_ast c2)
       | [ Symbol "or"; c1; c2 ] -> Or (build_ast c1, build_ast c2)
+      | [ Symbol "quote"; expr ] -> Literal (Quote expr)
       | [ Symbol "define"; Symbol name; expr ] ->
           Defexpr (Define (name, build_ast expr))
       | [ Symbol "apply"; fn_exprr; args ] when is_list args ->
           Apply (build_ast fn_exprr, build_ast args)
       | fn_exprr :: args -> Call (build_ast fn_exprr, List.map build_ast args)
       | [] -> raise (Parse_error_exn "poorly formed exprrression"))
-  | Pair _ -> Literal sexprr
+  | Pair _ -> Literal sexpr
 
 let rec string_expr = function
   | Literal e -> string_val e

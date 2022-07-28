@@ -1,3 +1,4 @@
 (library
  (name ocamlisp)
+ (modes byte native)
  (flags (:standard -w -39)))
