@@ -27,26 +27,27 @@ type lobject =
 type t = lobject
 
 exception This_can't_happen_exn
+exception Type_error_exn of string
 
 let rec is_list = function Nil -> true | Pair (_, b) -> is_list b | _ -> false
 
-let rec print_sexp sexp =
-  match sexp with
+let rec print_sexpr sexpr =
+  match sexpr with
   | Fixnum v -> print_int v
   | Boolean b -> print_string (if b then "#t" else "#f")
   | Symbol s -> print_string s
   | Nil -> print_string "nil"
-  | Pair (_, _) ->  
+  | Pair (_, _) ->
       print_string "(";
-      if is_list sexp then print_list sexp else print_pair sexp;
+      if is_list sexpr then print_list sexpr else print_pair sexpr;
       print_string ")"
-  | _ -> failwith "print_sexp"
+  | _ -> failwith "print_sexpr"
 
 and print_list lst =
   match lst with
-  | Pair (a, Nil) -> print_sexp a
+  | Pair (a, Nil) -> print_sexpr a
   | Pair (a, b) ->
-      print_sexp a;
+      print_sexpr a;
       print_string " ";
       print_list b
   | _ -> raise This_can't_happen_exn
@@ -54,9 +55,9 @@ and print_list lst =
 and print_pair pair =
   match pair with
   | Pair (a, b) ->
-      print_sexp a;
+      print_sexpr a;
       print_string " . ";
-      print_sexp b
+      print_sexpr b
   | _ -> raise This_can't_happen_exn
 
 let rec pair_to_list pair =

@@ -95,7 +95,7 @@ let rec read_boolean a_stream =
   | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
 
 (** Read in a whole number *)
-let rec read_sexp a_stream =
+let rec read_sexpr a_stream =
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
   if is_symbol_start_char a_char then
@@ -113,6 +113,6 @@ and read_list a_stream =
   if a_char = ')' then Object.Nil
   else
     let _ = unread_char a_stream a_char in
-    let car = read_sexp a_stream in
+    let car = read_sexpr a_stream in
     let cdr = read_list a_stream in
     Object.Pair (car, cdr)

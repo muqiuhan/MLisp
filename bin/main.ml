@@ -17,18 +17,19 @@
 (****************************************************************************)
 
 open Ocamlisp.Stream
-open Ocamlisp.Object
+open Ocamlisp.Eval
 open Ocamlisp.Environment
+open Ocamlisp.Ast
 
 let rec repl a_stream env =
   print_string "> ";
   flush stdout;
-  let sexp = read_sexp a_stream in
-  let result, env' = eval_sexp sexp env in
-  print_sexp result;
+  let ast = build_ast (read_sexpr a_stream) in
+  let result, env' = eval ast env in
+  let () = print_string (string_val result) in
   print_newline ();
   repl a_stream env'
 
 let () =
-  try repl { chrs = []; line_num = 1; chan = stdin } Nil
+  try repl { chrs = []; line_num = 1; chan = stdin } basis
   with End_of_file -> print_endline "Goodbye!"
