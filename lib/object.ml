@@ -22,6 +22,7 @@ type lobject =
   | Symbol of string
   | Nil
   | Pair of lobject * lobject
+  | Primitive of string * (lobject list -> lobject)
 
 type t = lobject
 
@@ -39,6 +40,7 @@ let rec print_sexp sexp =
       print_string "(";
       if is_list sexp then print_list sexp else print_pair sexp;
       print_string ")"
+  | _ -> failwith "print_sexp"
 
 and print_list lst =
   match lst with
