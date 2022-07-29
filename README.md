@@ -32,6 +32,14 @@ $ dune exec ocamlisp
 (3 . 4)
 > (pair 5 6)
 (5 . 6)
+> (setq x (lambda (y) (+ y 1)))     
+#<closure>
+> (x 10)
+11
+> (defun x (y) (+ y 1))
+#<closure>
+> (x 10)
+11
 > Goodbye!
 ```
 
