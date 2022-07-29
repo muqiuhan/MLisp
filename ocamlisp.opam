@@ -6,9 +6,9 @@ maintainer: ["Muqiu Han"]
 authors: ["Muqiu Han"]
 license: "AGPL-v3"
 tags: ["lisp" "interpreter" "compiler"]
-homepage: "https://github.com/muqiuhan/ocamlisp"
-doc: "https://github.com/muqiuhan/ocamlisp"
-bug-reports: "https://github.com/muqiuhan/ocamlisp/issues"
+homepage: "https://github.com/muqiuhan/MLisp"
+doc: "https://github.com/muqiuhan/MLisp"
+bug-reports: "https://github.com/muqiuhan/MLisp/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.3"}
@@ -28,4 +28,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/muqiuhan/ocamlisp.git"
+dev-repo: "git+https://github.com/muqiuhan/MLisp.git"

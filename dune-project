@@ -5,7 +5,7 @@
 (generate_opam_files true)
 
 (source
- (github muqiuhan/ocamlisp))
+ (github muqiuhan/MLisp))
 
 (authors "Muqiu Han")
 
@@ -13,7 +13,7 @@
 
 (license AGPL-v3)
 
-(documentation https://github.com/muqiuhan/ocamlisp)
+(documentation https://github.com/muqiuhan/MLisp)
 
 (package
  (name ocamlisp)
