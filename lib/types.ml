@@ -36,6 +36,7 @@ module Object = struct
 
   and value = lobject
   and name = string
+  and let_kind = LET | LETSTAR | LETREC  
 
   and expr =
     | Literal of value
@@ -47,6 +48,7 @@ module Object = struct
     | Call of expr * expr list
     | Defexpr of def
     | Lambda of name list * expr
+    | Let of let_kind * (name * expr) list * expr
 
   and def =
     | Setq of name * expr

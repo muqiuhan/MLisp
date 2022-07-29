@@ -10,7 +10,7 @@ This is a Lisp interpreter project implemented using OCaml5, not only that, but 
 - This project is developed entirely in OCaml 5.0 (Current is OCaml5.0.0~alpha1)
 
 # Use
-## REPL
+- REPL
 ```lisp
 > (env)
 ((pair . #<primitive:pair>) (+ . #<primitive:+>) (list . #<primitive:list>))
@@ -63,9 +63,7 @@ This is a Lisp interpreter project implemented using OCaml5, not only that, but 
 > Goodbye!
 ```
 
-## Meta-circular
-
-### Demo
+- Meta-circular
 ```lisp
 (eval. '((label fact
                 (lambda (x)
@@ -110,19 +108,18 @@ Result:
 
 # Build
 
-## From source
-### Dependencies
-- Since this project is developed using OCaml5, you need to install the OCaml5 environment. The current latest OCaml5 Release version is OCaml5.0.0~alpha1.You can install this version via `opam update && opam switch create 5.0.0~alpha1 --repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git` to install this version of OCaml environment.
+- From source
+  Since this project is developed using OCaml5, you need to install the OCaml5 environment. The current latest OCaml5 Release version is OCaml5.0.0~alpha1.You can install this version via `opam update && opam switch create 5.0.0~alpha1 --repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git` to install this version of OCaml environment.
 
-- This project is built with dune, you can install it with `opam install dune`
+- Dependencies
+  1. This project is built with dune, you can install it with `opam install dune`
+  
+  2. The unit test set for this project is written using alcotest, which currently supports OCaml5.0.0~alpha1 and can be installed via `opam install alcotest`.
 
-- The unit test set for this project is written using alcotest, which currently supports OCaml5.0.0~alpha1 and can be installed via `opam install alcotest`.
-
-### Run Build
-
-- Run `dune build --profile release` to build release version from source (or `dune build --profile dev` for dev)
-- Run `dune test` to run all test cases
-- Run `dune exec ocamlisp` to run the executable
+- Run Build
+  1. Run `dune build --profile release` to build release version from source (or `dune build --profile dev` for dev)
+  2. Run `dune test` to run all test cases
+  3. Run `dune exec ocamlisp` to run the executable
 
 # License
 Copyright (C) 2022 Muqiu Han
