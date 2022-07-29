@@ -19,12 +19,17 @@
 include Ast
 open Types.Object
 
+let extend newenv oldenv =
+  List.fold_right
+    (fun (b, v) acc -> Environment.bind_loc (b, v, acc))
+    newenv oldenv
+
 let rec eval_expr expr env =
   let eval_apply fn_expr args =
     match fn_expr with
     | Primitive (_, f) -> f args
     | Closure (ns, e, clenv) ->
-        eval_expr e (Environment.bind_list ns args clenv)
+        eval_expr e (extend (Environment.bind_list ns args clenv) env)
     | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
   in
   let rec eval = function

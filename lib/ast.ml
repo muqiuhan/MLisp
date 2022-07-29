@@ -28,6 +28,7 @@ let rec build_ast sexpr =
       match Object.pair_to_list sexpr with
       | [ Symbol "if"; cond; if_true; if_false ] ->
           If (build_ast cond, build_ast if_true, build_ast if_false)
+      | Symbol "cond" :: conditions -> cond_to_if conditions
       | [ Symbol "and"; cond_x; cond_y ] ->
           And (build_ast cond_x, build_ast cond_y)
       | [ Symbol "or"; cond_x; cond_y ] ->
@@ -57,6 +58,12 @@ let rec build_ast sexpr =
       | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)
       | [] -> raise (Parse_error_exn "poorly formed expression"))
   | Pair _ -> Literal sexpr
+
+and cond_to_if = function
+  | [] -> Literal (Symbol "error")
+  | Pair (cond, Pair (res, Nil)) :: condpairs ->
+      If (build_ast cond, build_ast res, cond_to_if condpairs)
+  | _ -> raise (Type_error_exn "(cond conditions)")
 
 let spacesep ns = String.concat " " ns
 
