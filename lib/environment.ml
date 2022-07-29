@@ -35,23 +35,29 @@ let bind_list ns vs env =
   List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
 
 let basis =
-  let rec prim_list = function
-    | [] -> Object.Nil
-    | car :: cdr -> Object.Pair (car, prim_list cdr)
-  in
-  let prim_plus = function
-    | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Fixnum (a + b)
-    | _ -> raise (Object.Type_error_exn "(+ int int)")
-  in
-  let prim_pair = function
-    | [ a; b ] -> Object.Pair (a, b)
-    | _ -> raise (Object.Type_error_exn "(pair a b)")
-  in
   let newprim acc (name, func) =
     bind (name, Object.Primitive (name, func), acc)
   in
   List.fold_left newprim []
-    [ ("list", prim_list); ("+", prim_plus); ("pair", prim_pair) ]
+    [
+      ("list", Primitives.list);
+      ("+", Primitives.plus);
+      ("pair", Primitives.pair);
+      ("car", Primitives.car);
+      ("cdr", Primitives.cdr);
+      ("eq", Primitives.eq);
+      ("atom?", Primitives.atomp);
+      Primitives.Num.generate "+" ( + );
+      Primitives.Num.generate "-" ( - );
+      Primitives.Num.generate "*" ( * );
+      Primitives.Num.generate "/" ( / );
+      Primitives.Num.generate "mod" ( mod );
+      Primitives.Cmp.generate "=" ( = );
+      Primitives.Cmp.generate "<" ( < );
+      Primitives.Cmp.generate ">" ( > );
+      Primitives.Cmp.generate ">=" ( >= );
+      Primitives.Cmp.generate "<=" ( <= );
+    ]
 
 let rec env_to_val =
   let b_to_val (n, vor) =
