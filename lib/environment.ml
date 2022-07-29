@@ -16,17 +16,23 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
+open Types
+
 exception Not_found_exn of string
+exception Unspecified_value_exn of string
 
-let rec lookup (name, sexpr) =
-  match sexpr with
-  | Object.Nil -> raise (Not_found_exn name)
-  | Object.Pair (Object.Pair (Object.Symbol name', value), rest) ->
-      if name = name' then value else lookup (name, rest)
-  | _ -> raise Object.This_can't_happen_exn
+let rec lookup = function
+  | n, [] -> raise (Not_found_exn n)
+  | n, (n', v) :: _ when n = n' -> (
+      match !v with Some v' -> v' | None -> raise (Unspecified_value_exn n))
+  | n, (_, _) :: bs -> lookup (n, bs)
 
-let bind (name, value, sexpr) =
-  Object.Pair (Object.Pair (Object.Symbol name, value), sexpr)
+let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
+let mk_loc () = ref None
+let bind_loc (n, vor, e) = (n, vor) :: e
+
+let bind_list ns vs env =
+  List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
 
 let basis =
   let rec prim_list = function
@@ -41,10 +47,16 @@ let basis =
     | [ a; b ] -> Object.Pair (a, b)
     | _ -> raise (Object.Type_error_exn "(pair a b)")
   in
-  let newprim acc (name, func) = bind (name, Primitive (name, func), acc) in
-  List.fold_left newprim Nil
-    [
-      ("list", prim_list);
-      ("+", prim_plus);
-      ("pair", prim_pair)
-    ]
+  let newprim acc (name, func) =
+    bind (name, Object.Primitive (name, func), acc)
+  in
+  List.fold_left newprim []
+    [ ("list", prim_list); ("+", prim_plus); ("pair", prim_pair) ]
+
+let rec env_to_val =
+  let b_to_val (n, vor) =
+    Object.Pair
+      (Symbol n, match !vor with None -> Symbol "unspecified" | Some v -> v)
+  in
+  function
+  | [] -> Object.Nil | b :: bs -> Object.Pair (b_to_val b, env_to_val bs)

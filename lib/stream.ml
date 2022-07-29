@@ -16,17 +16,11 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-type stream = {
-  mutable line_num : int;
-  mutable chrs : char list;
-  chan : in_channel;
-}
-
-type t = stream
+open Types.Stream
+open Types
 
 exception Syntax_error_exn of string
 
-(** Read in a character *)
 let read_char a_stream =
   match a_stream.chrs with
   | [] ->
@@ -39,13 +33,11 @@ let read_char a_stream =
       let _ = a_stream.chrs <- rest in
       a_char
 
-(** Use for backtracking *)
 let unread_char a_stream a_char = a_stream.chrs <- a_char :: a_stream.chrs
 
 let is_whitespace a_char =
   match a_char with ' ' | '\t' | '\n' -> true | _ -> false
 
-(** This will read whitespace characters and ignore then until it hits a non-whitespace character. *)
 let rec eat_whitespace a_stream =
   let a_char = read_char a_stream in
   if is_whitespace a_char then eat_whitespace a_stream

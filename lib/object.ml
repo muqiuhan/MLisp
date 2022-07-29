@@ -16,19 +16,7 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-type lobject =
-  | Fixnum of int
-  | Boolean of bool
-  | Symbol of string
-  | Nil
-  | Pair of lobject * lobject
-  | Primitive of string * (lobject list -> lobject)
-  | Quote of lobject
-              
-type t = lobject
-
-exception This_can't_happen_exn
-exception Type_error_exn of string
+open Types.Object
 
 let rec is_list = function Nil -> true | Pair (_, b) -> is_list b | _ -> false
 

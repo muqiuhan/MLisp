@@ -1,5 +1,4 @@
 (****************************************************************************)
-
 (* OCamLisp                                                                 *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
@@ -17,58 +16,66 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-include Object
-
-type value = lobject
-and name = string
-
-and expr =
-  | Literal of value
-  | Var of name
-  | If of expr * expr * expr
-  | And of expr * expr
-  | Or of expr * expr
-  | Apply of expr * expr
-  | Call of expr * expr list
-  | Defexpr of def
-
-and def = Define of name * expr | Expr of expr
-    
-exception Parse_error_exn of string
+open Types.Object
+open Types.Ast
 
 let rec build_ast sexpr =
   match sexpr with
-  | Primitive _ -> raise This_can't_happen_exn
-  | Fixnum _ | Boolean _ | Quote _ | Nil -> Literal sexpr
-  | Symbol s -> Var s
-  | Pair _ when is_list sexpr -> (
-      match pair_to_list sexpr with
+  | Primitive _ | Closure _ -> raise This_can't_happen_exn
+  | Fixnum _ | Boolean _ | Nil | Quote _ -> Literal sexpr
+  | Symbol symbol -> Var symbol
+  | Pair _ when Object.is_list sexpr -> (
+      match Object.pair_to_list sexpr with
       | [ Symbol "if"; cond; if_true; if_false ] ->
           If (build_ast cond, build_ast if_true, build_ast if_false)
-      | [ Symbol "and"; c1; c2 ] -> And (build_ast c1, build_ast c2)
-      | [ Symbol "or"; c1; c2 ] -> Or (build_ast c1, build_ast c2)
+      | [ Symbol "and"; cond_x; cond_y ] ->
+          And (build_ast cond_x, build_ast cond_y)
+      | [ Symbol "or"; cond_x; cond_y ] ->
+          Or (build_ast cond_x, build_ast cond_y)
       | [ Symbol "quote"; expr ] -> Literal (Quote expr)
-      | [ Symbol "define"; Symbol name; expr ] ->
-          Defexpr (Define (name, build_ast expr))
-      | [ Symbol "apply"; fn_exprr; args ] when is_list args ->
-          Apply (build_ast fn_exprr, build_ast args)
-      | fn_exprr :: args -> Call (build_ast fn_exprr, List.map build_ast args)
-      | [] -> raise (Parse_error_exn "poorly formed exprrression"))
+      | [ Symbol "setq"; Symbol name; expr ] ->
+          Defexpr (Setq (name, build_ast expr))
+      | [ Symbol "lambda"; ns; e ] when Object.is_list ns ->
+          let names =
+            List.map
+              (function
+                | Symbol symbol -> symbol
+                | _ -> raise (Type_error_exn "(lambda (formals) body)"))
+              (Object.pair_to_list ns)
+          in
+          Lambda (names, build_ast e)
+      | [ Symbol "defun"; Symbol name; args; expr ] ->
+          let err () = raise (Type_error_exn "(defun name (formals) body)") in
+          let names =
+            List.map
+              (function Symbol s -> s | _ -> err ())
+              (Object.pair_to_list args)
+          in
+          Defexpr (Defun (name, names, build_ast expr))
+      | [ Symbol "apply"; fn_expr; args ] ->
+          Apply (build_ast fn_expr, build_ast args)
+      | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)
+      | [] -> raise (Parse_error_exn "poorly formed expression"))
   | Pair _ -> Literal sexpr
 
-let rec string_expr = function
+let spacesep ns = String.concat " " ns
+
+let rec string_exp =
+  let spacesep_exp es = spacesep (List.map string_exp es) in
+  function
   | Literal e -> string_val e
   | Var n -> n
   | If (c, t, f) ->
-      "(if " ^ string_expr c ^ " " ^ string_expr t ^ " " ^ string_expr f ^ ")"
-  | And (c0, c1) -> "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Apply (f, e) -> "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
-  | Call (f, es) ->
-      let string_es = String.concat " " (List.map string_expr es) in
-      "(" ^ string_expr f ^ " " ^ string_es ^ ")"
-  | Defexpr (Define (n, e)) -> "(val " ^ n ^ " " ^ string_expr e ^ ")"
-  | Defexpr (Expr e) -> string_expr e
+      "(if " ^ string_exp c ^ " " ^ string_exp t ^ " " ^ string_exp f ^ ")"
+  | And (c0, c1) -> "(and " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
+  | Or (c0, c1) -> "(or " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
+  | Apply (f, e) -> "(apply " ^ string_exp f ^ " " ^ string_exp e ^ ")"
+  | Call (f, es) -> "(" ^ string_exp f ^ " " ^ spacesep_exp es ^ ")"
+  | Lambda (_, _) -> "#<lambda>"
+  | Defexpr (Setq (n, e)) -> "(val " ^ n ^ " " ^ string_exp e ^ ")"
+  | Defexpr (Defun (n, ns, e)) ->
+      "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_exp e ^ ")"
+  | Defexpr (Expr e) -> string_exp e
 
 and string_val e =
   let rec string_list l =
@@ -88,6 +95,7 @@ and string_val e =
   | Symbol s -> s
   | Nil -> "nil"
   | Pair (_, _) ->
-      "(" ^ (if is_list e then string_list e else string_pair e) ^ ")"
+      "(" ^ (if Object.is_list e then string_list e else string_pair e) ^ ")"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_val expr
+  | Closure (_, _, _) -> "#<closure>"
