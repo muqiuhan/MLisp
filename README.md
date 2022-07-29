@@ -1,8 +1,8 @@
-# OCamLisp
+# MLisp
 
 <div align=center><img width="150" height="150" src="./res/logo.png"/></div>
 
-<p align="center"> OCamLisp is a Lisp implementation in OCaml5 </p>
+<p align="center"> MLisp is a Lisp implementation in OCaml5 </p>
 
 # Introduction
 This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
