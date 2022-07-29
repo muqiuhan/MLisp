@@ -2,10 +2,10 @@
 
 <div align=center><img width="150" height="150" src="./res/logo.png"/></div>
 
-<p align="center"> MLisp is a Lisp implementation in OCaml5 </p>
+<p align="center"> A Lisp dialect implementation in OCaml5 </p>
 
 # Introduction
-This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
+This project is the MLisp interpreter.
 
 - This project is developed entirely in OCaml 5.0 (Current is OCaml5.0.0~alpha1)
 
