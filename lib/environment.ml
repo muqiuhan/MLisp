@@ -40,13 +40,6 @@ let basis =
   in
   List.fold_left newprim []
     [
-      ("list", Primitives.list);
-      ("+", Primitives.plus);
-      ("pair", Primitives.pair);
-      ("car", Primitives.car);
-      ("cdr", Primitives.cdr);
-      ("eq", Primitives.eq);
-      ("atom?", Primitives.atomp);
       Primitives.Num.generate "+" ( + );
       Primitives.Num.generate "-" ( - );
       Primitives.Num.generate "*" ( * );
@@ -57,6 +50,14 @@ let basis =
       Primitives.Cmp.generate ">" ( > );
       Primitives.Cmp.generate ">=" ( >= );
       Primitives.Cmp.generate "<=" ( <= );
+      
+      ("list", Primitives.list);
+      ("pair", Primitives.pair);
+      ("car", Primitives.car);
+      ("cdr", Primitives.cdr);
+      ("eq", Primitives.eq);
+      ("atom?", Primitives.atomp);
+      ("sym?", Primitives.symp);
     ]
 
 let rec env_to_val =

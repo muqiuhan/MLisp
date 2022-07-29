@@ -49,7 +49,7 @@ let is_digit a_char =
   let code = Char.code a_char in
   code >= Char.code '0' && code <= Char.code '9'
 
-let rec read_fixnum a_stream acc =
+let read_fixnum a_stream acc =
   let rec loop acc =
     let num_char = read_char a_stream in
     if is_digit num_char then num_char |> Char.escaped |> ( ^ ) acc |> loop
@@ -80,7 +80,7 @@ let rec read_symbol a_stream =
 
 let is_boolean a_char = Char.equal a_char '#'
 
-let rec read_boolean a_stream =
+let read_boolean a_stream =
   match read_char a_stream with
   | 't' -> Object.Boolean true
   | 'f' -> Object.Boolean false

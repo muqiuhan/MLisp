@@ -79,7 +79,7 @@ let rec string_exp =
   | Apply (f, e) -> "(apply " ^ string_exp f ^ " " ^ string_exp e ^ ")"
   | Call (f, es) -> "(" ^ string_exp f ^ " " ^ spacesep_exp es ^ ")"
   | Lambda (_, _) -> "#<lambda>"
-  | Defexpr (Setq (n, e)) -> "(val " ^ n ^ " " ^ string_exp e ^ ")"
+  | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_exp e ^ ")"
   | Defexpr (Defun (n, ns, e)) ->
       "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_exp e ^ ")"
   | Defexpr (Expr e) -> string_exp e

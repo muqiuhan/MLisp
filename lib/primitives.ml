@@ -22,10 +22,6 @@ let rec list = function
   | [] -> Object.Nil
   | car :: cdr -> Object.Pair (car, list cdr)
 
-let plus = function
-  | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Fixnum (a + b)
-  | _ -> raise (Object.Type_error_exn "(+ int int)")
-
 let pair = function
   | [ a; b ] -> Object.Pair (a, b)
   | _ -> raise (Object.Type_error_exn "(pair a b)")
@@ -46,6 +42,11 @@ let atomp = function
 let eq = function
   | [ a; b ] -> Object.Boolean (a = b)
   | _ -> raise (Object.Type_error_exn "(eq a b)")
+
+let symp = function
+  | [Object.Symbol _] -> Object.Boolean true
+  | [_] -> Object.Boolean false
+  | _ -> raise (Object.Type_error_exn "(sym? single-arg)")
 
 module Num = struct
   let generate name operator =

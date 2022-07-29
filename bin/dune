@@ -3,3 +3,9 @@
  (name main)
  (modes byte native)
  (libraries ocamlisp))
+
+(env
+ (dev
+  (flags (:standard -w +42)))
+ (release
+  (ocamlopt_flags (:standard -O3))))
