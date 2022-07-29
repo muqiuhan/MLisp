@@ -4,8 +4,14 @@
 
 <p align="center"> OCamLisp is a Lisp implementation in OCaml5 </p>
 
+# Introduction
+This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
+
+- This project is developed entirely in OCaml 5.0 (Current is OCaml5.0.0~alpha1)
+
+# Use
+## REPL
 ```lisp
-$ dune exec ocamlisp
 > (env)
 ((pair . #<primitive:pair>) (+ . #<primitive:+>) (list . #<primitive:list>))
 > (+ 3 5)
@@ -57,10 +63,50 @@ $ dune exec ocamlisp
 > Goodbye!
 ```
 
-# Introduction
-This is a Lisp interpreter project implemented using OCaml5, not only that, but we will also provide a standard library.
+## Meta-circular
 
-- This project is developed entirely in OCaml 5.0 (Current is OCaml5.0.0~alpha1)
+### Demo
+```lisp
+(eval. '((label fact
+                (lambda (x)
+                  (cond ((< x 2) 1)
+                        (#t (* x (fact (- x 1)))))))
+         5)
+       '())
+```
+
+Since the loading mechanism is not currently implemented, it can be called in the following way:
+```shell
+./_build/default/bin/main.exe < bin/metacircular.mlisp
+```
+
+Or running with OCaml VM:
+```shell
+./_build/default/bin/main.bc < bin/metacircular.mlisp
+```
+
+Result:
+```shell
+> #<closure>
+> #<closure>
+> #<closure>
+> #<primitive:pair>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> #<closure>
+> 120
+> Goodbye!
+```
 
 # Build
 
@@ -74,7 +120,7 @@ This is a Lisp interpreter project implemented using OCaml5, not only that, but 
 
 ### Run Build
 
-- Run `dune build` to build from source
+- Run `dune build --profile release` to build release version from source (or `dune build --profile dev` for dev)
 - Run `dune test` to run all test cases
 - Run `dune exec ocamlisp` to run the executable
 
