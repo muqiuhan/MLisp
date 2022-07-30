@@ -1,0 +1,6 @@
+(eval. '((label fact
+                (lambda (x)
+                  (cond ((< x 2) 1)
+                        (#t (* x (fact (- x 1)))))))
+         5)
+       '())

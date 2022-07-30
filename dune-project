@@ -1,6 +1,6 @@
 (lang dune 3.3)
 
-(name ocamlisp)
+(name mlisp)
 
 (generate_opam_files true)
 
@@ -11,12 +11,12 @@
 
 (maintainers "Muqiu Han")
 
-(license AGPL-v3)
+(license AGPL-3.0-only)
 
 (documentation https://github.com/muqiuhan/MLisp)
 
 (package
- (name ocamlisp)
+ (name mlisp)
  (synopsis "A Lisp implementation in OCaml")
  (description "A Lisp implementation in OCaml")
  (depends ocaml dune)

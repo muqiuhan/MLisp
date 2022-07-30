@@ -28,7 +28,7 @@ let get_input_channel () =
   | Invalid_argument _ -> stdin
 ;;
 
-let stdlib =
+let _stdlib =
   let eval env e =
     match e with
     | Defexpr d -> eval_def d env
@@ -112,9 +112,11 @@ let rec repl a_stream env =
 
 let () =
   let input_channel = get_input_channel () in
-  try repl (make_filestream input_channel) stdlib with
+  try
+    repl (make_filestream input_channel) basis
+  with
   | _ ->
     if input_channel = stdin
-    then repl (make_filestream input_channel) stdlib
+    then repl (make_filestream input_channel) basis
     else close_in input_channel
 ;;
