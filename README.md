@@ -75,7 +75,7 @@ This project is the MLisp interpreter.
 > Goodbye!
 ```
 
-- Meta-circular
+- __test/metacircular.mlisp:__
 ```lisp
 (eval. '((label fact
                 (lambda (x)
@@ -83,16 +83,6 @@ This project is the MLisp interpreter.
                         (#t (* x (fact (- x 1)))))))
          5)
        '())
-```
-
-Since the loading mechanism is not currently implemented, it can be called in the following way:
-```shell
-./_build/default/bin/main.exe < bin/metacircular.mlisp
-```
-
-Or running with OCaml VM:
-```shell
-./_build/default/bin/main.bc < bin/metacircular.mlisp
 ```
 
 Result:
