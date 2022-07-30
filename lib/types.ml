@@ -66,6 +66,8 @@ module Ast = struct
 end
 
 module Stream = struct
+  exception Syntax_error_exn of string
+
   type stream =
     { mutable line_num : int
     ; mutable chrs : char list

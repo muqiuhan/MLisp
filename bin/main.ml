@@ -20,17 +20,27 @@ open Mlisp.Stream
 open Mlisp.Eval
 open Mlisp.Environment
 open Mlisp.Ast
+open Mlisp.Types.Stream
+
+let get_input_channel () =
+  try open_in Sys.argv.(1) with
+  | Invalid_argument _ -> stdin
+;;
 
 let rec repl a_stream env =
-  print_string "> ";
-  flush stdout;
+  if a_stream.chan = stdin
+  then (
+    print_string "> ";
+    flush stdout);
   let ast = build_ast (read_sexpr a_stream) in
   let result, env' = eval ast env in
-  print_endline (string_val result);
+  if a_stream.chan = stdin then print_endline (string_object result);
   repl a_stream env'
 ;;
 
 let () =
-  try repl { chrs = []; line_num = 1; chan = stdin } basis with
-  | End_of_file -> print_endline "Goodbye!"
+  let input_channel = get_input_channel () in
+  let a_stream = { chrs = []; line_num = 1; chan = input_channel } in
+  try repl a_stream basis with
+  | End_of_file -> if input_channel <> stdin then close_in input_channel
 ;;

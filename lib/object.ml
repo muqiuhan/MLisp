@@ -60,3 +60,5 @@ let rec pair_to_list pair =
   | Pair (a, b) -> a :: pair_to_list b
   | _ -> failwith "pair_to_list"
 ;;
+
+let string_of_char a_char = String.make 1 a_char

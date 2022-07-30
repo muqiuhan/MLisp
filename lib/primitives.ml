@@ -16,51 +16,82 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Types
+open Types.Object
 
 let rec list = function
-  | [] -> Object.Nil
-  | car :: cdr -> Object.Pair (car, list cdr)
+  | [] -> Nil
+  | car :: cdr -> Pair (car, list cdr)
 ;;
 
 let pair = function
-  | [ a; b ] -> Object.Pair (a, b)
-  | _ -> raise (Object.Type_error_exn "(pair a b)")
+  | [ a; b ] -> Pair (a, b)
+  | _ -> raise (Type_error_exn "(pair a b)")
 ;;
 
 let car = function
-  | [ Object.Pair (car, _) ] -> car
-  | _ -> raise (Object.Type_error_exn "(car non-nil-pair)")
+  | [ Pair (car, _) ] -> car
+  | _ -> raise (Type_error_exn "(car non-nil-pair)")
 ;;
 
 let cdr = function
-  | [ Object.Pair (_, cdr) ] -> cdr
-  | _ -> raise (Object.Type_error_exn "(cdr non-nil-pair)")
+  | [ Pair (_, cdr) ] -> cdr
+  | _ -> raise (Type_error_exn "(cdr non-nil-pair)")
 ;;
 
 let atomp = function
-  | [ Object.Pair (_, _) ] -> Object.Boolean false
-  | [ _ ] -> Object.Boolean true
-  | _ -> raise (Object.Type_error_exn "(atom? something)")
+  | [ Pair (_, _) ] -> Boolean false
+  | [ _ ] -> Boolean true
+  | _ -> raise (Type_error_exn "(atom? something)")
 ;;
 
 let eq = function
-  | [ a; b ] -> Object.Boolean (a = b)
-  | _ -> raise (Object.Type_error_exn "(eq a b)")
+  | [ a; b ] -> Boolean (a = b)
+  | _ -> raise (Type_error_exn "(eq a b)")
 ;;
 
 let symp = function
-  | [ Object.Symbol _ ] -> Object.Boolean true
-  | [ _ ] -> Object.Boolean false
-  | _ -> raise (Object.Type_error_exn "(sym? single-arg)")
+  | [ Symbol _ ] -> Boolean true
+  | [ _ ] -> Boolean false
+  | _ -> raise (Type_error_exn "(sym? single-arg)")
+;;
+
+let getchar = function
+  | [] ->
+    (try Fixnum (int_of_char @@ input_char stdin) with
+    | End_of_file -> Fixnum (-1))
+  | _ -> raise (Type_error_exn "(getchar)")
+;;
+
+let print = function
+  | [ v ] ->
+    let () = print_string @@ Ast.string_object v in
+    Symbol ""
+  | _ -> raise (Type_error_exn "(print object)")
+;;
+
+let println = function
+  | [ v ] ->
+    let () = print_endline @@ Ast.string_object v in
+    Symbol ""
+  | _ -> raise (Type_error_exn "(print object)")
+;;
+
+let int_to_char = function
+  | [ Fixnum i ] -> Symbol (Object.string_of_char @@ char_of_int i)
+  | _ -> raise (Type_error_exn "(int_to_char int)")
+;;
+
+let cat = function
+  | [ Symbol a; Symbol b ] -> Symbol (a ^ b)
+  | _ -> raise (Type_error_exn "(cat sym sym)")
 ;;
 
 module Num = struct
   let generate name operator =
     ( name
     , function
-      | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Fixnum (operator a b)
-      | _ -> raise (Object.Type_error_exn ("(" ^ name ^ " int int)")) )
+      | [ Fixnum a; Fixnum b ] -> Fixnum (operator a b)
+      | _ -> raise (Type_error_exn ("(" ^ name ^ " int int)")) )
   ;;
 end
 
@@ -68,7 +99,7 @@ module Cmp = struct
   let generate name operator =
     ( name
     , function
-      | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Boolean (operator a b)
-      | _ -> raise (Object.Type_error_exn ("(" ^ name ^ " int int)")) )
+      | [ Fixnum a; Fixnum b ] -> Boolean (operator a b)
+      | _ -> raise (Type_error_exn ("(" ^ name ^ " int int)")) )
   ;;
 end

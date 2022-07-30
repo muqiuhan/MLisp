@@ -60,7 +60,7 @@ let rec build_ast sexpr =
             | _ -> raise (Type_error_exn "(defun name (formals) body)"))
           (Object.pair_to_list args)
       in
-      let () = assert_unique names in      
+      let () = assert_unique names in
       Defexpr (Defun (name, names, build_ast expr))
     | [ Symbol "apply"; fn_expr; args ] -> Apply (build_ast fn_expr, build_ast args)
     | [ Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
@@ -88,7 +88,7 @@ let rec string_exp =
   let spacesep_exp es = spacesep (List.map string_exp es) in
   let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_exp e ^ ")" in
   function
-  | Literal e -> string_val e
+  | Literal e -> string_object e
   | Var n -> n
   | If (c, t, f) -> "(if " ^ string_exp c ^ " " ^ string_exp t ^ " " ^ string_exp f ^ ")"
   | And (c0, c1) -> "(and " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
@@ -110,16 +110,16 @@ let rec string_exp =
     let bindings = spacesep (List.map string_of_binding bs) in
     "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_exp e ^ ")"
 
-and string_val e =
+and string_object e =
   let rec string_list l =
     match l with
-    | Pair (a, Nil) -> string_val a
-    | Pair (a, b) -> string_val a ^ " " ^ string_list b
+    | Pair (a, Nil) -> string_object a
+    | Pair (a, b) -> string_object a ^ " " ^ string_list b
     | _ -> raise This_can't_happen_exn
   in
   let string_pair p =
     match p with
-    | Pair (a, b) -> string_val a ^ " . " ^ string_val b
+    | Pair (a, b) -> string_object a ^ " . " ^ string_object b
     | _ -> raise This_can't_happen_exn
   in
   match e with
@@ -129,6 +129,6 @@ and string_val e =
   | Nil -> "nil"
   | Pair (_, _) -> "(" ^ (if Object.is_list e then string_list e else string_pair e) ^ ")"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
-  | Quote expr -> "'" ^ string_val expr
+  | Quote expr -> "'" ^ string_object expr
   | Closure (_, _, _) -> "#<closure>"
 ;;

@@ -16,7 +16,7 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Types
+open Types.Object
 
 exception Not_found_exn of string
 exception Unspecified_value_exn of string
@@ -40,10 +40,10 @@ let bind_local_list ns vs env =
 ;;
 
 let basis =
-  let newprim acc (name, func) = bind (name, Object.Primitive (name, func), acc) in
+  let newprim acc (name, func) = bind (name, Primitive (name, func), acc) in
   List.fold_left
     newprim
-    []
+    [ "empty-symbol", ref (Some (Symbol "")) ]
     [ Primitives.Num.generate "+" ( + )
     ; Primitives.Num.generate "-" ( - )
     ; Primitives.Num.generate "*" ( * )
@@ -61,18 +61,23 @@ let basis =
     ; "eq", Primitives.eq
     ; "atom?", Primitives.atomp
     ; "sym?", Primitives.symp
+    ; "getchar", Primitives.getchar
+    ; "print", Primitives.print
+    ; "println", Primitives.println
+    ; "int->char", Primitives.int_to_char
+    ; "cat", Primitives.cat
     ]
 ;;
 
 let rec env_to_val =
   let b_to_val (n, vor) =
-    Object.Pair
+    Pair
       ( Symbol n
       , match !vor with
         | None -> Symbol "unspecified"
         | Some v -> v )
   in
   function
-  | [] -> Object.Nil
-  | b :: bs -> Object.Pair (b_to_val b, env_to_val bs)
+  | [] -> Nil
+  | b :: bs -> Pair (b_to_val b, env_to_val bs)
 ;;

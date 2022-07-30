@@ -17,9 +17,7 @@
 (****************************************************************************)
 
 open Types.Stream
-open Types
-
-exception Syntax_error_exn of string
+open Types.Object
 
 let read_char a_stream =
   match a_stream.chrs with
@@ -52,8 +50,6 @@ let rec eat_comment a_stream =
   if read_char a_stream = '\n' then () else eat_comment a_stream
 ;;
 
-let string_of_char a_char = String.make 1 a_char
-
 let is_digit a_char =
   let code = Char.code a_char in
   code >= Char.code '0' && code <= Char.code '9'
@@ -66,7 +62,7 @@ let read_fixnum a_stream acc =
     then num_char |> Char.escaped |> ( ^ ) acc |> loop
     else (
       let _ = unread_char a_stream num_char in
-      Object.Fixnum (int_of_string acc))
+      Fixnum (int_of_string acc))
   in
   loop acc
 ;;
@@ -93,25 +89,28 @@ let rec read_symbol a_stream =
   then (
     let _ = unread_char a_stream next_char in
     "")
-  else string_of_char next_char ^ read_symbol a_stream
+  else Object.string_of_char next_char ^ read_symbol a_stream
 ;;
 
 let is_boolean a_char = Char.equal a_char '#'
 
 let read_boolean a_stream =
   match read_char a_stream with
-  | 't' -> Object.Boolean true
-  | 'f' -> Object.Boolean false
-  | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x))
+  | 't' -> Boolean true
+  | 'f' -> Boolean false
+  | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ (Char.escaped x) ^ "'"))
 ;;
 
 (** Read in a whole number *)
 let rec read_sexpr a_stream =
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
-  if a_char = ';' then (eat_comment a_stream; read_sexpr a_stream)
+  if a_char = ';'
+  then (
+    eat_comment a_stream;
+    read_sexpr a_stream)
   else if is_symbol_start_char a_char
-  then Object.Symbol (string_of_char a_char ^ read_symbol a_stream)
+  then Symbol (Object.string_of_char a_char ^ read_symbol a_stream)
   else if is_digit a_char || Char.equal a_char '~'
   then
     (if Char.equal '~' a_char then '-' else a_char)
@@ -122,17 +121,17 @@ let rec read_sexpr a_stream =
   else if is_boolean a_char
   then read_boolean a_stream
   else if Char.equal a_char '\''
-  then Object.Quote (read_sexpr a_stream)
+  then Quote (read_sexpr a_stream)
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
 
 and read_list a_stream =
   eat_whitespace a_stream;
   let a_char = read_char a_stream in
   if a_char = ')'
-  then Object.Nil
+  then Nil
   else (
     let _ = unread_char a_stream a_char in
     let car = read_sexpr a_stream in
     let cdr = read_list a_stream in
-    Object.Pair (car, cdr))
+    Pair (car, cdr))
 ;;

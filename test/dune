@@ -1,3 +1,4 @@
 (test
  (name mlisp)
+ (flags (:standard -w -32))
  (libraries mlisp alcotest))
