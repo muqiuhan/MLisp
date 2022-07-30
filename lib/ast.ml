@@ -63,14 +63,14 @@ let rec build_ast sexpr =
       let () = assert_unique names in      
       Defexpr (Defun (name, names, build_ast expr))
     | [ Symbol "apply"; fn_expr; args ] -> Apply (build_ast fn_expr, build_ast args)
-    | [ Symbol s; bindings; exp ] when Object.is_list bindings && valid_let s ->
+    | [ Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
       let make_binding = function
         | Pair (Symbol n, Pair (expr, Nil)) -> n, build_ast expr
         | _ -> raise (Type_error_exn "(let bindings expr)")
       in
       let bindings = List.map make_binding (Object.pair_to_list bindings) in
       let () = assert_unique (List.map fst bindings) in
-      Let (to_kind s, bindings, build_ast exp)
+      Let (to_kind s, bindings, build_ast expr)
     | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)
     | [] -> raise (Parse_error_exn "poorly formed expression"))
   | Pair _ -> Literal sexpr
