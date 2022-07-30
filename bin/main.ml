@@ -34,7 +34,7 @@ let () =
   let rec repl a_stream env =
     if a_stream.stdin
     then (
-      print_string "> ";
+      print_string "# ";
       flush stdout);
     let ast = build_ast (read_sexpr a_stream) in
     let result, env' = eval ast env in
@@ -54,10 +54,10 @@ let () =
     let stm = make_filestream (open_in stdlib_path) in
     slurp stm basis
   in
+  print_endline "MLisp 0.0.1";
   let input_channel = get_input_channel () in
   try repl (make_filestream input_channel) stdlib with
   | _ ->
-    if input_channel = stdin
-    then repl (make_filestream input_channel) stdlib
-    else close_in input_channel
+    if input_channel <> stdin then
+      close_in input_channel
 ;;

@@ -28,7 +28,7 @@ This project is the MLisp interpreter.
 4
 > (if (or #t #f) 3 4)
 3
-> (define x 3)
+> (setq x 3)
 3
 > (env)
 ((x . 3) (pair . #<primitive:pair>) (+ . #<primitive:+>) (list . #<primitive:list>))
