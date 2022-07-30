@@ -50,24 +50,25 @@ let rec build_ast sexpr =
             | _ -> raise (Type_error_exn "(lambda (formals) body)"))
           (Object.pair_to_list ns)
       in
+      let () = assert_unique names in
       Lambda (names, build_ast e)
     | [ Symbol "defun"; Symbol name; args; expr ] ->
-      let err () = raise (Type_error_exn "(defun name (formals) body)") in
       let names =
         List.map
           (function
             | Symbol s -> s
-            | _ -> err ())
+            | _ -> raise (Type_error_exn "(defun name (formals) body)"))
           (Object.pair_to_list args)
       in
+      let () = assert_unique names in      
       Defexpr (Defun (name, names, build_ast expr))
     | [ Symbol "apply"; fn_expr; args ] -> Apply (build_ast fn_expr, build_ast args)
     | [ Symbol s; bindings; exp ] when Object.is_list bindings && valid_let s ->
-      let mkbinding = function
+      let make_binding = function
         | Pair (Symbol n, Pair (expr, Nil)) -> n, build_ast expr
         | _ -> raise (Type_error_exn "(let bindings expr)")
       in
-      let bindings = List.map mkbinding (Object.pair_to_list bindings) in
+      let bindings = List.map make_binding (Object.pair_to_list bindings) in
       let () = assert_unique (List.map fst bindings) in
       Let (to_kind s, bindings, build_ast exp)
     | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)

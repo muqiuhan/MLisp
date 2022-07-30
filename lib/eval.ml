@@ -23,7 +23,13 @@ let extend newenv oldenv =
   List.fold_right (fun (b, v) acc -> Environment.bind_local (b, v, acc)) newenv oldenv
 ;;
 
-let unzip ls = List.map fst ls, List.map snd ls
+let rec unzip l =
+  match l with
+  | [] -> [], []
+  | (a, b) :: rst ->
+    let flist, slist = unzip rst in
+    a :: flist, b :: slist
+;;
 
 let rec eval_expr expr env =
   let rec eval = function
@@ -64,11 +70,13 @@ let rec eval_expr expr env =
 
 and eval_apply fn_expr args =
   match fn_expr with
-  | Primitive (_, f) -> f args
-  | Closure (ns, e, clenv) -> eval_closure ns e args clenv
+  | Primitive (_, fn) -> fn args
+  | Closure (names, expr, clenv) -> eval_closure names expr args clenv
   | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
 
-and eval_closure ns e args clenv = eval_expr e (Environment.bind_list ns args clenv)
+and eval_closure names expr args clenv =
+  eval_expr expr (Environment.bind_list names args clenv)
+;;
 
 let eval_def def env =
   match def with
