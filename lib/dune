@@ -1,5 +1,5 @@
 (library
- (name ocamlisp)
+ (name mlisp)
  (modes byte native))
 
 (env

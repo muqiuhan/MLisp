@@ -1,3 +1,3 @@
 (test
- (name ocamlisp)
- (libraries ocamlisp alcotest))
+ (name mlisp)
+ (libraries mlisp alcotest))

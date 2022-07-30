@@ -1,8 +1,8 @@
 (executable
- (public_name ocamlisp)
+ (public_name mlisp)
  (name main)
  (modes byte native)
- (libraries ocamlisp))
+ (libraries mlisp))
 
 (env
  (dev

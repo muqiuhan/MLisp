@@ -58,6 +58,7 @@ end
 
 module Ast = struct
   exception Parse_error_exn of string
+  exception Unique_error_exn of string
 end
 
 module Stream = struct

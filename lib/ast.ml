@@ -19,6 +19,15 @@
 open Types.Object
 open Types.Ast
 
+let rec assert_unique = function
+  | [] -> ()
+  | x :: xs ->
+      if List.mem x xs then raise (Unique_error_exn x) else assert_unique xs
+
+let let_kinds = ["let", LET; "let*", LETSTAR; "letrec", LETREC]
+let valid_let s = List.mem_assoc s let_kinds
+let to_kind s = List.assoc s let_kinds
+
 let rec build_ast sexpr =
   match sexpr with
   | Primitive _ | Closure _ -> raise This_can't_happen_exn
@@ -54,7 +63,15 @@ let rec build_ast sexpr =
           in
           Defexpr (Defun (name, names, build_ast expr))
       | [ Symbol "apply"; fn_expr; args ] ->
-          Apply (build_ast fn_expr, build_ast args)
+        Apply (build_ast fn_expr, build_ast args)
+      | (Symbol s)::bindings::exp::[] when Object.is_list bindings && valid_let s ->
+        let mkbinding = function
+          | Pair (Symbol n, Pair (expr, Nil)) -> n, build_ast expr
+          | _ -> raise (Type_error_exn "(let bindings expr)")
+        in
+        let bindings = List.map mkbinding (Object.pair_to_list bindings) in
+        let () = assert_unique (List.map fst bindings) in
+        Let (to_kind s, bindings, build_ast exp)
       | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)
       | [] -> raise (Parse_error_exn "poorly formed expression"))
   | Pair _ -> Literal sexpr
@@ -69,6 +86,7 @@ let spacesep ns = String.concat " " ns
 
 let rec string_exp =
   let spacesep_exp es = spacesep (List.map string_exp es) in
+  let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_exp e ^ ")" in
   function
   | Literal e -> string_val e
   | Var n -> n
@@ -78,11 +96,18 @@ let rec string_exp =
   | Or (c0, c1) -> "(or " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
   | Apply (f, e) -> "(apply " ^ string_exp f ^ " " ^ string_exp e ^ ")"
   | Call (f, es) -> "(" ^ string_exp f ^ " " ^ spacesep_exp es ^ ")"
-  | Lambda (_, _) -> "#<lambda>"
+  | Lambda (args, body) ->
+      "(lambda (" ^ spacesep args ^ ") " ^ string_exp body ^ ")"
   | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_exp e ^ ")"
   | Defexpr (Defun (n, ns, e)) ->
       "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_exp e ^ ")"
   | Defexpr (Expr e) -> string_exp e
+  | Let (kind, bs, e) ->
+      let str =
+        match kind with LET -> "let" | LETSTAR -> "let*" | LETREC -> "letrec"
+      in
+      let bindings = spacesep (List.map string_of_binding bs) in
+      "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_exp e ^ ")"
 
 and string_val e =
   let rec string_list l =

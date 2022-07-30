@@ -51,6 +51,11 @@ let rec eval_expr expr env =
     | Call (Var "env", []) -> Environment.env_to_val env
     | Call (fn, args) -> eval_apply (eval fn) (List.map eval args)
     | Lambda (args, body) -> Closure (args, body, env)
+    | Let (LET, bindings, body) ->
+        let eval_binding (n, e) = n, ref (Some (eval e)) in
+        eval_expr body (extend (List.map eval_binding bindings) env)
+    | Let (LETSTAR, _, _) -> failwith "Not yet implemented"
+    | Let (LETREC, _, _) -> failwith "Not yet implemented"  
     | Defexpr _ -> raise This_can't_happen_exn
   in
   eval expr

@@ -16,10 +16,10 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Ocamlisp.Stream
-open Ocamlisp.Eval
-open Ocamlisp.Environment
-open Ocamlisp.Ast
+open Mlisp.Stream
+open Mlisp.Eval
+open Mlisp.Environment
+open Mlisp.Ast
 
 let rec repl a_stream env =
   print_string "> ";
