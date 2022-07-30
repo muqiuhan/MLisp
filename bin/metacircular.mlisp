@@ -86,7 +86,9 @@
                              (map-eval. (cdr e) env))
                        env))))))
 
-(letrec ((fact (lambda (x)
-		 (cond ((< x 2) 1)
-		       (#t (* x (fact (- x 1))))))))
-  (fact 5))
+(eval. '((label fact
+                (lambda (x)
+                  (cond ((< x 2) 1)
+                        (#t (* x (fact (- x 1)))))))
+         5)
+       '())

@@ -60,6 +60,18 @@ This project is the MLisp interpreter.
 1
 > (g 10)
 3
+> (let ((x 10)
+        (y 20))
+    (+ x y))
+30
+> (let* ((x 10)
+         (y x))
+    (+ x y))
+20
+> (letrec ((f (lambda (x) (g (+ x 1))))
+           (g (lambda (x) (+ x 3))))                                                                       
+    (f 0))
+4
 > Goodbye!
 ```
 
