@@ -65,14 +65,7 @@ let getchar = function
 let print = function
   | [ v ] ->
     let () = print_string @@ Ast.string_object v in
-    Symbol ""
-  | _ -> raise (Type_error_exn "(print object)")
-;;
-
-let println = function
-  | [ v ] ->
-    let () = print_endline @@ Ast.string_object v in
-    Symbol ""
+    Symbol "ok"
   | _ -> raise (Type_error_exn "(print object)")
 ;;
 

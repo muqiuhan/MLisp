@@ -63,7 +63,6 @@ let basis =
     ; "sym?", Primitives.symp
     ; "getchar", Primitives.getchar
     ; "print", Primitives.print
-    ; "println", Primitives.println
     ; "int->char", Primitives.int_to_char
     ; "cat", Primitives.cat
     ]
