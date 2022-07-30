@@ -56,7 +56,7 @@ let rec eval_expr expr env =
       eval_expr body (extend (List.map eval_binding bindings) env)
     | Let (LETSTAR, bindings, body) ->
       let eval_binding acc (n, e) = Environment.bind (n, eval_expr e acc, acc) in
-      eval_expr body (extend (List.fold_left eval_binding [] bindings) env)
+      eval_expr body (List.fold_left eval_binding env bindings)
     | Let (LETREC, bindings, body) ->
       let names, values = unzip bindings in
       let env' =
@@ -67,7 +67,11 @@ let rec eval_expr expr env =
       eval_expr body env'
     | Defexpr _ -> raise This_can't_happen_exn
   in
-  eval expr
+  try eval expr with
+  | e ->
+    let err = Printexc.to_string e in
+    print_endline @@ "Error: '" ^ err ^ "' in expr " ^ string_exp expr;
+    raise e
 
 and eval_apply fn_expr args =
   match fn_expr with

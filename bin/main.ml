@@ -113,5 +113,8 @@ let rec repl a_stream env =
 let () =
   let input_channel = get_input_channel () in
   try repl (make_filestream input_channel) stdlib with
-  | Stream.Failure -> if input_channel <> stdin then close_in input_channel
+  | _ ->
+    if input_channel = stdin
+    then repl (make_filestream input_channel) stdlib
+    else close_in input_channel
 ;;
