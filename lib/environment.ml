@@ -31,9 +31,13 @@ let rec lookup = function
 ;;
 
 let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
-let mk_loc () = ref None
-let bind_loc (n, vor, e) = (n, vor) :: e
+let make_local _ = ref None
+let bind_local (n, vor, e) = (n, vor) :: e
 let bind_list ns vs env = List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
+
+let bind_local_list ns vs env =
+  List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+;;
 
 let basis =
   let newprim acc (name, func) = bind (name, Object.Primitive (name, func), acc) in

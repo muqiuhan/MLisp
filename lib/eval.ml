@@ -20,8 +20,10 @@ include Ast
 open Types.Object
 
 let extend newenv oldenv =
-  List.fold_right (fun (b, v) acc -> Environment.bind_loc (b, v, acc)) newenv oldenv
+  List.fold_right (fun (b, v) acc -> Environment.bind_local (b, v, acc)) newenv oldenv
 ;;
+
+let unzip ls = List.map fst ls, List.map snd ls
 
 let rec eval_expr expr env =
   let rec eval = function
@@ -38,9 +40,9 @@ let rec eval_expr expr env =
       (match eval cond_x, eval cond_y with
       | Boolean x, Boolean y -> Boolean (x && y)
       | _ -> raise (Type_error_exn "(or bool bool)"))
-    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args)) env
+    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args))
     | Call (Var "env", []) -> Environment.env_to_val env
-    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
+    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args)
     | Lambda (args, body) -> Closure (args, body, env)
     | Let (LET, bindings, body) ->
       let eval_binding (n, e) = n, ref (Some (eval e)) in
@@ -48,20 +50,25 @@ let rec eval_expr expr env =
     | Let (LETSTAR, bindings, body) ->
       let eval_binding acc (n, e) = Environment.bind (n, eval_expr e acc, acc) in
       eval_expr body (extend (List.fold_left eval_binding [] bindings) env)
-    | Let (LETREC, _, _) -> failwith "Not yet implemented"
+    | Let (LETREC, bindings, body) ->
+      let names, values = unzip bindings in
+      let env' =
+        Environment.bind_local_list names (List.map Environment.make_local values) env
+      in
+      let updates = List.map (fun (n, e) -> n, Some (eval_expr e env')) bindings in
+      let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
+      eval_expr body env'
     | Defexpr _ -> raise This_can't_happen_exn
   in
   eval expr
 
-and eval_apply fn_expr args env =
+and eval_apply fn_expr args =
   match fn_expr with
   | Primitive (_, f) -> f args
-  | Closure (ns, e, clenv) -> eval_closure ns e args clenv env
+  | Closure (ns, e, clenv) -> eval_closure ns e args clenv
   | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
 
-and eval_closure ns e args clenv env =
-  eval_expr e (extend (Environment.bind_list ns args clenv) env)
-;;
+and eval_closure ns e args clenv = eval_expr e (Environment.bind_list ns args clenv)
 
 let eval_def def env =
   match def with
@@ -74,10 +81,10 @@ let eval_def def env =
       | Closure (fs, bod, env) -> fs, bod, env
       | _ -> raise (Type_error_exn "Expecting closure.")
     in
-    let loc = Environment.mk_loc () in
-    let clo = Closure (formals, body, Environment.bind_loc (n, loc, cl_env)) in
+    let loc = Environment.make_local () in
+    let clo = Closure (formals, body, Environment.bind_local (n, loc, cl_env)) in
     let () = loc := Some clo in
-    clo, Environment.bind_loc (n, loc, env)
+    clo, Environment.bind_local (n, loc, env)
   | Expr e -> eval_expr e env, env
 ;;
 
