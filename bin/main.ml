@@ -54,8 +54,8 @@ let () =
     let stm = make_filestream (open_in stdlib_path) in
     slurp stm basis
   in
-  print_endline "MLisp 0.0.1";
   let input_channel = get_input_channel () in
+  if input_channel = stdin then print_endline "MLisp v0.0.1";
   try repl (make_filestream input_channel) stdlib with
   | _ ->
     if input_channel <> stdin then
