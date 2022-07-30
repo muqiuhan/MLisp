@@ -124,15 +124,19 @@ Result:
   Since this project is developed using OCaml5, you need to install the OCaml5 environment. The current latest OCaml5 Release version is OCaml5.0.0~alpha1.You can install this version via `opam update && opam switch create 5.0.0~alpha1 --repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git` to install this version of OCaml environment.
 
 - Dependencies
+  
   This project is built with dune, you can install it with `opam install dune`
   
 - Build
+  
   Run `dune build --profile release` to build release version from source (or `dune build --profile dev` for dev)
 
 - Test
+  
   Run `dune test` to run all test cases
 
 - Exec
+  
   Run `dune exec mlisp` to run the executable
 
 # License
