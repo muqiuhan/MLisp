@@ -16,11 +16,11 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Mlisp.Stream
+open Mlisp.Reader
 open Mlisp.Eval
 open Mlisp.Environment
 open Mlisp.Ast
-open Mlisp.Types.Stream
+open Mlisp.Types.Reader
 
 let get_input_channel () =
   try open_in Sys.argv.(1) with
@@ -28,19 +28,18 @@ let get_input_channel () =
 ;;
 
 let rec repl a_stream env =
-  if a_stream.chan = stdin
+  if a_stream.stdin
   then (
     print_string "> ";
     flush stdout);
   let ast = build_ast (read_sexpr a_stream) in
   let result, env' = eval ast env in
-  if a_stream.chan = stdin then print_endline (string_object result);
+  if a_stream.stdin then print_endline (string_object result);
   repl a_stream env'
 ;;
 
 let () =
   let input_channel = get_input_channel () in
-  let a_stream = { chrs = []; line_num = 1; chan = input_channel } in
-  try repl a_stream basis with
-  | End_of_file -> if input_channel <> stdin then close_in input_channel
+  try repl (make_filestream input_channel) basis with
+  | Stream.Failure -> if input_channel <> stdin then close_in input_channel
 ;;

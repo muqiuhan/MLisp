@@ -65,12 +65,13 @@ module Ast = struct
   exception Unique_error_exn of string
 end
 
-module Stream = struct
+module Reader = struct
   exception Syntax_error_exn of string
 
-  type stream =
+  type 'a stream =
     { mutable line_num : int
     ; mutable chrs : char list
-    ; chan : in_channel
+    ; stm : 'a Stream.t
+    ; stdin : bool
     }
 end

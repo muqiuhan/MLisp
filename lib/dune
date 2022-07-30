@@ -1,6 +1,7 @@
 (library
  (name mlisp)
- (modes byte native))
+ (modes byte native)
+ (libraries camlp-streams))
 
 (env
  (dev

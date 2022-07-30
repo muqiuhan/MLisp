@@ -42,16 +42,16 @@ let rec build_ast sexpr =
     | [ Symbol "or"; cond_x; cond_y ] -> Or (build_ast cond_x, build_ast cond_y)
     | [ Symbol "quote"; expr ] -> Literal (Quote expr)
     | [ Symbol "setq"; Symbol name; expr ] -> Defexpr (Setq (name, build_ast expr))
-    | [ Symbol "lambda"; ns; e ] when Object.is_list ns ->
+    | [ Symbol "lambda"; args; body ] when Object.is_list args ->
       let names =
         List.map
           (function
             | Symbol symbol -> symbol
             | _ -> raise (Type_error_exn "(lambda (formals) body)"))
-          (Object.pair_to_list ns)
+          (Object.pair_to_list args)
       in
       let () = assert_unique names in
-      Lambda (names, build_ast e)
+      Lambda (names, build_ast body)
     | [ Symbol "defun"; Symbol name; args; expr ] ->
       let names =
         List.map

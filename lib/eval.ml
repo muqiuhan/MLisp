@@ -33,6 +33,7 @@ let rec unzip l =
 
 let rec eval_expr expr env =
   let rec eval = function
+    | Literal (Quote expr) -> expr
     | Literal l -> l
     | Var n -> Environment.lookup (n, env)
     | If (cond, if_true, _) when eval cond = Boolean true -> eval if_true
@@ -83,16 +84,16 @@ let eval_def def env =
   | Setq (name, expr) ->
     let v = eval_expr expr env in
     v, Environment.bind (name, v, env)
-  | Defun (n, ns, e) ->
-    let formals, body, cl_env =
-      match eval_expr (Lambda (ns, e)) env with
+  | Defun (name, args, body) ->
+    let formals, body', cl_env =
+      match eval_expr (Lambda (args, body)) env with
       | Closure (fs, bod, env) -> fs, bod, env
       | _ -> raise (Type_error_exn "Expecting closure.")
     in
     let loc = Environment.make_local () in
-    let clo = Closure (formals, body, Environment.bind_local (n, loc, cl_env)) in
+    let clo = Closure (formals, body', Environment.bind_local (name, loc, cl_env)) in
     let () = loc := Some clo in
-    clo, Environment.bind_local (n, loc, env)
+    clo, Environment.bind_local (name, loc, env)
   | Expr e -> eval_expr e env, env
 ;;
 
