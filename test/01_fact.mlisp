@@ -1,0 +1,3 @@
+(defun fact (x)
+   (cond ((< x 2) 1)
+      (#t (* x (fact (- x 1))))))
