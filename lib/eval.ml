@@ -20,66 +20,69 @@ include Ast
 open Types.Object
 
 let extend newenv oldenv =
-  List.fold_right
-    (fun (b, v) acc -> Environment.bind_loc (b, v, acc))
-    newenv oldenv
+  List.fold_right (fun (b, v) acc -> Environment.bind_loc (b, v, acc)) newenv oldenv
+;;
 
 let rec eval_expr expr env =
-  let eval_apply fn_expr args =
-    match fn_expr with
-    | Primitive (_, f) -> f args
-    | Closure (ns, e, clenv) ->
-        eval_expr e (extend (Environment.bind_list ns args clenv) env)
-    | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
-  in
   let rec eval = function
-    | Literal (Quote e) -> e
     | Literal l -> l
     | Var n -> Environment.lookup (n, env)
     | If (cond, if_true, _) when eval cond = Boolean true -> eval if_true
     | If (cond, _, if_false) when eval cond = Boolean false -> eval if_false
     | If _ -> raise (Type_error_exn "(if bool e1 e2)")
-    | And (cond_x, cond_y) -> (
-        match (eval cond_x, eval cond_y) with
-        | Boolean x, Boolean y -> Boolean (x && y)
-        | _ -> raise (Type_error_exn "(and bool bool)"))
-    | Or (cond_x, cond_y) -> (
-        match (eval cond_x, eval cond_y) with
-        | Boolean v1, Boolean v2 -> Boolean (v1 || v2)
-        | _ -> raise (Type_error_exn "(or bool bool)"))
-    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args))
+    | And (cond_x, cond_y) ->
+      (match eval cond_x, eval cond_y with
+      | Boolean x, Boolean y -> Boolean (x && y)
+      | _ -> raise (Type_error_exn "(and bool bool)"))
+    | Or (cond_x, cond_y) ->
+      (match eval cond_x, eval cond_y with
+      | Boolean x, Boolean y -> Boolean (x && y)
+      | _ -> raise (Type_error_exn "(or bool bool)"))
+    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Call (Var "env", []) -> Environment.env_to_val env
-    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args)
+    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
     | Lambda (args, body) -> Closure (args, body, env)
     | Let (LET, bindings, body) ->
-        let eval_binding (n, e) = n, ref (Some (eval e)) in
-        eval_expr body (extend (List.map eval_binding bindings) env)
-    | Let (LETSTAR, _, _) -> failwith "Not yet implemented"
-    | Let (LETREC, _, _) -> failwith "Not yet implemented"  
+      let eval_binding (n, e) = n, ref (Some (eval e)) in
+      eval_expr body (extend (List.map eval_binding bindings) env)
+    | Let (LETSTAR, bindings, body) ->
+      let eval_binding acc (n, e) = Environment.bind (n, eval_expr e acc, acc) in
+      eval_expr body (extend (List.fold_left eval_binding [] bindings) env)
+    | Let (LETREC, _, _) -> failwith "Not yet implemented"
     | Defexpr _ -> raise This_can't_happen_exn
   in
   eval expr
 
+and eval_apply fn_expr args env =
+  match fn_expr with
+  | Primitive (_, f) -> f args
+  | Closure (ns, e, clenv) -> eval_closure ns e args clenv env
+  | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
+
+and eval_closure ns e args clenv env =
+  eval_expr e (extend (Environment.bind_list ns args clenv) env)
+;;
+
 let eval_def def env =
   match def with
   | Setq (name, expr) ->
-      let v = eval_expr expr env in
-      (v, Environment.bind (name, v, env))
+    let v = eval_expr expr env in
+    v, Environment.bind (name, v, env)
   | Defun (n, ns, e) ->
-      let formals, body, cl_env =
-        match eval_expr (Lambda (ns, e)) env with
-        | Closure (fs, bod, env) -> (fs, bod, env)
-        | _ -> raise (Type_error_exn "Expecting closure.")
-      in
-      let loc = Environment.mk_loc () in
-      let clo =
-        Closure (formals, body, Environment.bind_loc (n, loc, cl_env))
-      in
-      let () = loc := Some clo in
-      (clo, Environment.bind_loc (n, loc, env))
-  | Expr e -> (eval_expr e env, env)
+    let formals, body, cl_env =
+      match eval_expr (Lambda (ns, e)) env with
+      | Closure (fs, bod, env) -> fs, bod, env
+      | _ -> raise (Type_error_exn "Expecting closure.")
+    in
+    let loc = Environment.mk_loc () in
+    let clo = Closure (formals, body, Environment.bind_loc (n, loc, cl_env)) in
+    let () = loc := Some clo in
+    clo, Environment.bind_loc (n, loc, env)
+  | Expr e -> eval_expr e env, env
+;;
 
 let eval ast env =
   match ast with
   | Defexpr def_expr -> eval_def def_expr env
-  | expr -> (eval_expr expr env, env)
+  | expr -> eval_expr expr env, env
+;;

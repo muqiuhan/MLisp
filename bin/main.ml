@@ -28,7 +28,9 @@ let rec repl a_stream env =
   let result, env' = eval ast env in
   print_endline (string_val result);
   repl a_stream env'
+;;
 
 let () =
-  try repl { chrs = []; line_num = 1; chan = stdin } basis
-  with End_of_file -> print_endline "Goodbye!"
+  try repl { chrs = []; line_num = 1; chan = stdin } basis with
+  | End_of_file -> print_endline "Goodbye!"
+;;

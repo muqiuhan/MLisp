@@ -36,7 +36,11 @@ module Object = struct
 
   and value = lobject
   and name = string
-  and let_kind = LET | LETSTAR | LETREC  
+
+  and let_kind =
+    | LET
+    | LETSTAR
+    | LETREC
 
   and expr =
     | Literal of value
@@ -62,9 +66,9 @@ module Ast = struct
 end
 
 module Stream = struct
-  type stream = {
-    mutable line_num : int;
-    mutable chrs : char list;
-    chan : in_channel;
-  }
+  type stream =
+    { mutable line_num : int
+    ; mutable chrs : char list
+    ; chan : in_channel
+    }
 end

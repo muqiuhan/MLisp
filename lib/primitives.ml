@@ -21,45 +21,54 @@ open Types
 let rec list = function
   | [] -> Object.Nil
   | car :: cdr -> Object.Pair (car, list cdr)
+;;
 
 let pair = function
   | [ a; b ] -> Object.Pair (a, b)
   | _ -> raise (Object.Type_error_exn "(pair a b)")
+;;
 
 let car = function
   | [ Object.Pair (car, _) ] -> car
   | _ -> raise (Object.Type_error_exn "(car non-nil-pair)")
+;;
 
 let cdr = function
   | [ Object.Pair (_, cdr) ] -> cdr
   | _ -> raise (Object.Type_error_exn "(cdr non-nil-pair)")
+;;
 
 let atomp = function
   | [ Object.Pair (_, _) ] -> Object.Boolean false
   | [ _ ] -> Object.Boolean true
   | _ -> raise (Object.Type_error_exn "(atom? something)")
+;;
 
 let eq = function
   | [ a; b ] -> Object.Boolean (a = b)
   | _ -> raise (Object.Type_error_exn "(eq a b)")
+;;
 
 let symp = function
-  | [Object.Symbol _] -> Object.Boolean true
-  | [_] -> Object.Boolean false
+  | [ Object.Symbol _ ] -> Object.Boolean true
+  | [ _ ] -> Object.Boolean false
   | _ -> raise (Object.Type_error_exn "(sym? single-arg)")
+;;
 
 module Num = struct
   let generate name operator =
-    ( name,
-      function
+    ( name
+    , function
       | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Fixnum (operator a b)
       | _ -> raise (Object.Type_error_exn ("(" ^ name ^ " int int)")) )
+  ;;
 end
 
 module Cmp = struct
   let generate name operator =
-    ( name,
-      function
+    ( name
+    , function
       | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Boolean (operator a b)
       | _ -> raise (Object.Type_error_exn ("(" ^ name ^ " int int)")) )
+  ;;
 end
