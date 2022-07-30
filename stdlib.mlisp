@@ -121,3 +121,67 @@
                 (append. (zip. (cadar e)
                                (map-eval. (cdr e) env))
                          env))))))
+
+(defun o (f g) (lambda (x) (f (g x))))
+(setq caar (o car car))
+(setq cadr (o car cdr))
+(setq caddr (o cadr cdr))
+(setq cadar (o car (o cdr car)))
+(setq caddar (o car (o cdr (o cdr car))))
+
+(setq cons pair)
+
+(setq newline (int->char 10))
+(setq space (int->char 32))
+
+; This is pretty awkward looking because we have no other way to sequence
+; operations. We have no begin, nothing.
+(defun println (s)
+  (let ((ok (print s)))
+    (print newline)))
+
+; This is less awkward because we actually use ic and c.
+(defun getline ()
+  (let* ((ic (getchar))
+         (c (int->char ic)))
+    (if (or (eq c newline) (eq ic ~1))
+      empty-symbol
+      (cat c (getline)))))
+
+(defun null? (xs)
+  (eq xs '()))
+
+(defun length (ls)
+  (if (null? ls)
+    0
+    (+ 1 (length (cdr ls)))))
+
+(defun take (n ls)
+  (if (or (< n 1) (null? ls))
+    '()
+    (cons (car ls) (take (- n 1) (cdr ls)))))
+
+(defun drop (n ls)
+  (if (or (< n 1) (null? ls))
+    ls
+    (drop (- n 1) (cdr ls))))
+
+(defun merge (xs ys)
+  (if (null? xs)
+    ys
+    (if (null? ys)
+      xs
+      (if (< (car xs) (car ys))
+        (cons (car xs) (merge (cdr xs) ys))
+        (cons (car ys) (merge xs (cdr ys)))))))
+
+(defun mergesort (ls)
+  (if (null? ls)
+    ls
+    (if (null? (cdr ls))
+      ls
+      (let* ((size (length ls))
+             (half (/ size 2))
+             (first (take half ls))
+             (second (drop half ls)))
+        (merge (mergesort first) (mergesort second))))))
