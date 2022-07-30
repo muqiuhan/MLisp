@@ -52,17 +52,19 @@ let rec build_ast sexpr =
       in
       let () = assert_unique names in
       Lambda (names, build_ast body)
-    | [ Symbol "defun"; Symbol name; args; expr ] ->
+    | [ Symbol "apply"; fn_expr; args ] -> Apply (build_ast fn_expr, build_ast args)
+    | [ Symbol "defun"; Symbol n; ns; e ] ->
+      let err () = raise (Type_error_exn "(defun name (formals) body)") in
       let names =
         List.map
           (function
             | Symbol s -> s
-            | _ -> raise (Type_error_exn "(defun name (formals) body)"))
-          (Object.pair_to_list args)
+            | _ -> err ())
+          (Object.pair_to_list ns)
       in
       let () = assert_unique names in
-      Defexpr (Defun (name, names, build_ast expr))
-    | [ Symbol "apply"; fn_expr; args ] -> Apply (build_ast fn_expr, build_ast args)
+      let lam = Lambda (names, build_ast e) in
+      Defexpr (Setq (n, Let (LETREC, [ n, lam ], Var n)))
     | [ Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
       let make_binding = function
         | Pair (Symbol n, Pair (expr, Nil)) -> n, build_ast expr
