@@ -1,3 +1,5 @@
+#!/usr/bin/env ocaml
+
 let install () =
   [ "sudo rm -rf /usr/include/mlisp"
   ; "sudo mkdir /usr/include/mlisp"
@@ -18,11 +20,14 @@ let build () =
   |> List.iter (fun command -> Sys.command command |> ignore)
 ;;
 
-let test () = [ "dune test" ] |> List.iter (fun command -> Sys.command command |> ignore)
-
 let clean () =
   [ "dune clean" ] |> List.iter (fun command -> Sys.command command |> ignore)
 ;;
+
+let test () =
+  clean ();
+  build ();
+  [ "dune test" ] |> List.iter (fun command -> Sys.command command |> ignore)
 
 let repl () =
   [ "dune exec mlisp" ] |> List.iter (fun command -> Sys.command command |> ignore)
