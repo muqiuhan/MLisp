@@ -48,6 +48,10 @@ let rec eat_whitespace a_stream =
   if is_whitespace a_char then eat_whitespace a_stream else unread_char a_stream a_char
 ;;
 
+let rec eat_comment a_stream =
+  if read_char a_stream = '\n' then () else eat_comment a_stream
+;;
+
 let string_of_char a_char = String.make 1 a_char
 
 let is_digit a_char =
@@ -105,7 +109,8 @@ let read_boolean a_stream =
 let rec read_sexpr a_stream =
   let _ = eat_whitespace a_stream in
   let a_char = read_char a_stream in
-  if is_symbol_start_char a_char
+  if a_char = ';' then (eat_comment a_stream; read_sexpr a_stream)
+  else if is_symbol_start_char a_char
   then Object.Symbol (string_of_char a_char ^ read_symbol a_stream)
   else if is_digit a_char || Char.equal a_char '~'
   then
