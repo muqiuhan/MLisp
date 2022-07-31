@@ -55,9 +55,10 @@ let () =
     slurp stm basis
   in
   let input_channel = get_input_channel () in
-  if input_channel = stdin then print_endline "MLisp v0.0.1";
+  if input_channel = stdin
+  then print_endline "MLisp v0.1.0 (main, Jul 31 2022, 10:48:46) [OCaml 5.0.0~alpha1]\n";
   try repl (make_filestream input_channel) stdlib with
   | _ ->
-    if input_channel <> stdin then
-      close_in input_channel
+    if input_channel <> stdin then close_in input_channel else
+      print_endline "Goodbye!"
 ;;
