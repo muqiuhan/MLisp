@@ -1,1 +1,1 @@
-/usr/bin/rlwrap /usr/bin/origin_mlisp
+/usr/local/bin/rlwrap /usr/bin/origin_mlisp
