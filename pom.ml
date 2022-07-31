@@ -1,22 +1,31 @@
 #!/usr/bin/env ocaml
 
+let build () =
+  [ "git submodule sync && git submodule update --init"
+  ; "dune build --profile release"
+  ; "cd extern/rlwrap && autoreconf --install && ./configure && make && sudo make \
+     install && cd ../.."
+  ]
+  |> List.iter (fun command -> Sys.command command |> ignore)
+;;
+
 let install () =
-  [ "sudo rm -rf /usr/include/mlisp"
+  build ();
+  [ "sudo rm -rf /usr/bin/origin_mlisp"
   ; "sudo mkdir /usr/include/mlisp"
   ; "sudo cp ./stdlib.mlisp /usr/include/mlisp"
-  ; "dune build --profile release"
-  ; "dune install"
+  ; "sudo cp ./_build/default/bin/main.exe /usr/bin/origin_mlisp"
+  ; "sudo chmod +x mlisp"
+  ; "sudo cp mlisp /usr/bin/mlisp"
   ]
   |> List.iter (fun command -> Sys.command command |> ignore)
 ;;
 
 let uninstall () =
-  [ "sudo rm -rf /usr/include/mlisp"; "dune uninstall" ]
-  |> List.iter (fun command -> Sys.command command |> ignore)
-;;
-
-let build () =
-  [ "dune build --profile release" ]
+  [ "sudo rm -rf /usr/bin/origin_mlisp /usr/bin/mlisp"
+  ; "sudo rm -rf /usr/include/mlisp"
+  ; "cd extern/rlwrap && sudo make uninstall && cd ../.."
+  ]
   |> List.iter (fun command -> Sys.command command |> ignore)
 ;;
 
@@ -28,9 +37,11 @@ let test () =
   clean ();
   build ();
   [ "dune test" ] |> List.iter (fun command -> Sys.command command |> ignore)
+;;
 
 let repl () =
-  [ "dune exec mlisp" ] |> List.iter (fun command -> Sys.command command |> ignore)
+  [ "./_build/default/bin/main.exe" ]
+  |> List.iter (fun command -> Sys.command command |> ignore)
 ;;
 
 let _ =
