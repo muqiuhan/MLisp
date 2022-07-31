@@ -31,7 +31,7 @@ let to_kind s = List.assoc s let_kinds
 let rec build_ast sexpr =
   match sexpr with
   | Primitive _ | Closure _ -> raise This_can't_happen_exn
-  | Fixnum _ | Boolean _ | Nil | Quote _ -> Literal sexpr
+  | Fixnum _ | Boolean _ | Quote _ | String _ | Nil -> Literal sexpr
   | Symbol symbol -> Var symbol
   | Pair _ when Object.is_list sexpr ->
     (match Object.pair_to_list sexpr with
@@ -127,6 +127,7 @@ and string_object e =
   match e with
   | Fixnum v -> string_of_int v
   | Boolean b -> if b then "#t" else "#f"
+  | String s -> "\"" ^ s ^ "\""
   | Symbol s -> s
   | Nil -> "nil"
   | Pair (_, _) -> "(" ^ (if Object.is_list e then string_list e else string_pair e) ^ ")"

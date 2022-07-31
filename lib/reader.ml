@@ -82,10 +82,8 @@ let is_symbol_start_char =
 ;;
 
 let rec read_symbol a_stream =
-  let literal_quote = '"' in
   let is_delimiter = function
     | '(' | ')' | '{' | '}' | ';' -> true
-    | a_char when a_char = literal_quote -> true
     | a_char -> is_whitespace a_char
   in
   let next_char = read_char a_stream in
@@ -103,6 +101,16 @@ let read_boolean a_stream =
   | 't' -> Boolean true
   | 'f' -> Boolean false
   | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x ^ "'"))
+;;
+
+let read_string a_stream =
+  let rec loop acc =
+    let a_char = read_char a_stream in
+    if Char.equal a_char '"'
+    then String acc
+    else a_char |> Char.escaped |> ( ^ ) acc |> loop
+  in
+  loop ""
 ;;
 
 (** Read in a whole number *)
@@ -126,6 +134,8 @@ let rec read_sexpr a_stream =
   then read_boolean a_stream
   else if Char.equal a_char '\''
   then Quote (read_sexpr a_stream)
+  else if Char.equal a_char '\"'
+  then read_string a_stream
   else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
 
 and read_list a_stream =

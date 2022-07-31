@@ -28,6 +28,7 @@ module Object = struct
     | Fixnum of int
     | Boolean of bool
     | Symbol of string
+    | String of string
     | Nil
     | Pair of lobject * lobject
     | Primitive of string * (lobject list -> lobject)
