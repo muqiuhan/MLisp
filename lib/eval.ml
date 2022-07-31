@@ -45,7 +45,7 @@ let rec eval_expr expr env =
       | _ -> raise (Type_error_exn "(and bool bool)"))
     | Or (cond_x, cond_y) ->
       (match eval cond_x, eval cond_y with
-      | Boolean x, Boolean y -> Boolean (x && y)
+      | Boolean x, Boolean y -> Boolean (x || y)
       | _ -> raise (Type_error_exn "(or bool bool)"))
     | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args))
     | Call (Var "env", []) -> Environment.env_to_val env

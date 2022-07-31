@@ -20,4 +20,4 @@
    (cond ((< x 2) 1)
       (#t (* x (fact (- x 1))))))
 
-(println (fact 20))
+(fact 20)
