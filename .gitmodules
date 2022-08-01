@@ -1,0 +1,3 @@
+[submodule "extern/rlwrap"]
+	path = extern/rlwrap
+	url = https://github.com/hanslub42/rlwrap
