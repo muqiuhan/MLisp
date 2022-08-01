@@ -18,9 +18,6 @@
 
 module Environment = struct
   type 'a env = (string * 'a option ref) list
-
-  exception Not_found_exn of string
-  exception Unspecified_value_exn of string
 end
 
 module Object = struct
@@ -64,10 +61,15 @@ module Object = struct
 end
 
 module Ast = struct
-  exception Parse_error_exn of string
-  exception Unique_error_exn of string
+  
   exception Undefined_symbol_exn of string
-  exception Type_error_exn of string
+
+  type parse_error = 
+    | Unique_error of string
+    | Type_error of string
+    | Poorly_formed_expression
+
+    exception Parse_error_exn of parse_error
 end
 
 module Reader = struct
@@ -88,7 +90,11 @@ module Reader = struct
 end
 
 module Eval = struct
-  exception Eval_error_exn of string
+  type runtime_error = 
+    | Not_found of string
+    | Unspecified_value of string
+
+  exception Runtime_error_exn of runtime_error
 end
 
 module Error = struct

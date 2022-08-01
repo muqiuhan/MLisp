@@ -19,7 +19,6 @@
 include Ast
 open Types.Object
 open Types.Ast
-open Types.Eval
 
 let extend newenv oldenv =
   List.fold_right (fun (b, v) acc -> Environment.bind_local (b, v, acc)) newenv oldenv
@@ -40,15 +39,15 @@ let rec eval_expr expr env =
     | Var n -> Environment.lookup (n, env)
     | If (cond, if_true, _) when eval cond = Boolean true -> eval if_true
     | If (cond, _, if_false) when eval cond = Boolean false -> eval if_false
-    | If _ -> raise (Type_error_exn "(if bool e1 e2)")
+    | If _ -> raise (Parse_error_exn (Type_error "(if bool e1 e2)"))
     | And (cond_x, cond_y) ->
       (match eval cond_x, eval cond_y with
       | Boolean x, Boolean y -> Boolean (x && y)
-      | _ -> raise (Type_error_exn "(and bool bool)"))
+      | _ -> raise (Parse_error_exn (Type_error "(and bool bool)")))
     | Or (cond_x, cond_y) ->
       (match eval cond_x, eval cond_y with
       | Boolean x, Boolean y -> Boolean (x || y)
-      | _ -> raise (Type_error_exn "(or bool bool)"))
+      | _ -> raise (Parse_error_exn (Type_error "(or bool bool)")))
     | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Call (Var "env", []) -> Environment.env_to_val env
     | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
@@ -69,14 +68,13 @@ let rec eval_expr expr env =
       eval_expr body env'
     | Defexpr _ -> raise This_can't_happen_exn
   in
-  try eval expr with
-  | e -> raise (Eval_error_exn ("Error: " ^ (Printexc.to_string e) ^ " in expression : " ^ string_expr expr ))
+  eval expr
 
 and eval_apply fn_expr args _env =
   match fn_expr with
-  | Primitive (_, fn) -> fn args;
+  | Primitive (_, fn) -> fn args
   | Closure (names, expr, clenv) -> eval_closure names expr args clenv
-  | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
+  | _ -> raise (Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
 
 and eval_closure names expr args clenv =
   eval_expr expr (Environment.bind_list names args clenv)
@@ -91,7 +89,7 @@ let eval_def def env =
     let formals, body', cl_env =
       match eval_expr (Lambda (args, body)) env with
       | Closure (fs, bod, env) -> fs, bod, env
-      | _ -> raise (Type_error_exn "Expecting closure.")
+      | _ -> raise (Parse_error_exn (Type_error "Expecting closure."))
     in
     let loc = Environment.make_local () in
     let clo = Closure (formals, body', Environment.bind_local (name, loc, cl_env)) in

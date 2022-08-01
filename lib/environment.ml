@@ -17,14 +17,14 @@
 (****************************************************************************)
 
 open Types.Object
-open Types.Environment
+open Types.Eval
 
 let rec lookup = function
-  | n, [] -> raise (Not_found_exn n)
+  | n, [] -> raise (Runtime_error_exn (Not_found n))
   | n, (n', v) :: _ when n = n' ->
     (match !v with
     | Some v' -> v'
-    | None -> raise (Unspecified_value_exn n))
+    | None -> raise (Runtime_error_exn (Unspecified_value n)))
   | n, (_, _) :: bs -> lookup (n, bs)
 ;;
 

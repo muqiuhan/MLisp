@@ -24,7 +24,7 @@ let stdlib_path = "/usr/include/mlisp/stdlib.mlisp"
 let eval env e =
   match e with
   | Defexpr d -> Eval.eval_def d env
-  | _ -> raise (Type_error_exn "Can only have definitions in stdlib")
+  | _ -> raise (Parse_error_exn (Type_error "Can only have definitions in stdlib"))
 ;;
 
 let rec slurp stm env =

@@ -21,7 +21,8 @@ open Types.Ast
 
 let rec assert_unique = function
   | [] -> ()
-  | x :: xs -> if List.mem x xs then raise (Unique_error_exn x) else assert_unique xs
+  | x :: xs ->
+    if List.mem x xs then raise (Parse_error_exn (Unique_error x)) else assert_unique xs
 ;;
 
 let let_kinds = [ "let", LET; "let*", LETSTAR; "letrec", LETREC ]
@@ -47,7 +48,7 @@ let rec build_ast sexpr =
         List.map
           (function
             | Symbol s -> s
-            | _ -> raise (Type_error_exn "(lambda (formals) body)"))
+            | _ -> raise (Parse_error_exn (Type_error "(lambda (formals) body)")))
           (Object.pair_to_list args)
       in
       let () = assert_unique names in
@@ -58,7 +59,7 @@ let rec build_ast sexpr =
         List.map
           (function
             | Symbol s -> s
-            | _ -> raise (Type_error_exn "(defun name (formals) body)"))
+            | _ -> raise (Parse_error_exn (Type_error "(defun name (formals) body)")))
           (Object.pair_to_list args)
       in
       let () = assert_unique names in
@@ -67,20 +68,20 @@ let rec build_ast sexpr =
     | [ Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
       let make_binding = function
         | Pair (Symbol n, Pair (expr, Nil)) -> n, build_ast expr
-        | _ -> raise (Type_error_exn "(let bindings expr)")
+        | _ -> raise (Parse_error_exn (Type_error "(let bindings expr)"))
       in
       let bindings = List.map make_binding (Object.pair_to_list bindings) in
       let () = assert_unique (List.map fst bindings) in
       Let (to_kind s, bindings, build_ast expr)
     | fn_expr :: args -> Call (build_ast fn_expr, List.map build_ast args)
-    | [] -> raise (Parse_error_exn "poorly formed expression"))
+    | [] -> raise (Parse_error_exn Poorly_formed_expression))
   | Pair _ -> Literal sexpr
 
 and cond_to_if = function
   | [] -> Literal (Symbol "error")
   | Pair (cond, Pair (res, Nil)) :: condpairs ->
     If (build_ast cond, build_ast res, cond_to_if condpairs)
-  | _ -> raise (Type_error_exn "(cond conditions)")
+  | _ -> raise (Parse_error_exn (Type_error "(cond conditions)"))
 ;;
 
 let spacesep ns = String.concat " " ns
