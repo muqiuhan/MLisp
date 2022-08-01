@@ -18,6 +18,7 @@
 
 include Ast
 open Types.Object
+open Types.Ast
 open Types.Eval
 
 let extend newenv oldenv =

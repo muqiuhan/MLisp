@@ -18,11 +18,13 @@
 
 module Environment = struct
   type 'a env = (string * 'a option ref) list
+
+  exception Not_found_exn of string
+  exception Unspecified_value_exn of string
 end
 
 module Object = struct
   exception This_can't_happen_exn
-  exception Type_error_exn of string
 
   type lobject =
     | Fixnum of int
@@ -65,19 +67,36 @@ module Ast = struct
   exception Parse_error_exn of string
   exception Unique_error_exn of string
   exception Undefined_symbol_exn of string
+  exception Type_error_exn of string
 end
 
 module Reader = struct
-  exception Syntax_error_exn of string
+  type syntax_error =
+    | Invalid_boolean_literal of string
+    | Unexcepted_character of string
+  
+  exception Syntax_error_exn of syntax_error
 
   type 'a stream =
     { mutable line_num : int
     ; mutable chrs : char list
+    ; mutable column_number : int
     ; stm : 'a Stream.t
     ; stdin : bool
+    ; file_name : string
     }
 end
 
 module Eval = struct
   exception Eval_error_exn of string
+end
+
+module Error = struct
+  type error_info = {
+    file_name : string;
+    line_number : int;
+    column_number : int;
+    message : string;
+    help : string
+  }
 end

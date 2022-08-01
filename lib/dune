@@ -1,10 +1,10 @@
 (library
  (name mlisp)
  (modes byte native)
- (libraries camlp-streams))
+ (libraries camlp-streams ocolor))
 
 (env
  (dev
-  (flags (:standard -w +42)))
+  (flags (:standard -w -42)))
  (release
   (ocamlopt_flags (:standard -O3))))

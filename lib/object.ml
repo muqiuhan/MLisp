@@ -58,7 +58,7 @@ let rec pair_to_list pair =
   match pair with
   | Nil -> []
   | Pair (a, b) -> a :: pair_to_list b
-  | _ -> failwith "pair_to_list"
+  | _ -> raise This_can't_happen_exn
 ;;
 
 let string_of_char a_char = String.make 1 a_char

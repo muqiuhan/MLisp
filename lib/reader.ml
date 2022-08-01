@@ -19,9 +19,15 @@
 open Types.Reader
 open Types.Object
 
-let make_stream is_stdin stm = { chrs = []; line_num = 1; stdin = is_stdin; stm }
+let make_stream ?(file_name = "stdin") is_stdin stm =
+  { chrs = []; line_num = 1; stdin = is_stdin; stm; file_name; column_number = 0 }
+;;
+
 let make_stringstream s = make_stream false @@ Stream.of_string s
-let make_filestream f = make_stream (f = stdin) @@ Stream.of_channel f
+
+let make_filestream ?(file_name = "stdin") f =
+  make_stream ~file_name (f = stdin) @@ Stream.of_channel f
+;;
 
 let read_char a_stream =
   match a_stream.chrs with
@@ -30,14 +36,18 @@ let read_char a_stream =
     if a_char = '\n'
     then (
       let _ = a_stream.line_num <- a_stream.line_num + 1 in
+      let _ = a_stream.column_number <- 0 in
       a_char)
-    else a_char
+    else (
+      let _ = a_stream.column_number <- a_stream.column_number + 1 in
+      a_char)
   | a_char :: rest ->
     let _ = a_stream.chrs <- rest in
     a_char
 ;;
 
-let unread_char a_stream a_char = a_stream.chrs <- a_char :: a_stream.chrs
+let unread_char a_stream a_char = 
+  a_stream.chrs <- a_char :: a_stream.chrs
 
 let is_whitespace a_char =
   match a_char with
@@ -100,7 +110,7 @@ let read_boolean a_stream =
   match read_char a_stream with
   | 't' -> Boolean true
   | 'f' -> Boolean false
-  | x -> raise (Syntax_error_exn ("Invalid boolean literal '" ^ Char.escaped x ^ "'"))
+  | x -> raise (Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
 ;;
 
 let read_string a_stream =
@@ -136,7 +146,7 @@ let rec read_sexpr a_stream =
   then Quote (read_sexpr a_stream)
   else if Char.equal a_char '\"'
   then read_string a_stream
-  else raise (Syntax_error_exn ("Unexcepted character '" ^ Char.escaped a_char))
+  else raise (Syntax_error_exn (Unexcepted_character (Char.escaped a_char)))
 
 and read_list a_stream =
   eat_whitespace a_stream;

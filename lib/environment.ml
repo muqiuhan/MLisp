@@ -17,9 +17,7 @@
 (****************************************************************************)
 
 open Types.Object
-
-exception Not_found_exn of string
-exception Unspecified_value_exn of string
+open Types.Environment
 
 let rec lookup = function
   | n, [] -> raise (Not_found_exn n)

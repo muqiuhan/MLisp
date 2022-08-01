@@ -16,6 +16,7 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
+open Types.Ast
 open Types.Object
 
 let stdlib_path = "/usr/include/mlisp/stdlib.mlisp"
