@@ -19,6 +19,7 @@
 open Types.Reader
 open Types.Error
 open Types.Ast
+open Types.Eval
 
 let message = function
   | Syntax_error_exn e ->
@@ -48,6 +49,10 @@ let help = function
     | Unique_error _ -> "A conflict error caused by duplicate parameter names when defining closure."
     | Type_error _ -> "Possible type error due to a function call with parameters of a type different from that specified in the function definition."
     | Poorly_formed_expression -> "Syntactically incorrect or redundant elements.")
+  | Runtime_error_exn e -> 
+      (match e with
+      | Not_found _ -> "Accessing an identifier that has not been defined in the context."
+      | Unspecified_value _ -> "Accessing an identifier that is not explicitly defined in the context.")
   | _ -> "None"
 ;;
 
