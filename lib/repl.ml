@@ -30,6 +30,6 @@ let rec repl a_stream env =
     repl a_stream env'
   with
   | Stream.Failure -> ()
-  | Syntax_error_exn e -> Error.print_error a_stream (Syntax_error_exn e)
+  | Syntax_error_exn e -> Error.print_error a_stream (Syntax_error_exn e); if a_stream.stdin then repl a_stream env else ()
   | e -> raise e
 ;;
