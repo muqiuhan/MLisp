@@ -17,13 +17,15 @@ See `test/*.mlisp`
 ## From source
   Since this project is developed using OCaml5, you need to install the OCaml5 environment. The current latest OCaml5 Release version is OCaml5.0.0~alpha1.You can install this version via `opam update && opam switch create 5.0.0~alpha1 --repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git` to install this version of OCaml environment.
 
-This project is built with dune, you can install it with `opam install dune`.
+- This project is built with `dune`, you can install it with `opam install dune`.
+- This project relies on [camlp-streams](https://github.com/ocaml/camlp-streams) for `streaming operations`, this library that is usually builtin, if you don't have, you can install it via `opam install camlp-streams`. See details: [https://discuss.ocaml.org/t/module-stream-removed-from-5-0-standard-library](https://discuss.ocaml.org/t/module-stream-removed-from-5-0-standard-library)
+- This project relies on [ocolor](https://github.com/marc-chevalier/ocolor) for `error message printing`, you can install it via `opam install ocolor`
 
-1. Build and install the standard library with `ocaml pom.ml install`
-2. Run all tests with `ocaml pom.ml test`
-3. Execute with `mlisp`
+1. Build and install with `ocaml pom.ml install`
+2. Run all tests via `ocaml pom.ml test`
+3. Execute via `mlisp`
 
-NOTE: Uninstall with `ocaml pom.ml uninstall`
+NOTE: Uninstall via `ocaml pom.ml uninstall`
   
 # License
 Copyright (C) 2022 Muqiu Han
