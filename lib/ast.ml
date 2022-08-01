@@ -1,5 +1,5 @@
 (****************************************************************************)
-(* OCamLisp                                                                 *)
+(* MLisp                                                                    *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
 (* This program is free software: you can redistribute it and/or modify     *)
@@ -85,22 +85,23 @@ and cond_to_if = function
 
 let spacesep ns = String.concat " " ns
 
-let rec string_exp =
-  let spacesep_exp es = spacesep (List.map string_exp es) in
-  let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_exp e ^ ")" in
+let rec string_expr =
+  let spacesep_exp es = spacesep (List.map string_expr es) in
+  let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_expr e ^ ")" in
   function
   | Literal e -> string_object e
   | Var n -> n
-  | If (c, t, f) -> "(if " ^ string_exp c ^ " " ^ string_exp t ^ " " ^ string_exp f ^ ")"
-  | And (c0, c1) -> "(and " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
-  | Or (c0, c1) -> "(or " ^ string_exp c0 ^ " " ^ string_exp c1 ^ ")"
-  | Apply (f, e) -> "(apply " ^ string_exp f ^ " " ^ string_exp e ^ ")"
-  | Call (f, es) -> "(" ^ string_exp f ^ " " ^ spacesep_exp es ^ ")"
-  | Lambda (args, body) -> "(lambda (" ^ spacesep args ^ ") " ^ string_exp body ^ ")"
-  | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_exp e ^ ")"
+  | If (c, t, f) ->
+    "(if " ^ string_expr c ^ " " ^ string_expr t ^ " " ^ string_expr f ^ ")"
+  | And (c0, c1) -> "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
+  | Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
+  | Apply (f, e) -> "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
+  | Call (f, es) -> "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
+  | Lambda (args, body) -> "(lambda (" ^ spacesep args ^ ") " ^ string_expr body ^ ")"
+  | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_expr e ^ ")"
   | Defexpr (Defun (n, ns, e)) ->
-    "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_exp e ^ ")"
-  | Defexpr (Expr e) -> string_exp e
+    "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_expr e ^ ")"
+  | Defexpr (Expr e) -> string_expr e
   | Let (kind, bs, e) ->
     let str =
       match kind with
@@ -109,7 +110,7 @@ let rec string_exp =
       | LETREC -> "letrec"
     in
     let bindings = spacesep (List.map string_of_binding bs) in
-    "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_exp e ^ ")"
+    "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
 
 and string_object e =
   let rec string_list l =

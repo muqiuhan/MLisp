@@ -1,5 +1,5 @@
 (****************************************************************************)
-(* OCamLisp                                                                 *)
+(* MLisp                                                                    *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
 (* This program is free software: you can redistribute it and/or modify     *)
@@ -18,6 +18,7 @@
 
 include Ast
 open Types.Object
+open Types.Eval
 
 let extend newenv oldenv =
   List.fold_right (fun (b, v) acc -> Environment.bind_local (b, v, acc)) newenv oldenv
@@ -47,9 +48,9 @@ let rec eval_expr expr env =
       (match eval cond_x, eval cond_y with
       | Boolean x, Boolean y -> Boolean (x || y)
       | _ -> raise (Type_error_exn "(or bool bool)"))
-    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args))
+    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Call (Var "env", []) -> Environment.env_to_val env
-    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args)
+    | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
     | Lambda (args, body) -> Closure (args, body, env)
     | Let (LET, bindings, body) ->
       let eval_binding (n, e) = n, ref (Some (eval e)) in
@@ -68,14 +69,11 @@ let rec eval_expr expr env =
     | Defexpr _ -> raise This_can't_happen_exn
   in
   try eval expr with
-  | e ->
-    let err = Printexc.to_string e in
-    print_endline @@ "Error: '" ^ err ^ "' in expr " ^ string_exp expr;
-    raise e
+  | e -> raise (Eval_error_exn ("Error: " ^ (Printexc.to_string e) ^ " in expression : " ^ string_expr expr ))
 
-and eval_apply fn_expr args =
+and eval_apply fn_expr args _env =
   match fn_expr with
-  | Primitive (_, fn) -> fn args
+  | Primitive (_, fn) -> fn args;
   | Closure (names, expr, clenv) -> eval_closure names expr args clenv
   | _ -> raise (Type_error_exn "(apply prim '(args)) or (prim args)")
 

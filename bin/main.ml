@@ -1,5 +1,5 @@
 (****************************************************************************)
-(* OCamLisp                                                                 *)
+(* MLisp                                                                    *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
 (* This program is free software: you can redistribute it and/or modify     *)
@@ -17,13 +17,8 @@
 (****************************************************************************)
 
 open Mlisp.Reader
-open Mlisp.Eval
-open Mlisp.Environment
-open Mlisp.Ast
-open Mlisp.Types.Reader
-open Mlisp.Types.Object
-
-let stdlib_path = "/usr/include/mlisp/stdlib.mlisp"
+open Mlisp.Repl
+open Mlisp.Stdlib
 
 let get_input_channel () =
   try open_in Sys.argv.(1) with
@@ -31,34 +26,11 @@ let get_input_channel () =
 ;;
 
 let () =
-  let rec repl a_stream env =
-    if a_stream.stdin
-    then (
-      print_string "# ";
-      flush stdout);
-    let ast = build_ast (read_sexpr a_stream) in
-    let result, env' = eval ast env in
-    if a_stream.stdin then print_endline (string_object result);
-    repl a_stream env'
-  in
-  let stdlib =
-    let eval env e =
-      match e with
-      | Defexpr d -> eval_def d env
-      | _ -> raise (Type_error_exn "Can only have definitions in stdlib")
-    in
-    let rec slurp stm env =
-      try stm |> read_sexpr |> build_ast |> eval env |> snd |> slurp stm with
-      | Stream.Failure -> env
-    in
-    let stm = make_filestream (open_in stdlib_path) in
-    slurp stm basis
-  in
   let input_channel = get_input_channel () in
   if input_channel = stdin
   then print_endline "MLisp v0.1.0 (main, Jul 31 2022, 10:48:46) [OCaml 5.0.0~alpha1]\n";
   try repl (make_filestream input_channel) stdlib with
-  | _ ->
-    if input_channel <> stdin then close_in input_channel else
-      print_endline "Goodbye!"
+  | e ->
+    if input_channel <> stdin then close_in input_channel else print_endline "Goodbye!";
+    raise e;
 ;;

@@ -16,9 +16,6 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(eval. '((label fact
-                (lambda (x)
-                  (cond ((< x 2) 1)
-                        (#t (* x (fact (- x 1)))))))
-         5)
-       '())
+(println "Please don't be nervous, we are just testing the display of error messages")
+
+(define x (y) z)

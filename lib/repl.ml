@@ -16,28 +16,19 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-let exec_path = "../bin/main.exe"
-let test_path = "../../../test/"
+open Types.Reader
 
-let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with
-  | _ :: [ "mlisp" ] -> true
-  | _ -> false
-;;
-
-let test_mlisp_file file_name =
-  Sys.command (exec_path ^ " " ^ test_path ^ file_name) |> ignore
-;;
-
-let test_files =
-  test_path
-  |> Sys.readdir
-  |> Array.iter (fun file_name ->
-         if is_mlisp_file file_name
-         then (
-           flush_all ();
-           Printf.printf "Test %s ..." file_name;
-           test_mlisp_file file_name;
-           print_endline "done!")
-         else ())
+let rec repl a_stream env =
+  try
+    if a_stream.stdin
+    then (
+      print_string "# ";
+      flush stdout);
+    let ast = Ast.build_ast (Reader.read_sexpr a_stream) in
+    let result, env' = Eval.eval ast env in
+    if a_stream.stdin then print_endline (Ast.string_object result);
+    repl a_stream env'
+  with
+  | Stream.Failure -> ()
+  | e -> raise e
 ;;

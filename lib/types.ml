@@ -1,5 +1,5 @@
 (****************************************************************************)
-(* OCamLisp                                                                 *)
+(* MLisp                                                                    *)
 (* Copyright (C) 2022 Muqiu Han                                             *)
 (*                                                                          *)
 (* This program is free software: you can redistribute it and/or modify     *)
@@ -64,6 +64,7 @@ end
 module Ast = struct
   exception Parse_error_exn of string
   exception Unique_error_exn of string
+  exception Undefined_symbol_exn of string
 end
 
 module Reader = struct
@@ -75,4 +76,8 @@ module Reader = struct
     ; stm : 'a Stream.t
     ; stdin : bool
     }
+end
+
+module Eval = struct
+  exception Eval_error_exn of string
 end
