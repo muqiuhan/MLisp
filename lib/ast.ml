@@ -96,7 +96,10 @@ let rec string_expr =
   | And (c0, c1) -> "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
   | Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
   | Apply (f, e) -> "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
-  | Call (f, es) -> "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
+  | Call (f, es) ->
+    if List.length es == 0
+    then "(" ^ string_expr f ^ spacesep_exp es ^ ")"
+    else "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
   | Lambda (args, body) -> "(lambda (" ^ spacesep args ^ ") " ^ string_expr body ^ ")"
   | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_expr e ^ ")"
   | Defexpr (Defun (n, ns, e)) ->
