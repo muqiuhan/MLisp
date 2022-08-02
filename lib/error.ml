@@ -35,6 +35,10 @@ let message = function
     | Unique_error p -> "Unique error : " ^ p
     | Type_error x -> "Type error : " ^ x
     | Poorly_formed_expression -> "Poorly formed expression.")
+  | Runtime_error_exn e ->
+    (match e with
+    | Not_found e -> "Not found : " ^ e
+    | Unspecified_value e -> "Unspecified value : " ^ e)
   | _ -> "None"
 ;;
 
@@ -46,13 +50,17 @@ let help = function
     | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals.")
   | Parse_error_exn e ->
     (match e with
-    | Unique_error _ -> "A conflict error caused by duplicate parameter names when defining closure."
-    | Type_error _ -> "Possible type error due to a function call with parameters of a type different from that specified in the function definition."
+    | Unique_error _ ->
+      "A conflict error caused by duplicate parameter names when defining closure."
+    | Type_error _ ->
+      "Possible type error due to a function call with parameters of a type different \
+       from that specified in the function definition."
     | Poorly_formed_expression -> "Syntactically incorrect or redundant elements.")
-  | Runtime_error_exn e -> 
-      (match e with
-      | Not_found _ -> "Accessing an identifier that has not been defined in the context."
-      | Unspecified_value _ -> "Accessing an identifier that is not explicitly defined in the context.")
+  | Runtime_error_exn e ->
+    (match e with
+    | Not_found _ -> "Accessing an identifier that has not been defined in the context."
+    | Unspecified_value _ ->
+      "Accessing an identifier that is not explicitly defined in the context.")
   | _ -> "None"
 ;;
 

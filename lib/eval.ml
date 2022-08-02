@@ -70,14 +70,14 @@ let rec eval_expr expr env =
   in
   eval expr
 
-and eval_apply fn_expr args _env =
+and eval_apply fn_expr args env =
   match fn_expr with
   | Primitive (_, fn) -> fn args
-  | Closure (names, expr, clenv) -> eval_closure names expr args clenv
+  | Closure (names, expr, clenv) -> eval_closure names expr args clenv env
   | _ -> raise (Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
 
-and eval_closure names expr args clenv =
-  eval_expr expr (Environment.bind_list names args clenv)
+and eval_closure names expr args clenv env =
+  eval_expr expr (extend (Environment.bind_list names args clenv) env)
 ;;
 
 let eval_def def env =

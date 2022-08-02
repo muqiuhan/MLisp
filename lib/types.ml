@@ -61,22 +61,21 @@ module Object = struct
 end
 
 module Ast = struct
-  
   exception Undefined_symbol_exn of string
 
-  type parse_error = 
+  type parse_error =
     | Unique_error of string
     | Type_error of string
     | Poorly_formed_expression
 
-    exception Parse_error_exn of parse_error
+  exception Parse_error_exn of parse_error
 end
 
 module Reader = struct
   type syntax_error =
     | Invalid_boolean_literal of string
     | Unexcepted_character of string
-  
+
   exception Syntax_error_exn of syntax_error
 
   type 'a stream =
@@ -90,7 +89,7 @@ module Reader = struct
 end
 
 module Eval = struct
-  type runtime_error = 
+  type runtime_error =
     | Not_found of string
     | Unspecified_value of string
 
@@ -98,11 +97,15 @@ module Eval = struct
 end
 
 module Error = struct
-  type error_info = {
-    file_name : string;
-    line_number : int;
-    column_number : int;
-    message : string;
-    help : string
-  }
+  type error_info =
+    { file_name : string
+    ; line_number : int
+    ; column_number : int
+    ; message : string
+    ; help : string
+    }
+end
+
+module Repl = struct
+  let prompt_tip = ">"
 end

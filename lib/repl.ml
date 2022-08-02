@@ -17,19 +17,37 @@
 (****************************************************************************)
 
 open Types.Reader
+open Types.Ast
+open Types.Eval
+open Types.Repl
+
+let print_prompt () =
+  Printf.printf "%s " prompt_tip;
+  flush_all ();
+;;
+
+let print_result result =
+  Printf.printf "- : %s\n" result;
+  flush_all ();
+;;
 
 let rec repl a_stream env =
   try
-    if a_stream.stdin
-    then (
-      print_string "# ";
-      flush stdout);
+    if a_stream.stdin then print_prompt ();
     let ast = Ast.build_ast (Reader.read_sexpr a_stream) in
     let result, env' = Eval.eval ast env in
-    if a_stream.stdin then print_endline (Ast.string_object result);
+    if a_stream.stdin then print_result (Object.string_object result);
     repl a_stream env'
   with
-  | Stream.Failure -> ()
-  | Syntax_error_exn e -> Error.print_error a_stream (Syntax_error_exn e); if a_stream.stdin then repl a_stream env else ()
+  | Stream.Failure -> if a_stream.stdin then print_newline () else ()
+  | Syntax_error_exn e ->
+    Error.print_error a_stream (Syntax_error_exn e);
+    if a_stream.stdin then repl a_stream env else ()
+  | Parse_error_exn e ->
+    Error.print_error a_stream (Parse_error_exn e);
+    if a_stream.stdin then repl a_stream env else ()
+  | Runtime_error_exn e ->
+    Error.print_error a_stream (Runtime_error_exn e);
+    if a_stream.stdin then repl a_stream env else ()
   | e -> raise e
 ;;
