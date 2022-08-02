@@ -74,7 +74,7 @@ let repl_error { file_name; line_number; column_number; message; help } =
         + 31)
         [ String.length message + 9; String.length help + 9 ]
     in
-    "+" ^ String.make (char_num + 2) '-'
+    "+" ^ String.make (char_num + 4) '-'
   in
   let split_line = split_line { file_name; line_number; column_number; message; help } in
   Ocolor_format.printf
@@ -106,7 +106,7 @@ let file_error { file_name; line_number; column_number; message; help } =
         ; String.length line_value + 8
         ]
     in
-    "+" ^ String.make char_num '-'
+    "+" ^ String.make (char_num + 4) '-'
   in
   let line_value = List.nth (Utils.read_lines file_name) (line_number - 1) in
   let split_line =
