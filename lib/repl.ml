@@ -27,7 +27,7 @@ let print_prompt () =
 ;;
 
 let print_result result =
-  Printf.printf "- : %s = %s\n" (Object.object_type result) (Object.string_object result);
+  Printf.printf "- : %s = %s\n\n" (Object.object_type result) (Object.string_object result);
   flush_all ();
 ;;
 

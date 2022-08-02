@@ -18,4 +18,14 @@
 
 (println "Please don't be nervous, we are just testing the display of error messages")
 
-(setq x #a)
+(defun f (x)
+  (if (< x 2)
+      1
+      (g (- x 1))))
+
+(defun g (x)
+  (if (< x 2)
+      3
+      (f (- x 2))))
+
+(f g)
