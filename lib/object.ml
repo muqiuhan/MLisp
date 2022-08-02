@@ -62,7 +62,6 @@ let rec pair_to_list pair =
 ;;
 
 let string_of_char a_char = String.make 1 a_char
-
 let spacesep ns = String.concat " " ns
 
 let rec string_expr =
@@ -117,4 +116,16 @@ and string_object e =
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
   | Closure (_, _, _) -> "#<closure>"
-;;    
+;;
+
+let object_type = function
+  | Fixnum _ -> "int"
+  | Boolean _ -> "boolean"
+  | String _ -> "string"
+  | Symbol _ -> "symbol"
+  | Nil -> "nil"
+  | Pair _ -> "pair"
+  | Primitive _ -> "primitive"
+  | Quote _ -> "quote"
+  | Closure _ -> "closure"
+;;

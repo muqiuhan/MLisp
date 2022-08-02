@@ -27,7 +27,7 @@ let print_prompt () =
 ;;
 
 let print_result result =
-  Printf.printf "- : %s\n" result;
+  Printf.printf "- : %s = %s\n" (Object.object_type result) (Object.string_object result);
   flush_all ();
 ;;
 
@@ -36,7 +36,7 @@ let rec repl a_stream env =
     if a_stream.stdin then print_prompt ();
     let ast = Ast.build_ast (Reader.read_sexpr a_stream) in
     let result, env' = Eval.eval ast env in
-    if a_stream.stdin then print_result (Object.string_object result);
+    if a_stream.stdin then print_result result;
     repl a_stream env'
   with
   | Stream.Failure -> if a_stream.stdin then print_newline () else ()
