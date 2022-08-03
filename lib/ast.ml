@@ -32,7 +32,7 @@ let to_kind s = List.assoc s let_kinds
 let rec build_ast sexpr =
   match sexpr with
   | Primitive _ | Closure _ -> raise This_can't_happen_exn
-  | Fixnum _ | Boolean _ | Quote _ | String _ | Nil -> Literal sexpr
+  | Fixnum _ | Boolean _ | Quote _ | String _ | Record _ | Nil -> Literal sexpr
   | Symbol symbol -> Var symbol
   | Pair _ when Object.is_list sexpr ->
     (match Object.pair_to_list sexpr with
@@ -43,6 +43,16 @@ let rec build_ast sexpr =
     | [ Symbol "or"; cond_x; cond_y ] -> Or (build_ast cond_x, build_ast cond_y)
     | [ Symbol "quote"; expr ] -> Literal (Quote expr)
     | [ Symbol "setq"; Symbol name; expr ] -> Defexpr (Setq (name, build_ast expr))
+    | [ Symbol "record"; Symbol name; field_list ] ->
+      let names =
+        List.map
+          (function
+            | Symbol s -> s
+            | _ -> raise (Parse_error_exn (Type_error "(record name (fields)")))
+          (Object.pair_to_list field_list)
+      in
+      let () = assert_unique names in
+      Defexpr (Defrecord (name, names))
     | [ Symbol "lambda"; args; body ] when Object.is_list args ->
       let names =
         List.map

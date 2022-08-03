@@ -80,7 +80,7 @@ and eval_closure names expr args clenv env =
   eval_expr expr (extend (Environment.bind_list names args clenv) env)
 ;;
 
-let eval_def def env =
+let rec eval_def def env =
   match def with
   | Setq (name, expr) ->
     let v = eval_expr expr env in
@@ -95,6 +95,16 @@ let eval_def def env =
     let clo = Closure (formals, body', Environment.bind_local (name, loc, cl_env)) in
     let () = loc := Some clo in
     clo, Environment.bind_local (name, loc, env)
+  | Defrecord (name, name_list) ->
+    eval_def
+      (Defun
+         ( name
+         , name_list
+         , Literal
+             (Record
+                (name, List.map (fun name -> Environment.lookup (name, env)) name_list))
+         ))
+      env
   | Expr e -> eval_expr e env, env
 ;;
 

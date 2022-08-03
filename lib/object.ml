@@ -84,6 +84,8 @@ let rec string_expr =
   | Defexpr (Defun (n, ns, e)) ->
     "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_expr e ^ ")"
   | Defexpr (Expr e) -> string_expr e
+  | Defexpr (Defrecord (name, field_list)) ->
+    "(record " ^ name ^ spacesep field_list ^ ")"
   | Let (kind, bs, e) ->
     let str =
       match kind with
@@ -112,10 +114,16 @@ and string_object e =
   | String s -> "\"" ^ s ^ "\""
   | Symbol s -> s
   | Nil -> "nil"
-  | Pair (_, _) -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")"
+  | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
-  | Closure (_, _, _) -> "#<closure>"
+  | Closure (name_list, _, _) -> "#<closure:(" ^ String.concat " " name_list ^ ")>"
+  | Record (name, field_list) ->
+    "#<record:"
+    ^ name
+    ^ "("
+    ^ String.concat " " (List.map string_object field_list)
+    ^ ")>"
 ;;
 
 let object_type = function
@@ -128,4 +136,5 @@ let object_type = function
   | Primitive _ -> "primitive"
   | Quote _ -> "quote"
   | Closure _ -> "closure"
+  | Record _ -> "record"
 ;;

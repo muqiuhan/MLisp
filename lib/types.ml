@@ -30,6 +30,7 @@ module Object = struct
     | String of string
     | Nil
     | Pair of lobject * lobject
+    | Record of name * lobject list
     | Primitive of string * (lobject list -> lobject)
     | Quote of value
     | Closure of name list * expr * value Environment.env
@@ -57,7 +58,10 @@ module Object = struct
   and def =
     | Setq of name * expr
     | Defun of name * name list * expr
+    | Defrecord of name * name list
     | Expr of expr
+
+  and cons = Consrecord of name * value list
 end
 
 module Ast = struct
