@@ -1,4 +1,4 @@
-# PornLisp
+# MLisp
 
 <div align=center><img width="150" height="150" src="./res/logo.png"/></div>
 
