@@ -66,6 +66,7 @@ let rec eval_expr expr env =
       let updates = List.map (fun (n, e) -> n, Some (eval_expr e env')) bindings in
       let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
       eval_expr body env'
+    | Consexpr cons -> eval_cons cons env
     | Defexpr _ -> raise This_can't_happen_exn
   in
   eval expr
@@ -78,9 +79,8 @@ and eval_apply fn_expr args env =
 
 and eval_closure names expr args clenv env =
   eval_expr expr (extend (Environment.bind_list names args clenv) env)
-;;
 
-let rec eval_def def env =
+and eval_def def env =
   match def with
   | Setq (name, expr) ->
     let v = eval_expr expr env in
@@ -95,20 +95,17 @@ let rec eval_def def env =
     let clo = Closure (formals, body', Environment.bind_local (name, loc, cl_env)) in
     let () = loc := Some clo in
     clo, Environment.bind_local (name, loc, env)
-  | Defrecord (name, name_list) ->
-    eval_def
-      (Defun
-         ( name
-         , name_list
-         , Literal
-             (Record
-                (name, List.map (fun name -> Environment.lookup (name, env)) name_list))
-         ))
-      env
+  | Defrecord (name, fields) ->
+    let constructor = Defun (name, fields, Consexpr (Consrecord (name, fields))) in
+    eval_def constructor env
   | Expr e -> eval_expr e env, env
-;;
 
-let eval ast env =
+and eval_cons cons env =
+  match cons with
+  | Consrecord (name, fields) ->
+    Record (name, List.map (fun field -> Environment.lookup (field, env)) fields)
+
+and eval ast env =
   match ast with
   | Defexpr def_expr -> eval_def def_expr env
   | expr -> eval_expr expr env, env

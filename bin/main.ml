@@ -30,7 +30,7 @@ let () =
   let stream =
     if input_channel = stdin
     then (
-      print_endline "MLisp v0.1.2 (main, Aug 2 2022, 9:52:17) [OCaml 5.0.0~alpha1]\n";
+      print_endline "MLisp v0.1.3 (main, Aug 4 2022, 18:45:23) [OCaml 5.0.0~alpha1]\n";
       make_filestream input_channel)
     else make_filestream input_channel ~file_name:Sys.argv.(1)
   in

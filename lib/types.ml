@@ -52,6 +52,7 @@ module Object = struct
     | Apply of expr * expr
     | Call of expr * expr list
     | Defexpr of def
+    | Consexpr of cons  
     | Lambda of name list * expr
     | Let of let_kind * (name * expr) list * expr
 
@@ -61,7 +62,7 @@ module Object = struct
     | Defrecord of name * name list
     | Expr of expr
 
-  and cons = Consrecord of name * value list
+  and cons = Consrecord of name * name list
 end
 
 module Ast = struct

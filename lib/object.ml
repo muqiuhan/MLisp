@@ -95,6 +95,8 @@ let rec string_expr =
     in
     let bindings = spacesep (List.map string_of_binding bs) in
     "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
+  | Consexpr (Consrecord (name, fields)) ->
+    "(" ^ name ^ " " ^ String.concat " " fields ^ ")"
 
 and string_object e =
   let rec string_list l =
@@ -114,7 +116,7 @@ and string_object e =
   | String s -> "\"" ^ s ^ "\""
   | Symbol s -> s
   | Nil -> "nil"
-  | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")"
+  | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")\n"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
   | Closure (name_list, _, _) -> "#<closure:(" ^ String.concat " " name_list ^ ")>"
