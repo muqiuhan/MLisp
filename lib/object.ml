@@ -62,43 +62,8 @@ let rec pair_to_list pair =
 ;;
 
 let string_of_char a_char = String.make 1 a_char
-let spacesep ns = String.concat " " ns
 
-let rec string_expr =
-  let spacesep_exp es = spacesep (List.map string_expr es) in
-  let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_expr e ^ ")" in
-  function
-  | Literal e -> string_object e
-  | Var n -> n
-  | If (c, t, f) ->
-    "(if " ^ string_expr c ^ " " ^ string_expr t ^ " " ^ string_expr f ^ ")"
-  | And (c0, c1) -> "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Apply (f, e) -> "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
-  | Call (f, es) ->
-    if List.length es == 0
-    then "(" ^ string_expr f ^ spacesep_exp es ^ ")"
-    else "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
-  | Lambda (args, body) -> "(lambda (" ^ spacesep args ^ ") " ^ string_expr body ^ ")"
-  | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_expr e ^ ")"
-  | Defexpr (Defun (n, ns, e)) ->
-    "(defun " ^ n ^ "(" ^ spacesep ns ^ ") " ^ string_expr e ^ ")"
-  | Defexpr (Expr e) -> string_expr e
-  | Defexpr (Defrecord (name, field_list)) ->
-    "(record " ^ name ^ spacesep field_list ^ ")"
-  | Let (kind, bs, e) ->
-    let str =
-      match kind with
-      | LET -> "let"
-      | LETSTAR -> "let*"
-      | LETREC -> "letrec"
-    in
-    let bindings = spacesep (List.map string_of_binding bs) in
-    "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
-  | Consexpr (Consrecord (name, fields)) ->
-    "(" ^ name ^ " " ^ String.concat " " fields ^ ")"
-
-and string_object e =
+let rec string_object e =
   let rec string_list l =
     match l with
     | Pair (a, Nil) -> string_object a

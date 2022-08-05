@@ -33,3 +33,5 @@ let read_lines filename =
     close_in chan;
     List.rev !lines
 ;;
+
+let spacesep ns = String.concat " " ns
