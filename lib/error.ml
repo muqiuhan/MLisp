@@ -38,7 +38,8 @@ let message = function
   | Runtime_error_exn e ->
     (match e with
     | Not_found e -> "Not found : " ^ e
-    | Unspecified_value e -> "Unspecified value : " ^ e)
+    | Unspecified_value e -> "Unspecified value : " ^ e
+    | Missing_argument args -> "Missing arguments : " ^ Utils.spacesep args)
   | _ -> "None"
 ;;
 
@@ -60,37 +61,24 @@ let help = function
     (match e with
     | Not_found _ -> "Accessing an identifier that has not been defined in the context."
     | Unspecified_value _ ->
-      "Accessing an identifier that is not explicitly defined in the context.")
+      "Accessing an identifier that is not explicitly defined in the context."
+    | Missing_argument _ ->
+      "It is possible that the actual parameter quantity is inconsistent with the formal \
+       parameter quantity")
   | _ -> "None"
 ;;
 
 let repl_error { file_name; line_number; column_number; message; help } =
-  let split_line { file_name; line_number; column_number; message; help } =
-    let char_num =
-      List.fold_left
-        (fun max prev -> if prev > max then prev else max)
-        (String.length
-           (string_of_int line_number ^ string_of_int column_number ^ file_name)
-        + 31)
-        [ String.length message + 9; String.length help + 9 ]
-    in
-    "+" ^ String.make (char_num + 4) '-'
-  in
-  let split_line = split_line { file_name; line_number; column_number; message; help } in
   Ocolor_format.printf
     "\n\
-     @{<hi_white>%s@}\n\
      @{<hi_white>|@} @{<hi_cyan>From : \"%s\" , Line: %d , Column: %d@}\n\
      @{<hi_white>|@} @{<hi_red>| Error: %s@}\n\
-     @{<hi_white>|@} @{<hi_green>| Help : %s@}\n\
-     @{<hi_white>%s@}\n"
-    split_line
+     @{<hi_white>|@} @{<hi_green>| Help : %s@}\n\n"
     file_name
     line_number
     column_number
     message
     help
-    split_line
 ;;
 
 let file_error { file_name; line_number; column_number; message; help } =

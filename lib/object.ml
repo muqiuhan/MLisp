@@ -24,6 +24,19 @@ let rec is_list = function
   | _ -> false
 ;;
 
+let object_type = function
+  | Fixnum _ -> "int"
+  | Boolean _ -> "boolean"
+  | String _ -> "string"
+  | Symbol _ -> "symbol"
+  | Nil -> "nil"
+  | Pair _ -> "pair"
+  | Primitive _ -> "primitive"
+  | Quote _ -> "quote"
+  | Closure _ -> "closure"
+  | Record _ -> "record"
+;;
+
 let rec print_sexpr sexpr =
   match sexpr with
   | Fixnum v -> print_int v
@@ -85,23 +98,16 @@ let rec string_object e =
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
   | Closure (name_list, _, _) -> "#<closure:(" ^ String.concat " " name_list ^ ")>"
-  | Record (name, field_list) ->
+  | Record (name, fields) ->
+    let fields_string = 
+      let to_string field = object_type field ^ " : " ^ string_object field in
+      match fields with
+      | [field] -> to_string field
+      | _ -> "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
+    in
     "#<record:"
     ^ name
-    ^ "("
-    ^ String.concat " " (List.map string_object field_list)
+    ^ "\n\t("
+    ^ fields_string
     ^ ")>"
-;;
-
-let object_type = function
-  | Fixnum _ -> "int"
-  | Boolean _ -> "boolean"
-  | String _ -> "string"
-  | Symbol _ -> "symbol"
-  | Nil -> "nil"
-  | Pair _ -> "pair"
-  | Primitive _ -> "primitive"
-  | Quote _ -> "quote"
-  | Closure _ -> "closure"
-  | Record _ -> "record"
 ;;

@@ -31,10 +31,15 @@ let rec lookup = function
 let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
 let make_local _ = ref None
 let bind_local (n, vor, e) = (n, vor) :: e
-let bind_list ns vs env = List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
+let bind_list ns vs env = 
+  try
+    List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
+  with Invalid_argument _ -> raise (Runtime_error_exn (Missing_argument ns))
 
 let bind_local_list ns vs env =
-  List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+  try
+    List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+  with Invalid_argument _ -> raise (Runtime_error_exn (Missing_argument ns))
 ;;
 
 let basis =

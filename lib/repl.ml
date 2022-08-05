@@ -23,12 +23,15 @@ open Types.Repl
 
 let print_prompt () =
   Printf.printf "%s " prompt_tip;
-  flush_all ();
+  flush_all ()
 ;;
 
 let print_result result =
-  Printf.printf "- : %s = %s\n\n" (Object.object_type result) (Object.string_object result);
-  flush_all ();
+  Printf.printf
+    "- : %s = %s\n\n"
+    (Object.object_type result)
+    (Object.string_object result);
+  flush_all ()
 ;;
 
 let rec repl a_stream env =
@@ -37,6 +40,7 @@ let rec repl a_stream env =
     let ast = Ast.build_ast (Reader.read_sexpr a_stream) in
     let result, env' = Eval.eval ast env in
     if a_stream.stdin then print_result result;
+    a_stream.line_num <- 0;
     repl a_stream env'
   with
   | Stream.Failure -> if a_stream.stdin then print_newline () else ()

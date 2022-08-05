@@ -97,6 +97,7 @@ module Eval = struct
   type runtime_error =
     | Not_found of string
     | Unspecified_value of string
+    | Missing_argument of string list
 
   exception Runtime_error_exn of runtime_error
 end

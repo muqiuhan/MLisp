@@ -46,8 +46,7 @@ let read_char a_stream =
     a_char
 ;;
 
-let unread_char a_stream a_char = 
-  a_stream.chrs <- a_char :: a_stream.chrs
+let unread_char a_stream a_char = a_stream.chrs <- a_char :: a_stream.chrs
 
 let is_whitespace a_char =
   match a_char with
