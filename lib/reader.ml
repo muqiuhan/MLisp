@@ -125,6 +125,13 @@ let rec read_sexpr stream =
   else raise (Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
 
 and read_list stream =
+  (* Better REPL *)
+  (let ch = read_char stream in
+   if stream.stdin && Char.equal ch '\n' then (
+     print_string
+       (String.make (String.length Types.Repl.prompt_tip - 1) ' ' ^ "| ");
+     Out_channel.flush stdout)
+   else unread_char stream ch);
   eat_whitespace stream;
   let ch = read_char stream in
   if ch = ')' then Nil
