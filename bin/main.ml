@@ -21,21 +21,19 @@ open Mlisp.Repl
 open Mlisp.Stdlib
 
 let get_input_channel () =
-  try open_in Sys.argv.(1) with
-  | Invalid_argument _ -> stdin
-;;
+  try open_in Sys.argv.(1) with Invalid_argument _ -> stdin
 
 let () =
   let input_channel = get_input_channel () in
   let stream =
-    if input_channel = stdin
-    then (
-      print_endline "MLisp v0.1.4 (main, Aug 5 2022, 23:10:05) [OCaml 5.0.0~alpha1]\n";
+    if input_channel = stdin then (
+      print_endline
+        "MLisp v0.1.5 (main, 2023-01-02 8:47 PM) [OCaml 5.0.0]\n";
       make_filestream input_channel)
     else make_filestream input_channel ~file_name:Sys.argv.(1)
   in
-  try repl stream stdlib with
-  | e ->
-    if input_channel <> stdin then close_in input_channel else print_endline "Goodbye!";
+  try repl stream stdlib
+  with e ->
+    if input_channel <> stdin then close_in input_channel
+    else print_endline "Goodbye!";
     raise e
-;;

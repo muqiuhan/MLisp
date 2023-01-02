@@ -109,5 +109,6 @@ module Error = struct
 end
 
 module Repl = struct
-  let prompt_tip = ">"
+  let prompt_tip = "mlisp>"
+  let prompt_tip_length = String.length prompt_tip + 1
 end

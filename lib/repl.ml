@@ -31,23 +31,23 @@ let print_result result =
     (Object.string_object result);
   flush_all ()
 
-let rec repl a_stream env =
+let rec repl stream env =
   try
-    if a_stream.stdin then print_prompt ();
-    let ast = Ast.build_ast (Reader.read_sexpr a_stream) in
+    if stream.stdin then print_prompt ();
+    let ast = Ast.build_ast (Reader.read_sexpr stream) in
     let result, env' = Eval.eval ast env in
-    if a_stream.stdin then print_result result;
-    a_stream.line_num <- 0;
-    repl a_stream env'
+    if stream.stdin then print_result result;
+    stream.line_num <- 0;
+    repl stream env'
   with
-  | Stream.Failure -> if a_stream.stdin then print_newline () else ()
+  | Stream.Failure -> if stream.stdin then print_newline () else ()
   | Syntax_error_exn e ->
-      Error.print_error a_stream (Syntax_error_exn e);
-      if a_stream.stdin then repl a_stream env else ()
+      Error.print_error stream (Syntax_error_exn e);
+      if stream.stdin then repl stream env else ()
   | Parse_error_exn e ->
-      Error.print_error a_stream (Parse_error_exn e);
-      if a_stream.stdin then repl a_stream env else ()
+      Error.print_error stream (Parse_error_exn e);
+      if stream.stdin then repl stream env else ()
   | Runtime_error_exn e ->
-      Error.print_error a_stream (Runtime_error_exn e);
-      if a_stream.stdin then repl a_stream env else ()
+      Error.print_error stream (Runtime_error_exn e);
+      if stream.stdin then repl stream env else ()
   | e -> raise e

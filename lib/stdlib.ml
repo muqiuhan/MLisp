@@ -19,8 +19,6 @@
 open Types.Ast
 open Types.Object
 
-let stdlib_path = "/usr/include/mlisp/stdlib.mlisp"
-
 let eval env e =
   match e with
   | Defexpr d -> Eval.eval_def d env
@@ -32,5 +30,5 @@ let rec slurp stm env =
   with Stream.Failure -> env
 
 let stdlib =
-  let stm = Reader.make_filestream (open_in stdlib_path) in
+  let stm = Reader.make_stringstream Mlisp_stdlib.Stdlib.stdlib_string in
   slurp stm Environment.basis
