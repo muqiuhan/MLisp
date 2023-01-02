@@ -21,65 +21,54 @@ open Types.Eval
 
 let rec lookup = function
   | n, [] -> raise (Runtime_error_exn (Not_found n))
-  | n, (n', v) :: _ when n = n' ->
-    (match !v with
-    | Some v' -> v'
-    | None -> raise (Runtime_error_exn (Unspecified_value n)))
+  | n, (n', v) :: _ when n = n' -> (
+      match !v with
+      | Some v' -> v'
+      | None -> raise (Runtime_error_exn (Unspecified_value n)))
   | n, (_, _) :: bs -> lookup (n, bs)
-;;
 
 let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
 let make_local _ = ref None
 let bind_local (n, vor, e) = (n, vor) :: e
-let bind_list ns vs env = 
-  try
-    List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
+
+let bind_list ns vs env =
+  try List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
   with Invalid_argument _ -> raise (Runtime_error_exn (Missing_argument ns))
 
 let bind_local_list ns vs env =
-  try
-    List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+  try List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
   with Invalid_argument _ -> raise (Runtime_error_exn (Missing_argument ns))
-;;
 
 let basis =
   let newprim acc (name, func) = bind (name, Primitive (name, func), acc) in
-  List.fold_left
-    newprim
-    [ "empty-symbol", ref (Some (Symbol "")) ]
-    [ Primitives.Num.generate "+" ( + )
-    ; Primitives.Num.generate "-" ( - )
-    ; Primitives.Num.generate "*" ( * )
-    ; Primitives.Num.generate "/" ( / )
-    ; Primitives.Num.generate "mod" ( mod )
-    ; Primitives.Cmp.generate "=" ( = )
-    ; Primitives.Cmp.generate "<" ( < )
-    ; Primitives.Cmp.generate ">" ( > )
-    ; Primitives.Cmp.generate ">=" ( >= )
-    ; Primitives.Cmp.generate "<=" ( <= )
-    ; "list", Primitives.list
-    ; "pair", Primitives.pair
-    ; "car", Primitives.car
-    ; "cdr", Primitives.cdr
-    ; "eq", Primitives.eq
-    ; "atom?", Primitives.atomp
-    ; "sym?", Primitives.symp
-    ; "getchar", Primitives.getchar
-    ; "print", Primitives.print
-    ; "int->char", Primitives.int_to_char
-    ; "cat", Primitives.cat
+  List.fold_left newprim
+    [ ("empty-symbol", ref (Some (Symbol ""))) ]
+    [
+      Primitives.Num.generate "+" ( + );
+      Primitives.Num.generate "-" ( - );
+      Primitives.Num.generate "*" ( * );
+      Primitives.Num.generate "/" ( / );
+      Primitives.Num.generate "mod" ( mod );
+      Primitives.Cmp.generate "=" ( = );
+      Primitives.Cmp.generate "<" ( < );
+      Primitives.Cmp.generate ">" ( > );
+      Primitives.Cmp.generate ">=" ( >= );
+      Primitives.Cmp.generate "<=" ( <= );
+      ("list", Primitives.list);
+      ("pair", Primitives.pair);
+      ("car", Primitives.car);
+      ("cdr", Primitives.cdr);
+      ("eq", Primitives.eq);
+      ("atom?", Primitives.atomp);
+      ("sym?", Primitives.symp);
+      ("getchar", Primitives.getchar);
+      ("print", Primitives.print);
+      ("int->char", Primitives.int_to_char);
+      ("cat", Primitives.cat);
     ]
-;;
 
 let rec env_to_val =
   let b_to_val (n, vor) =
-    Pair
-      ( Symbol n
-      , match !vor with
-        | None -> Symbol "unspecified"
-        | Some v -> v )
+    Pair (Symbol n, match !vor with None -> Symbol "unspecified" | Some v -> v)
   in
-  function
-  | [] -> Nil
-  | b :: bs -> Pair (b_to_val b, env_to_val bs)
-;;
+  function [] -> Nil | b :: bs -> Pair (b_to_val b, env_to_val bs)

@@ -19,81 +19,66 @@
 open Types.Ast
 open Types.Object
 
-let rec list = function
-  | [] -> Nil
-  | car :: cdr -> Pair (car, list cdr)
-;;
+let rec list = function [] -> Nil | car :: cdr -> Pair (car, list cdr)
 
 let pair = function
   | [ a; b ] -> Pair (a, b)
   | _ -> raise (Parse_error_exn (Type_error "(pair a b)"))
-;;
 
 let car = function
   | [ Pair (car, _) ] -> car
   | _ -> raise (Parse_error_exn (Type_error "(car non-nil-pair)"))
-;;
 
 let cdr = function
   | [ Pair (_, cdr) ] -> cdr
   | _ -> raise (Parse_error_exn (Type_error "(cdr non-nil-pair)"))
-;;
 
 let atomp = function
   | [ Pair (_, _) ] -> Boolean false
   | [ _ ] -> Boolean true
   | _ -> raise (Parse_error_exn (Type_error "(atom? something)"))
-;;
 
 let eq = function
   | [ a; b ] -> Boolean (a = b)
   | _ -> raise (Parse_error_exn (Type_error "(eq a b)"))
-;;
 
 let symp = function
   | [ Symbol _ ] -> Boolean true
   | [ _ ] -> Boolean false
   | _ -> raise (Parse_error_exn (Type_error "(sym? single-arg)"))
-;;
 
 let getchar = function
-  | [] ->
-    (try Fixnum (int_of_char @@ input_char stdin) with
-    | End_of_file -> Fixnum (-1))
+  | [] -> (
+      try Fixnum (int_of_char @@ input_char stdin)
+      with End_of_file -> Fixnum (-1))
   | _ -> raise (Parse_error_exn (Type_error "(getchar)"))
-;;
 
 let print = function
   | [ v ] ->
-    let () = print_string @@ Object.string_object v in
-    Symbol "ok"
+      let () = print_string @@ Object.string_object v in
+      Symbol "ok"
   | _ -> raise (Parse_error_exn (Type_error "(print object)"))
-;;
 
 let int_to_char = function
   | [ Fixnum i ] -> Symbol (Object.string_of_char @@ char_of_int i)
   | _ -> raise (Parse_error_exn (Type_error "(int_to_char int)"))
-;;
 
 let cat = function
   | [ Symbol a; Symbol b ] -> Symbol (a ^ b)
   | _ -> raise (Parse_error_exn (Type_error "(cat sym sym)"))
-;;
 
 module Num = struct
   let generate name operator =
-    ( name
-    , function
+    ( name,
+      function
       | [ Fixnum a; Fixnum b ] -> Fixnum (operator a b)
-      | _ -> raise (Parse_error_exn (Type_error ("(" ^ name ^ " int int)"))))
-  ;;
+      | _ -> raise (Parse_error_exn (Type_error ("(" ^ name ^ " int int)"))) )
 end
 
 module Cmp = struct
   let generate name operator =
-    ( name
-    , function
+    ( name,
+      function
       | [ Fixnum a; Fixnum b ] -> Boolean (operator a b)
-      | _ -> raise (Parse_error_exn (Type_error ("(" ^ name ^ " int int)"))))
-  ;;
+      | _ -> raise (Parse_error_exn (Type_error ("(" ^ name ^ " int int)"))) )
 end

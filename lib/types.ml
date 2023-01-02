@@ -37,11 +37,7 @@ module Object = struct
 
   and value = lobject
   and name = string
-
-  and let_kind =
-    | LET
-    | LETSTAR
-    | LETREC
+  and let_kind = LET | LETSTAR | LETREC
 
   and expr =
     | Literal of value
@@ -52,7 +48,7 @@ module Object = struct
     | Apply of expr * expr
     | Call of expr * expr list
     | Defexpr of def
-    | Consexpr of cons  
+    | Consexpr of cons
     | Lambda of name list * expr
     | Let of let_kind * (name * expr) list * expr
 
@@ -83,14 +79,14 @@ module Reader = struct
 
   exception Syntax_error_exn of syntax_error
 
-  type 'a stream =
-    { mutable line_num : int
-    ; mutable chrs : char list
-    ; mutable column_number : int
-    ; stm : 'a Stream.t
-    ; stdin : bool
-    ; file_name : string
-    }
+  type 'a stream = {
+    mutable line_num : int;
+    mutable chrs : char list;
+    mutable column_number : int;
+    stm : 'a Stream.t;
+    stdin : bool;
+    file_name : string;
+  }
 end
 
 module Eval = struct
@@ -103,13 +99,13 @@ module Eval = struct
 end
 
 module Error = struct
-  type error_info =
-    { file_name : string
-    ; line_number : int
-    ; column_number : int
-    ; message : string
-    ; help : string
-    }
+  type error_info = {
+    file_name : string;
+    line_number : int;
+    column_number : int;
+    message : string;
+    help : string;
+  }
 end
 
 module Repl = struct

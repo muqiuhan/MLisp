@@ -18,11 +18,7 @@
 
 open Types.Object
 
-let rec is_list = function
-  | Nil -> true
-  | Pair (_, b) -> is_list b
-  | _ -> false
-;;
+let rec is_list = function Nil -> true | Pair (_, b) -> is_list b | _ -> false
 
 let object_type = function
   | Fixnum _ -> "int"
@@ -35,7 +31,6 @@ let object_type = function
   | Quote _ -> "quote"
   | Closure _ -> "closure"
   | Record _ -> "record"
-;;
 
 let rec print_sexpr sexpr =
   match sexpr with
@@ -44,35 +39,33 @@ let rec print_sexpr sexpr =
   | Symbol s -> print_string s
   | Nil -> print_string "nil"
   | Pair (_, _) ->
-    print_string "(";
-    if is_list sexpr then print_list sexpr else print_pair sexpr;
-    print_string ")"
+      print_string "(";
+      if is_list sexpr then print_list sexpr else print_pair sexpr;
+      print_string ")"
   | _ -> failwith "print_sexpr"
 
 and print_list lst =
   match lst with
   | Pair (a, Nil) -> print_sexpr a
   | Pair (a, b) ->
-    print_sexpr a;
-    print_string " ";
-    print_list b
+      print_sexpr a;
+      print_string " ";
+      print_list b
   | _ -> raise This_can't_happen_exn
 
 and print_pair pair =
   match pair with
   | Pair (a, b) ->
-    print_sexpr a;
-    print_string " . ";
-    print_sexpr b
+      print_sexpr a;
+      print_string " . ";
+      print_sexpr b
   | _ -> raise This_can't_happen_exn
-;;
 
 let rec pair_to_list pair =
   match pair with
   | Nil -> []
   | Pair (a, b) -> a :: pair_to_list b
   | _ -> raise This_can't_happen_exn
-;;
 
 let string_of_char a_char = String.make 1 a_char
 
@@ -97,17 +90,16 @@ let rec string_object e =
   | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")\n"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
-  | Closure (name_list, _, _) -> "#<closure:(" ^ String.concat " " name_list ^ ")>"
+  | Closure (name_list, _, _) ->
+      "#<closure:(" ^ String.concat " " name_list ^ ")>"
   | Record (name, fields) ->
-    let fields_string = 
-      let to_string field = object_type field ^ " : " ^ string_object field in
-      match fields with
-      | [field] -> to_string field
-      | _ -> "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
-    in
-    "#<record:"
-    ^ name
-    ^ "\n\t("
-    ^ fields_string
-    ^ ")>"
-;;
+      let fields_string =
+        let to_string field = object_type field ^ " : " ^ string_object field in
+        match fields with
+        | [ field ] -> to_string field
+        | _ ->
+            "\n\t\t"
+            ^ String.concat "\n\t\t" (List.map to_string fields)
+            ^ "\n\t"
+      in
+      "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"

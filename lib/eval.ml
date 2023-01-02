@@ -21,16 +21,16 @@ open Types.Object
 open Types.Ast
 
 let extend newenv oldenv =
-  List.fold_right (fun (b, v) acc -> Environment.bind_local (b, v, acc)) newenv oldenv
-;;
+  List.fold_right
+    (fun (b, v) acc -> Environment.bind_local (b, v, acc))
+    newenv oldenv
 
 let rec unzip l =
   match l with
-  | [] -> [], []
+  | [] -> ([], [])
   | (a, b) :: rst ->
-    let flist, slist = unzip rst in
-    a :: flist, b :: slist
-;;
+      let flist, slist = unzip rst in
+      (a :: flist, b :: slist)
 
 let rec eval_expr expr env =
   let rec eval = function
@@ -40,32 +40,39 @@ let rec eval_expr expr env =
     | If (cond, if_true, _) when eval cond = Boolean true -> eval if_true
     | If (cond, _, if_false) when eval cond = Boolean false -> eval if_false
     | If _ -> raise (Parse_error_exn (Type_error "(if bool e1 e2)"))
-    | And (cond_x, cond_y) ->
-      (match eval cond_x, eval cond_y with
-      | Boolean x, Boolean y -> Boolean (x && y)
-      | _ -> raise (Parse_error_exn (Type_error "(and bool bool)")))
-    | Or (cond_x, cond_y) ->
-      (match eval cond_x, eval cond_y with
-      | Boolean x, Boolean y -> Boolean (x || y)
-      | _ -> raise (Parse_error_exn (Type_error "(or bool bool)")))
-    | Apply (fn, args) -> eval_apply (eval fn) (Object.pair_to_list (eval args)) env
+    | And (cond_x, cond_y) -> (
+        match (eval cond_x, eval cond_y) with
+        | Boolean x, Boolean y -> Boolean (x && y)
+        | _ -> raise (Parse_error_exn (Type_error "(and bool bool)")))
+    | Or (cond_x, cond_y) -> (
+        match (eval cond_x, eval cond_y) with
+        | Boolean x, Boolean y -> Boolean (x || y)
+        | _ -> raise (Parse_error_exn (Type_error "(or bool bool)")))
+    | Apply (fn, args) ->
+        eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Call (Var "env", []) -> Environment.env_to_val env
     | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
     | Lambda (args, body) -> Closure (args, body, env)
     | Let (LET, bindings, body) ->
-      let eval_binding (n, e) = n, ref (Some (eval e)) in
-      eval_expr body (extend (List.map eval_binding bindings) env)
+        let eval_binding (n, e) = (n, ref (Some (eval e))) in
+        eval_expr body (extend (List.map eval_binding bindings) env)
     | Let (LETSTAR, bindings, body) ->
-      let eval_binding acc (n, e) = Environment.bind (n, eval_expr e acc, acc) in
-      eval_expr body (List.fold_left eval_binding env bindings)
+        let eval_binding acc (n, e) =
+          Environment.bind (n, eval_expr e acc, acc)
+        in
+        eval_expr body (List.fold_left eval_binding env bindings)
     | Let (LETREC, bindings, body) ->
-      let names, values = unzip bindings in
-      let env' =
-        Environment.bind_local_list names (List.map Environment.make_local values) env
-      in
-      let updates = List.map (fun (n, e) -> n, Some (eval_expr e env')) bindings in
-      let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
-      eval_expr body env'
+        let names, values = unzip bindings in
+        let env' =
+          Environment.bind_local_list names
+            (List.map Environment.make_local values)
+            env
+        in
+        let updates =
+          List.map (fun (n, e) -> (n, Some (eval_expr e env'))) bindings
+        in
+        let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
+        eval_expr body env'
     | Consexpr cons -> eval_cons cons env
     | Defexpr _ -> raise This_can't_happen_exn
   in
@@ -75,7 +82,8 @@ and eval_apply fn_expr args env =
   match fn_expr with
   | Primitive (_, fn) -> fn args
   | Closure (names, expr, clenv) -> eval_closure names expr args clenv env
-  | _ -> raise (Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
+  | _ ->
+      raise (Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
 
 and eval_closure names expr args clenv env =
   eval_expr expr (extend (Environment.bind_list names args clenv) env)
@@ -83,30 +91,34 @@ and eval_closure names expr args clenv env =
 and eval_def def env =
   match def with
   | Setq (name, expr) ->
-    let v = eval_expr expr env in
-    v, Environment.bind (name, v, env)
+      let v = eval_expr expr env in
+      (v, Environment.bind (name, v, env))
   | Defun (name, args, body) ->
-    let formals, body', cl_env =
-      match eval_expr (Lambda (args, body)) env with
-      | Closure (fs, bod, env) -> fs, bod, env
-      | _ -> raise (Parse_error_exn (Type_error "Expecting closure."))
-    in
-    let loc = Environment.make_local () in
-    let clo = Closure (formals, body', Environment.bind_local (name, loc, cl_env)) in
-    let () = loc := Some clo in
-    clo, Environment.bind_local (name, loc, env)
+      let formals, body', cl_env =
+        match eval_expr (Lambda (args, body)) env with
+        | Closure (fs, bod, env) -> (fs, bod, env)
+        | _ -> raise (Parse_error_exn (Type_error "Expecting closure."))
+      in
+      let loc = Environment.make_local () in
+      let clo =
+        Closure (formals, body', Environment.bind_local (name, loc, cl_env))
+      in
+      let () = loc := Some clo in
+      (clo, Environment.bind_local (name, loc, env))
   | Defrecord (name, fields) ->
-    let constructor = Defun (name, fields, Consexpr (Consrecord (name, fields))) in
-    eval_def constructor env
-  | Expr e -> eval_expr e env, env
+      let constructor =
+        Defun (name, fields, Consexpr (Consrecord (name, fields)))
+      in
+      eval_def constructor env
+  | Expr e -> (eval_expr e env, env)
 
 and eval_cons cons env =
   match cons with
   | Consrecord (name, fields) ->
-    Record (name, List.map (fun field -> Environment.lookup (field, env)) fields)
+      Record
+        (name, List.map (fun field -> Environment.lookup (field, env)) fields)
 
 and eval ast env =
   match ast with
   | Defexpr def_expr -> eval_def def_expr env
-  | expr -> eval_expr expr env, env
-;;
+  | expr -> (eval_expr expr env, env)

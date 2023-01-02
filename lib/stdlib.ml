@@ -24,15 +24,13 @@ let stdlib_path = "/usr/include/mlisp/stdlib.mlisp"
 let eval env e =
   match e with
   | Defexpr d -> Eval.eval_def d env
-  | _ -> raise (Parse_error_exn (Type_error "Can only have definitions in stdlib"))
-;;
+  | _ ->
+      raise (Parse_error_exn (Type_error "Can only have definitions in stdlib"))
 
 let rec slurp stm env =
-  try stm |> Reader.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm with
-  | Stream.Failure -> env
-;;
+  try stm |> Reader.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm
+  with Stream.Failure -> env
 
 let stdlib =
   let stm = Reader.make_filestream (open_in stdlib_path) in
   slurp stm Environment.basis
-;;
