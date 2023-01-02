@@ -1,15 +1,12 @@
 # MLisp
 
-<div align=center><img width="150" height="150" src="./res/logo.png"/></div>
+<div align=center><img width="150" height="150" src="./.github/logo.png"/></div>
 
 <p align="center"> A Lisp dialect implementation in OCaml </p>
 
-# Introduction
-This project is the MLisp interpreter.
+# Start
 
-# Demo
-
-- REPL
+## REPL
 ```lisp
 MLisp v0.1.6 (main, 2023-01-02 9:19 PM) [OCaml 5.0.0]
 
@@ -106,7 +103,7 @@ mlisp> undef
 | | Help : Accessing an identifier that has not been defined in the context.
 ```
 
-- File
+## File
 MLisp supports loading programs from files since version 0.1.2, just pass the MLisp source file as the first argument to mlisp, For example:
 
 __File: 05_mutually_recursive_functions.mlisp__
