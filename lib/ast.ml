@@ -82,10 +82,11 @@ and if_expr cond if_true if_false =
 and record_expr name fields =
   Defexpr (Defrecord (name, assert_unique_args fields))
 
-and lambda_expr args body = Lambda (assert_unique_args args, build_ast body)
+and lambda_expr args body =
+  Lambda ("lambda", assert_unique_args args, build_ast body)
 
 and defun_expr fn_name args body =
-  let lam = Lambda (assert_unique_args args, build_ast body) in
+  let lam = Lambda (fn_name, assert_unique_args args, build_ast body) in
   Defexpr (Setq (fn_name, Let (LETREC, [ (fn_name, lam) ], Var fn_name)))
 
 and apply_expr fn_expr args = Apply (build_ast fn_expr, build_ast args)
@@ -121,7 +122,7 @@ let rec string_expr =
   | Call (f, es) ->
       if List.length es == 0 then "(" ^ string_expr f ^ spacesep_exp es ^ ")"
       else "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
-  | Lambda (args, body) ->
+  | Lambda (_, args, body) ->
       "(lambda (" ^ Utils.spacesep args ^ ") " ^ string_expr body ^ ")"
   | Defexpr (Setq (n, e)) -> "(setq " ^ n ^ " " ^ string_expr e ^ ")"
   | Defexpr (Defun (n, ns, e)) ->

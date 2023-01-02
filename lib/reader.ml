@@ -50,39 +50,34 @@ let read_char stream =
       ch
 
 let unread_char stream ch = stream.chrs <- ch :: stream.chrs
-let is_whitespace ch = match ch with ' ' | '\t' | '\n' -> true | _ -> false
 
 let rec eat_whitespace stream =
   let ch = read_char stream in
-  if is_whitespace ch then eat_whitespace stream else unread_char stream ch
+  if Core.Char.is_whitespace ch then eat_whitespace stream
+  else unread_char stream ch
 
 let rec eat_comment stream =
   if read_char stream = '\n' then () else eat_comment stream
 
-let is_digit ch =
-  let code = Char.code ch in
-  code >= Char.code '0' && code <= Char.code '9'
-
 let read_fixnum stream acc =
   let rec loop acc =
     let num_char = read_char stream in
-    if is_digit num_char then num_char |> Char.escaped |> ( ^ ) acc |> loop
+    if Core.Char.is_digit num_char then
+      num_char |> Char.escaped |> ( ^ ) acc |> loop
     else
       let _ = unread_char stream num_char in
       Fixnum (int_of_string acc)
   in
   loop acc
 
-let is_symbol_start_char =
-  let is_alpha = function 'A' .. 'Z' | 'a' .. 'z' -> true | _ -> false in
-  function
+let is_symbol_start_char = function
   | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' -> true
-  | ch -> is_alpha ch
+  | ch -> Core.Char.is_alpha ch
 
 let rec read_symbol stream =
   let is_delimiter = function
     | '(' | ')' | '{' | '}' | ';' -> true
-    | ch -> is_whitespace ch
+    | ch -> Core.Char.is_whitespace ch
   in
   let next_char = read_char stream in
   if is_delimiter next_char then
@@ -115,7 +110,7 @@ let rec read_sexpr stream =
     read_sexpr stream)
   else if is_symbol_start_char ch then
     Symbol (Object.string_of_char ch ^ read_symbol stream)
-  else if is_digit ch || Char.equal ch '~' then
+  else if Core.Char.is_digit ch || Char.equal ch '~' then
     (if Char.equal '~' ch then '-' else ch)
     |> Char.escaped |> read_fixnum stream
   else if Char.equal ch '(' then read_list stream

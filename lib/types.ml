@@ -33,7 +33,7 @@ module Object = struct
     | Record of name * lobject list
     | Primitive of string * (lobject list -> lobject)
     | Quote of value
-    | Closure of name list * expr * value Environment.env
+    | Closure of name * name list * expr * value Environment.env
 
   and value = lobject
   and name = string
@@ -49,7 +49,7 @@ module Object = struct
     | Call of expr * expr list
     | Defexpr of def
     | Consexpr of cons
-    | Lambda of name list * expr
+    | Lambda of name * name list * expr
     | Let of let_kind * (name * expr) list * expr
 
   and def =

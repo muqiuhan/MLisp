@@ -52,7 +52,7 @@ let rec eval_expr expr env =
         eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Call (Var "env", []) -> Environment.env_to_val env
     | Call (fn, args) -> eval_apply (eval fn) (List.map eval args) env
-    | Lambda (args, body) -> Closure (args, body, env)
+    | Lambda (name, args, body) -> Closure (name, args, body, env)
     | Let (LET, bindings, body) ->
         let eval_binding (n, e) = (n, ref (Some (eval e))) in
         eval_expr body (extend (List.map eval_binding bindings) env)
@@ -81,7 +81,7 @@ let rec eval_expr expr env =
 and eval_apply fn_expr args env =
   match fn_expr with
   | Primitive (_, fn) -> fn args
-  | Closure (names, expr, clenv) -> eval_closure names expr args clenv env
+  | Closure (_, names, expr, clenv) -> eval_closure names expr args clenv env
   | _ ->
       raise (Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
 
@@ -95,13 +95,14 @@ and eval_def def env =
       (v, Environment.bind (name, v, env))
   | Defun (name, args, body) ->
       let formals, body', cl_env =
-        match eval_expr (Lambda (args, body)) env with
-        | Closure (fs, bod, env) -> (fs, bod, env)
+        match eval_expr (Lambda (name, args, body)) env with
+        | Closure (_, fs, bod, env) -> (fs, bod, env)
         | _ -> raise (Parse_error_exn (Type_error "Expecting closure."))
       in
       let loc = Environment.make_local () in
       let clo =
-        Closure (formals, body', Environment.bind_local (name, loc, cl_env))
+        Closure
+          (name, formals, body', Environment.bind_local (name, loc, cl_env))
       in
       let () = loc := Some clo in
       (clo, Environment.bind_local (name, loc, env))

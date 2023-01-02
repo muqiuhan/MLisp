@@ -90,8 +90,8 @@ let rec string_object e =
   | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")\n"
   | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
   | Quote expr -> "'" ^ string_object expr
-  | Closure (name_list, _, _) ->
-      "#<closure:(" ^ String.concat " " name_list ^ ")>"
+  | Closure (name, name_list, _, _) ->
+      "#<" ^ name ^ ":(" ^ String.concat " " name_list ^ ")>"
   | Record (name, fields) ->
       let fields_string =
         let to_string field = object_type field ^ " : " ^ string_object field in
