@@ -1,13 +1,5 @@
 (executable
  (public_name mlisp)
- (name main)
+ (name mlisp)
  (modes byte native)
  (libraries mlisp))
-
-(env
- (dev
-  (flags
-   (:standard -w +42)))
- (release
-  (ocamlopt_flags
-   (:standard -O3))))

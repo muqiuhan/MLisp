@@ -12,6 +12,9 @@ bug-reports: "https://github.com/muqiuhan/MLisp/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.3"}
+  "core"
+  "ocolor"
+  "camlp-streams"
   "odoc" {with-doc}
 ]
 build: [
