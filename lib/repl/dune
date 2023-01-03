@@ -1,0 +1,11 @@
+(library
+ (name mlisp_repl)
+ (libraries
+  core
+  mlisp_object
+  mlisp_utils
+  mlisp_ast
+  mlisp_lexer
+  mlisp_vars
+  mlisp_eval
+  mlisp_print))

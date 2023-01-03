@@ -1,0 +1,3 @@
+(library
+ (name mlisp_utils)
+ (libraries core camlp-streams))

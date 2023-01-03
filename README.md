@@ -8,7 +8,7 @@
 
 ## REPL
 ```lisp
-MLisp v0.1.6 (main, 2023-01-02 9:19 PM) [OCaml 5.0.0]
+MLisp v0.1.7 (main, 2023-01-03 10:45 AM) [OCaml 5.0.0]
 
 mlisp> (env)
 - : pair = ((mergesort . #<mergesort:(ls)>)

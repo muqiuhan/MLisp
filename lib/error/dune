@@ -1,0 +1,3 @@
+(library
+ (name mlisp_error)
+ (libraries core ocolor mlisp_utils))

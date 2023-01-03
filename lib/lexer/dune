@@ -1,0 +1,9 @@
+(library
+ (name mlisp_lexer)
+ (libraries
+  core
+  camlp-streams
+  mlisp_object
+  mlisp_utils
+  mlisp_error
+  mlisp_vars))

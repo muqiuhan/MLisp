@@ -16,19 +16,33 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Types.Ast
-open Types.Object
+open Mlisp_object
 
-let eval env e =
-  match e with
-  | Defexpr d -> Eval.eval_def d env
-  | _ ->
-      raise (Parse_error_exn (Type_error "Can only have definitions in stdlib"))
-
-let rec slurp stm env =
-  try stm |> Reader.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm
-  with Stream.Failure -> env
-
-let stdlib =
-  let stm = Reader.make_stringstream Mlisp_stdlib.Stdlib.stdlib_string in
-  slurp stm Environment.basis
+let basis =
+  let newprim acc (name, func) = Object.bind (name, Object.Primitive (name, func), acc) in
+  List.fold_left
+    newprim
+    [ "empty-symbol", ref (Some (Object.Symbol "")) ]
+    [ Num.generate "+" ( + )
+    ; Num.generate "-" ( - )
+    ; Num.generate "*" ( * )
+    ; Num.generate "/" ( / )
+    ; Num.generate "mod" ( mod )
+    ; Cmp.generate "=" ( = )
+    ; Cmp.generate "<" ( < )
+    ; Cmp.generate ">" ( > )
+    ; Cmp.generate ">=" ( >= )
+    ; Cmp.generate "<=" ( <= )
+    ; "list", Core.list
+    ; "pair", Core.pair
+    ; "car", Core.car
+    ; "cdr", Core.cdr
+    ; "eq", Core.eq
+    ; "atom?", Core.atomp
+    ; "sym?", Core.symp
+    ; "getchar", Core.getchar
+    ; "print", Core.print
+    ; "int->char", Core.int_to_char
+    ; "cat", Core.cat
+    ]
+;;

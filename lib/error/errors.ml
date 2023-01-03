@@ -16,28 +16,22 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-let exec_path = "../bin/main.exe"
-let test_path = "../../../test/"
+type parse_error =
+  | Unique_error of string
+  | Type_error of string
+  | Poorly_formed_expression
 
-let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with
-  | _ :: [ "mlisp" ] -> true
-  | _ -> false
-;;
+type syntax_error =
+  | Invalid_boolean_literal of string
+  | Unexcepted_character of string
 
-let test_mlisp_file file_name =
-  Sys.command (exec_path ^ " " ^ test_path ^ file_name) |> ignore
-;;
+type runtime_error =
+  | Not_found of string
+  | Unspecified_value of string
+  | Missing_argument of string list
 
-let test_files =
-  test_path
-  |> Sys.readdir
-  |> Array.iter (fun file_name ->
-       if is_mlisp_file file_name
-       then (
-         flush_all ();
-         Printf.printf "Test %s ..." file_name;
-         test_mlisp_file file_name;
-         print_endline "done!")
-       else ())
-;;
+exception This_can't_happen_exn
+exception Undefined_symbol_exn of string
+exception Parse_error_exn of parse_error
+exception Syntax_error_exn of syntax_error
+exception Runtime_error_exn of runtime_error

@@ -16,28 +16,27 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-let exec_path = "../bin/main.exe"
-let test_path = "../../../test/"
+open Errors
+open Mlisp_utils
 
-let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with
-  | _ :: [ "mlisp" ] -> true
-  | _ -> false
-;;
-
-let test_mlisp_file file_name =
-  Sys.command (exec_path ^ " " ^ test_path ^ file_name) |> ignore
-;;
-
-let test_files =
-  test_path
-  |> Sys.readdir
-  |> Array.iter (fun file_name ->
-       if is_mlisp_file file_name
-       then (
-         flush_all ();
-         Printf.printf "Test %s ..." file_name;
-         test_mlisp_file file_name;
-         print_endline "done!")
-       else ())
+let message = function
+  | Syntax_error_exn e ->
+    "Syntax error -> "
+    ^
+    (match e with
+     | Unexcepted_character c -> "Unexcepted character : '" ^ c ^ "'"
+     | Invalid_boolean_literal b -> "Invalid boolean literal : '" ^ b ^ "'")
+  | Parse_error_exn e ->
+    "Parse error -> "
+    ^
+    (match e with
+     | Unique_error p -> "Unique error : " ^ p
+     | Type_error x -> "Type error : " ^ x
+     | Poorly_formed_expression -> "Poorly formed expression.")
+  | Runtime_error_exn e ->
+    (match e with
+     | Not_found e -> "Not found : " ^ e
+     | Unspecified_value e -> "Unspecified value : " ^ e
+     | Missing_argument args -> "Missing arguments : " ^ String.spacesep args)
+  | _ -> "None"
 ;;

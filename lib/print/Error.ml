@@ -16,28 +16,21 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-let exec_path = "../bin/main.exe"
-let test_path = "../../../test/"
+open Mlisp_error
+open Mlisp_utils
 
-let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with
-  | _ :: [ "mlisp" ] -> true
-  | _ -> false
-;;
-
-let test_mlisp_file file_name =
-  Sys.command (exec_path ^ " " ^ test_path ^ file_name) |> ignore
-;;
-
-let test_files =
-  test_path
-  |> Sys.readdir
-  |> Array.iter (fun file_name ->
-       if is_mlisp_file file_name
-       then (
-         flush_all ();
-         Printf.printf "Test %s ..." file_name;
-         test_mlisp_file file_name;
-         print_endline "done!")
-       else ())
+let print_error (stream : 'a Stream_wrapper.t) exn =
+  let open Mlisp_error.Error in
+  let open Mlisp_error.Help in
+  let data =
+    { file_name = stream.file_name
+    ; line_number = stream.line_num
+    ; column_number = stream.column_number
+    ; message = Message.message exn
+    ; help = help exn
+    }
+  in
+  if stream.stdin
+  then data |> repl_error |> ignore |> flush_all
+  else data |> file_error |> ignore |> flush_all
 ;;

@@ -1,0 +1,3 @@
+(library
+ (name mlisp_eval)
+ (libraries core mlisp_object))

@@ -16,38 +16,23 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-open Types.Reader
-open Types.Ast
-open Types.Eval
-open Types.Repl
+type 'a stream =
+  { mutable line_num : int
+  ; mutable chrs : char list
+  ; mutable column_number : int
+  ; stm : 'a Stream.t
+  ; stdin : bool
+  ; file_name : string
+  }
 
-let print_prompt () =
-  Printf.printf "%s " prompt_tip;
-  flush_all ()
+type 'a t = 'a stream
 
-let print_result result =
-  Printf.printf "- : %s = %s\n\n"
-    (Object.object_type result)
-    (Object.string_object result);
-  flush_all ()
+let make_stream ?(file_name = "stdin") is_stdin stm =
+  { chrs = []; line_num = 1; stdin = is_stdin; stm; file_name; column_number = 0 }
+;;
 
-let rec repl stream env =
-  try
-    if stream.stdin then print_prompt ();
-    let ast = Ast.build_ast (Reader.read_sexpr stream) in
-    let result, env' = Eval.eval ast env in
-    if stream.stdin then print_result result;
-    stream.line_num <- 0;
-    repl stream env'
-  with
-  | Stream.Failure -> if stream.stdin then print_newline () else ()
-  | Syntax_error_exn e ->
-      Error.print_error stream (Syntax_error_exn e);
-      if stream.stdin then repl stream env else ()
-  | Parse_error_exn e ->
-      Error.print_error stream (Parse_error_exn e);
-      if stream.stdin then repl stream env else ()
-  | Runtime_error_exn e ->
-      Error.print_error stream (Runtime_error_exn e);
-      if stream.stdin then repl stream env else ()
-  | e -> raise e
+let make_stringstream s = make_stream false @@ Stream.of_string s
+
+let make_filestream ?(file_name = "stdin") f =
+  make_stream ~file_name (f = stdin) @@ Stream.of_channel f
+;;

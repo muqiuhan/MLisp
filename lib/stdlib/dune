@@ -1,3 +1,11 @@
 (library
  (name mlisp_stdlib)
- (libraries core))
+ (libraries
+  core
+  mlisp_object
+  mlisp_error
+  mlisp_eval
+  mlisp_lexer
+  mlisp_ast
+  mlisp_utils
+  mlisp_primitives))

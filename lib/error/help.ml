@@ -16,28 +16,29 @@
 (* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
 (****************************************************************************)
 
-let exec_path = "../bin/main.exe"
-let test_path = "../../../test/"
+open Errors
 
-let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with
-  | _ :: [ "mlisp" ] -> true
-  | _ -> false
-;;
-
-let test_mlisp_file file_name =
-  Sys.command (exec_path ^ " " ^ test_path ^ file_name) |> ignore
-;;
-
-let test_files =
-  test_path
-  |> Sys.readdir
-  |> Array.iter (fun file_name ->
-       if is_mlisp_file file_name
-       then (
-         flush_all ();
-         Printf.printf "Test %s ..." file_name;
-         test_mlisp_file file_name;
-         print_endline "done!")
-       else ())
+let help = function
+  | Syntax_error_exn e ->
+    (match e with
+     | Unexcepted_character _ ->
+       "Usually triggered by wrong characters, such as extra parentheses, etc."
+     | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals.")
+  | Parse_error_exn e ->
+    (match e with
+     | Unique_error _ ->
+       "A conflict error caused by duplicate parameter names when defining closure."
+     | Type_error _ ->
+       "Possible type error due to a function call with parameters of a type different \
+        from that specified in the function definition."
+     | Poorly_formed_expression -> "Syntactically incorrect or redundant elements.")
+  | Runtime_error_exn e ->
+    (match e with
+     | Not_found _ -> "Accessing an identifier that has not been defined in the context."
+     | Unspecified_value _ ->
+       "Accessing an identifier that is not explicitly defined in the context."
+     | Missing_argument _ ->
+       "It is possible that the actual parameter quantity is inconsistent with the \
+        formal parameter quantity")
+  | _ -> "None"
 ;;

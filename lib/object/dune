@@ -1,0 +1,3 @@
+(library
+ (name mlisp_object)
+ (libraries core mlisp_error))
