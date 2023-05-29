@@ -156,5 +156,3 @@ let rec string_expr =
     in
     let bindings = String.spacesep (List.map string_of_binding bs) in
     "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
-  | Object.Consexpr (Consrecord (name, fields)) ->
-    "(" ^ name ^ " " ^ String.concat ~sep:" " fields ^ ")"
