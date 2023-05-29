@@ -19,26 +19,29 @@
 open Errors
 
 let help = function
-  | Syntax_error_exn e ->
-    (match e with
-     | Unexcepted_character _ ->
-       "Usually triggered by wrong characters, such as extra parentheses, etc."
-     | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals.")
-  | Parse_error_exn e ->
-    (match e with
-     | Unique_error _ ->
-       "A conflict error caused by duplicate parameter names when defining closure."
-     | Type_error _ ->
-       "Possible type error due to a function call with parameters of a type different \
-        from that specified in the function definition."
-     | Poorly_formed_expression -> "Syntactically incorrect or redundant elements.")
-  | Runtime_error_exn e ->
-    (match e with
-     | Not_found _ -> "Accessing an identifier that has not been defined in the context."
-     | Unspecified_value _ ->
-       "Accessing an identifier that is not explicitly defined in the context."
-     | Missing_argument _ ->
-       "It is possible that the actual parameter quantity is inconsistent with the \
-        formal parameter quantity")
+  | Syntax_error_exn e -> (
+    match e with
+    | Unexcepted_character _ ->
+      "Usually triggered by wrong characters, such as extra parentheses, etc."
+    | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals.")
+  | Parse_error_exn e -> (
+    match e with
+    | Unique_error _ ->
+      "A conflict error caused by duplicate parameter names when defining \
+       closure."
+    | Type_error _ ->
+      "Possible type error due to a function call with parameters of a type \
+       different from that specified in the function definition."
+    | Poorly_formed_expression ->
+      "Syntactically incorrect or redundant elements."
+    | Apply_error v -> Format.sprintf "'%s' may not be a function" v)
+  | Runtime_error_exn e -> (
+    match e with
+    | Not_found _ ->
+      "Accessing an identifier that has not been defined in the context."
+    | Unspecified_value _ ->
+      "Accessing an identifier that is not explicitly defined in the context."
+    | Missing_argument _ ->
+      "It is possible that the actual parameter quantity is inconsistent with \
+       the formal parameter quantity")
   | _ -> "None"
-;;

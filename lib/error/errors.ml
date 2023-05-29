@@ -20,6 +20,7 @@ type parse_error =
   | Unique_error of string
   | Type_error of string
   | Poorly_formed_expression
+  | Apply_error of string
 
 type syntax_error =
   | Invalid_boolean_literal of string

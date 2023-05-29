@@ -66,7 +66,6 @@ let rec is_list = function
   | Nil -> true
   | Pair (_, b) -> is_list b
   | _ -> false
-;;
 
 let object_type = function
   | Fixnum _ -> "int"
@@ -79,7 +78,6 @@ let object_type = function
   | Quote _ -> "quote"
   | Closure _ -> "closure"
   | Record _ -> "record"
-;;
 
 let rec print_sexpr sexpr =
   match sexpr with
@@ -109,14 +107,12 @@ and print_pair pair =
     print_string " . ";
     print_sexpr b
   | _ -> failwith "This can't happen!!!!"
-;;
 
 let rec pair_to_list pair =
   match pair with
   | Nil -> []
   | Pair (a, b) -> a :: pair_to_list b
   | _ -> failwith "This can't happen!!!!"
-;;
 
 let string_of_char a_char = String.make 1 a_char
 
@@ -147,44 +143,42 @@ let rec string_object e =
     let fields_string =
       let to_string field = object_type field ^ " : " ^ string_object field in
       match fields with
-      | [ field ] -> to_string field
-      | _ -> "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
+      | [field] -> to_string field
+      | _ ->
+        "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
     in
     "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"
-;;
 
 let rec lookup = function
   | n, [] -> raise (Errors.Runtime_error_exn (Errors.Not_found n))
-  | n, (n', v) :: _ when n = n' ->
-    (match !v with
-     | Some v' -> v'
-     | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
+  | n, (n', v) :: _ when n = n' -> (
+    match !v with
+    | Some v' -> v'
+    | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
   | n, (_, _) :: bs -> lookup (n, bs)
-;;
 
 let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
 let make_local _ = ref None
 let bind_local (n, vor, e) = (n, vor) :: e
 
 let bind_list ns vs env =
-  try List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs with
-  | Invalid_argument _ -> raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
-;;
+  try List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
+  with Invalid_argument _ ->
+    raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
 
 let bind_local_list ns vs env =
-  try List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs with
-  | Invalid_argument _ -> raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
-;;
+  try List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+  with Invalid_argument _ ->
+    raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
 
 let rec env_to_val =
   let b_to_val (n, vor) =
     Pair
-      ( Symbol n
-      , match !vor with
+      ( Symbol n,
+        match !vor with
         | None -> Symbol "unspecified"
         | Some v -> v )
   in
   function
   | [] -> Nil
   | b :: bs -> Pair (b_to_val b, env_to_val bs)
-;;
