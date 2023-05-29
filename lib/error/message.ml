@@ -32,7 +32,8 @@ let message = function
     match e with
     | Unique_error p -> "Unique error : " ^ p
     | Type_error x -> "Type error : " ^ x
-    | Poorly_formed_expression -> "Poorly formed expression.")
+    | Poorly_formed_expression -> "Poorly formed expression."
+    | Apply_error v -> Format.sprintf "(apply %s '(args)) or (%s args)" v v)
   | Runtime_error_exn e -> (
     match e with
     | Not_found e -> "Not found : " ^ e

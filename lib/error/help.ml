@@ -33,7 +33,8 @@ let help = function
       "Possible type error due to a function call with parameters of a type \
        different from that specified in the function definition."
     | Poorly_formed_expression ->
-      "Syntactically incorrect or redundant elements.")
+      "Syntactically incorrect or redundant elements."
+    | Apply_error v -> Format.sprintf "'%s' may not be a function" v)
   | Runtime_error_exn e -> (
     match e with
     | Not_found _ ->

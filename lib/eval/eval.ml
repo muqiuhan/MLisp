@@ -83,9 +83,8 @@ and eval_apply fn_expr args env =
   | Object.Primitive (_, fn) -> fn args
   | Object.Closure (_, names, expr, clenv) ->
     eval_closure names expr args clenv env
-  | _ ->
-    raise
-      (Errors.Parse_error_exn (Type_error "(apply prim '(args)) or (prim args)"))
+  | fn_expr ->
+    raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
 
 and eval_closure names expr args clenv env =
   eval_expr expr (extend (Object.bind_list names args clenv) env)
