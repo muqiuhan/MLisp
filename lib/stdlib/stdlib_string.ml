@@ -4,9 +4,12 @@ let stdlib_string =
    ;; MLisp\t\t\t\t\t\t\t\t    ;;\n\
    ;; Copyright (C) 2022 Muqiu Han\t\t\t\t\t\t    ;;\n\
    ;; \t\t\t\t\t\t\t\t\t    ;;\n\
-   ;; This program is free software: you can redistribute it and/or modify\t    ;;\n\
-   ;; it under the terms of the GNU Affero General Public License as published ;;\n\
-   ;; by the Free Software Foundation, either version 3 of the License, or\t    ;;\n\
+   ;; This program is free software: you can redistribute it and/or \
+   modify\t    ;;\n\
+   ;; it under the terms of the GNU Affero General Public License as published \
+   ;;\n\
+   ;; by the Free Software Foundation, either version 3 of the License, \
+   or\t    ;;\n\
    ;; (at your option) any later version.\t\t\t\t\t    ;;\n\
    ;; \t\t\t\t\t\t\t\t\t    ;;\n\
    ;; This program is distributed in the hope that it will be useful,\t    ;;\n\
@@ -14,8 +17,10 @@ let stdlib_string =
    ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\t    ;;\n\
    ;; GNU Affero General Public License for more details.\t\t\t    ;;\n\
    ;; \t\t\t\t\t\t\t\t\t    ;;\n\
-   ;; You should have received a copy of the GNU Affero General Public License ;;\n\
-   ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.   ;;\n\
+   ;; You should have received a copy of the GNU Affero General Public License \
+   ;;\n\
+   ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.   \
+   ;;\n\
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n\n\
    (defun null. (x)\n\
   \  (eq x '()))\n\n\
@@ -77,7 +82,8 @@ let stdlib_string =
   \        ; If it's some other type of atom, just leave it be. Let it\n\
   \        ; self-evaluate.\n\
   \        ((atom? e) e)\n\
-  \        ; If it's a list (the only alternative to being an atom), check if the\n\
+  \        ; If it's a list (the only alternative to being an atom), check if \
+   the\n\
   \        ; first item is an atom.\n\
   \        ((atom? (car e))\n\
   \         ; What kind of form is it?\n\
@@ -107,7 +113,8 @@ let stdlib_string =
   \                                   (eval. (caddr e) env)))\n\
   \           ((eq (car e) '<)     (< (eval. (cadr e) env)\n\
   \                                   (eval. (caddr e) env)))\n\
-  \           ; ...else, try and evaluate the function as a user-defined function,\n\
+  \           ; ...else, try and evaluate the function as a user-defined \
+   function,\n\
   \           ; applying it to the arguments.\n\
   \           (#t (eval. (cons (lookup. (car e) env)\n\
   \                            (cdr e))\n\
@@ -181,4 +188,3 @@ let stdlib_string =
   \             (first (take half ls))\n\
   \             (second (drop half ls)))\n\
   \        (merge (mergesort first) (mergesort second))))))\n\n"
-;;

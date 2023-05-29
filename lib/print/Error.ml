@@ -23,14 +23,15 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
   let open Mlisp_error.Error in
   let open Mlisp_error.Help in
   let data =
-    { file_name = stream.file_name
-    ; line_number = stream.line_num
-    ; column_number = stream.column_number
-    ; message = Message.message exn
-    ; help = help exn
+    {
+      file_name = stream.file_name;
+      line_number = stream.line_num;
+      column_number = stream.column_number;
+      message = Message.message exn;
+      help = help exn;
     }
   in
-  if stream.stdin
-  then data |> repl_error |> ignore |> flush_all
-  else data |> file_error |> ignore |> flush_all
-;;
+  if stream.stdin then
+    data |> repl_error |> ignore |> flush_all
+  else
+    data |> file_error |> ignore |> flush_all

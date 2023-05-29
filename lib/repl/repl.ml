@@ -27,15 +27,12 @@ open Mlisp_vars.Repl
 let print_prompt () =
   Printf.printf "%s " prompt_tip;
   flush_all ()
-;;
 
 let print_result result =
-  Printf.printf
-    "- : %s = %s\n\n"
+  Printf.printf "- : %s = %s\n\n"
     (Object.object_type result)
     (Object.string_object result);
   flush_all ()
-;;
 
 let rec repl stream env =
   try
@@ -57,4 +54,3 @@ let rec repl stream env =
     Mlisp_print.Error.print_error stream (Errors.Runtime_error_exn e);
     if stream.stdin then repl stream env else ()
   | e -> raise e
-;;

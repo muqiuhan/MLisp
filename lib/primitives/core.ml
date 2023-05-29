@@ -22,60 +22,49 @@ open Mlisp_error
 let rec list = function
   | [] -> Object.Nil
   | car :: cdr -> Object.Pair (car, list cdr)
-;;
 
 let pair = function
-  | [ a; b ] -> Object.Pair (a, b)
+  | [a; b] -> Object.Pair (a, b)
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(pair a b)"))
-;;
 
 let car = function
-  | [ Object.Pair (car, _) ] -> car
+  | [Object.Pair (car, _)] -> car
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(car non-nil-pair)"))
-;;
 
 let cdr = function
-  | [ Object.Pair (_, cdr) ] -> cdr
+  | [Object.Pair (_, cdr)] -> cdr
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(cdr non-nil-pair)"))
-;;
 
 let atomp = function
-  | [ Object.Pair (_, _) ] -> Object.Boolean false
-  | [ _ ] -> Object.Boolean true
+  | [Object.Pair (_, _)] -> Object.Boolean false
+  | [_] -> Object.Boolean true
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(atom? something)"))
-;;
 
 let eq = function
-  | [ a; b ] -> Object.Boolean (a = b)
+  | [a; b] -> Object.Boolean (a = b)
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(eq a b)"))
-;;
 
 let symp = function
-  | [ Object.Symbol _ ] -> Object.Boolean true
-  | [ _ ] -> Object.Boolean false
+  | [Object.Symbol _] -> Object.Boolean true
+  | [_] -> Object.Boolean false
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(sym? single-arg)"))
-;;
 
 let getchar = function
-  | [] ->
-    (try Object.Fixnum (int_of_char @@ input_char stdin) with
-     | End_of_file -> Object.Fixnum (-1))
+  | [] -> (
+    try Object.Fixnum (int_of_char @@ input_char stdin)
+    with End_of_file -> Object.Fixnum (-1))
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(getchar)"))
-;;
 
 let print = function
-  | [ v ] ->
+  | [v] ->
     let () = print_string @@ Object.string_object v in
     Object.Symbol "ok"
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(print object)"))
-;;
 
 let int_to_char = function
-  | [ Object.Fixnum i ] -> Object.Symbol (Object.string_of_char @@ char_of_int i)
+  | [Object.Fixnum i] -> Object.Symbol (Object.string_of_char @@ char_of_int i)
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(int_to_char int)"))
-;;
 
 let cat = function
-  | [ Object.Symbol a; Object.Symbol b ] -> Object.Symbol (a ^ b)
+  | [Object.Symbol a; Object.Symbol b] -> Object.Symbol (a ^ b)
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(cat sym sym)"))
-;;
