@@ -25,7 +25,7 @@ type lobject =
   | String of string
   | Nil
   | Pair of lobject * lobject
-  | Record of name * lobject list
+  | Record of name * (name * lobject) list
   | Primitive of string * (lobject list -> lobject)
   | Quote of value
   | Closure of name * name list * expr * value env
@@ -47,7 +47,6 @@ and expr =
   | Apply of expr * expr
   | Call of expr * expr list
   | Defexpr of def
-  | Consexpr of cons
   | Lambda of name * name list * expr
   | Let of let_kind * (name * expr) list * expr
 
@@ -57,7 +56,6 @@ and def =
   | Defrecord of name * name list
   | Expr of expr
 
-and cons = Consrecord of name * name list
 and 'a env = (string * 'a option ref) list
 
 type t = lobject
@@ -141,11 +139,11 @@ let rec string_object e =
     "#<" ^ name ^ ":(" ^ String.concat " " name_list ^ ")>"
   | Record (name, fields) ->
     let fields_string =
-      let to_string field = object_type field ^ " : " ^ string_object field in
-      match fields with
-      | [field] -> to_string field
-      | _ ->
-        "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
+      let to_string (field_name, field_value) =
+        Format.sprintf "%s: %s = %s" field_name (object_type field_value)
+          (string_object field_value)
+      in
+      "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
     in
     "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"
 

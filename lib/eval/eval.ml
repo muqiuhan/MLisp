@@ -73,7 +73,6 @@ let rec eval_expr expr env =
       in
       let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
       eval_expr body env'
-    | Object.Consexpr cons -> eval_cons cons env
     | Object.Defexpr _ -> failwith "This can't happen"
   in
   eval expr
@@ -111,16 +110,17 @@ and eval_def def env =
   | Defrecord (name, fields) ->
     let constructor =
       Object.Defun
-        (name, fields, Object.Consexpr (Object.Consrecord (name, fields)))
+        ( name,
+          fields,
+          Object.Literal
+            (Object.Record
+               ( name,
+                 List.map
+                   (fun field -> (field, Object.lookup (field, env)))
+                   fields )) )
     in
     eval_def constructor env
   | Expr e -> (eval_expr e env, env)
-
-and eval_cons cons env =
-  match cons with
-  | Object.Consrecord (name, fields) ->
-    Object.Record
-      (name, List.map (fun field -> Object.lookup (field, env)) fields)
 
 and eval ast env =
   match ast with
