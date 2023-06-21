@@ -6,6 +6,8 @@
 
 </div>
 
+![./demo](.github/demo.png)
+
 # Install
 
 1. `opam install . --deps-only`
