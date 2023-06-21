@@ -80,7 +80,9 @@ let rec eval_expr expr env =
 and eval_apply fn_expr args env =
   match fn_expr with
   | Object.Primitive (_, fn) -> fn args
-  | Object.Closure (_, names, expr, clenv) ->
+  | Object.Closure (fn_name, names, expr, clenv) ->
+    (* Check if the closure exists *)
+    Object.lookup (fn_name, env) |> ignore;
     eval_closure names expr args clenv env
   | fn_expr ->
     raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
