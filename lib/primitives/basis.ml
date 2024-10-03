@@ -22,28 +22,28 @@ let basis =
   let newprim acc (name, func) =
     Object.bind (name, Object.Primitive (name, func), acc)
   in
-  List.fold_left newprim
-    [("empty-symbol", ref (Some (Object.Symbol "")))]
-    [
-      Num.generate "+" ( + );
-      Num.generate "-" ( - );
-      Num.generate "*" ( * );
-      Num.generate "/" ( / );
-      Num.generate "mod" ( mod );
-      Cmp.generate "=" ( = );
-      Cmp.generate "<" ( < );
-      Cmp.generate ">" ( > );
-      Cmp.generate ">=" ( >= );
-      Cmp.generate "<=" ( <= );
-      ("list", Core.list);
-      ("pair", Core.pair);
-      ("car", Core.car);
-      ("cdr", Core.cdr);
-      ("eq", Core.eq);
-      ("atom?", Core.atomp);
-      ("sym?", Core.symp);
-      ("getchar", Core.getchar);
-      ("print", Core.print);
-      ("int->char", Core.int_to_char);
-      ("cat", Core.cat);
-    ]
+    List.fold_left newprim
+      [("empty-symbol", ref (Some (Object.Symbol "")))]
+      [
+        Num.generate "+" ( + );
+        Num.generate "-" ( - );
+        Num.generate "*" ( * );
+        Num.generate "/" ( / );
+        Num.generate "mod" ( mod );
+        Cmp.generate "=" ( = );
+        Cmp.generate "<" ( < );
+        Cmp.generate ">" ( > );
+        Cmp.generate ">=" ( >= );
+        Cmp.generate "<=" ( <= );
+        ("list", Core.list);
+        ("pair", Core.pair);
+        ("car", Core.car);
+        ("cdr", Core.cdr);
+        ("eq", Core.eq);
+        ("atom?", Core.atomp);
+        ("sym?", Core.symp);
+        ("getchar", Core.getchar);
+        ("print", Core.print);
+        ("int->char", Core.int_to_char);
+        ("cat", Core.cat);
+      ]

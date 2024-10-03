@@ -58,7 +58,7 @@ let getchar = function
 let print = function
   | [v] ->
     let () = print_string @@ Object.string_object v in
-    Object.Symbol "ok"
+      Object.Symbol "ok"
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(print object)"))
 
 let int_to_char = function

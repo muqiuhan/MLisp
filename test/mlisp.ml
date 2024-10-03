@@ -35,6 +35,6 @@ let test_files =
            flush_all ();
            Printf.printf "Test %s ..." file_name;
            test_mlisp_file file_name;
-           print_endline "done!")
-         else
+           print_endline "done!"
+         ) else
            ())
