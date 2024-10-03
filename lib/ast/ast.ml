@@ -39,7 +39,7 @@ let assert_unique_args args =
       (Object.pair_to_list args)
   in
   let () = assert_unique names in
-  names
+    names
 
 let let_kinds =
   [("let", Object.LET); ("let*", Object.LETSTAR); ("letrec", Object.LETREC)]
@@ -97,9 +97,9 @@ and lambda_expr args body =
 
 and defun_expr fn_name args body =
   let lam = Object.Lambda (fn_name, assert_unique_args args, build_ast body) in
-  Object.Defexpr
-    (Object.Setq
-       (fn_name, Let (Object.LETREC, [(fn_name, lam)], Object.Var fn_name)))
+    Object.Defexpr
+      (Object.Setq
+         (fn_name, Let (Object.LETREC, [(fn_name, lam)], Object.Var fn_name)))
 
 and apply_expr fn_expr args = Apply (build_ast fn_expr, build_ast args)
 
@@ -112,7 +112,7 @@ and let_expr s bindings expr =
   in
   let bindings = List.map make_binding (Object.pair_to_list bindings) in
   let () = assert_unique (List.map fst bindings) in
-  Object.Let (to_kind s, bindings, build_ast expr)
+    Object.Let (to_kind s, bindings, build_ast expr)
 
 and call_expr fn_expr args = Call (build_ast fn_expr, List.map build_ast args)
 
@@ -125,34 +125,36 @@ and cond_to_if = function
 let rec string_expr =
   let spacesep_exp es = String.spacesep (List.map string_expr es) in
   let string_of_binding (n, e) = "(" ^ n ^ " " ^ string_expr e ^ ")" in
-  function
-  | Object.Literal e -> Object.string_object e
-  | Object.Var n -> n
-  | Object.If (c, t, f) ->
-    "(if " ^ string_expr c ^ " " ^ string_expr t ^ " " ^ string_expr f ^ ")"
-  | Object.And (c0, c1) -> "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Object.Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
-  | Object.Apply (f, e) -> "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
-  | Object.Call (f, es) ->
-    if List.length es == 0 then
-      "(" ^ string_expr f ^ spacesep_exp es ^ ")"
-    else
-      "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
-  | Object.Lambda (_, args, body) ->
-    "(lambda (" ^ String.spacesep args ^ ") " ^ string_expr body ^ ")"
-  | Object.Defexpr (Object.Setq (n, e)) ->
-    "(setq " ^ n ^ " " ^ string_expr e ^ ")"
-  | Object.Defexpr (Object.Defun (n, ns, e)) ->
-    "(defun " ^ n ^ "(" ^ String.spacesep ns ^ ") " ^ string_expr e ^ ")"
-  | Object.Defexpr (Object.Expr e) -> string_expr e
-  | Object.Defexpr (Object.Defrecord (name, field_list)) ->
-    "(record " ^ name ^ String.spacesep field_list ^ ")"
-  | Object.Let (kind, bs, e) ->
-    let str =
-      match kind with
-      | LET -> "let"
-      | LETSTAR -> "let*"
-      | LETREC -> "letrec"
-    in
-    let bindings = String.spacesep (List.map string_of_binding bs) in
-    "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
+    function
+    | Object.Literal e -> Object.string_object e
+    | Object.Var n -> n
+    | Object.If (c, t, f) ->
+      "(if " ^ string_expr c ^ " " ^ string_expr t ^ " " ^ string_expr f ^ ")"
+    | Object.And (c0, c1) ->
+      "(and " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
+    | Object.Or (c0, c1) -> "(or " ^ string_expr c0 ^ " " ^ string_expr c1 ^ ")"
+    | Object.Apply (f, e) ->
+      "(apply " ^ string_expr f ^ " " ^ string_expr e ^ ")"
+    | Object.Call (f, es) ->
+      if List.length es == 0 then
+        "(" ^ string_expr f ^ spacesep_exp es ^ ")"
+      else
+        "(" ^ string_expr f ^ " " ^ spacesep_exp es ^ ")"
+    | Object.Lambda (_, args, body) ->
+      "(lambda (" ^ String.spacesep args ^ ") " ^ string_expr body ^ ")"
+    | Object.Defexpr (Object.Setq (n, e)) ->
+      "(setq " ^ n ^ " " ^ string_expr e ^ ")"
+    | Object.Defexpr (Object.Defun (n, ns, e)) ->
+      "(defun " ^ n ^ "(" ^ String.spacesep ns ^ ") " ^ string_expr e ^ ")"
+    | Object.Defexpr (Object.Expr e) -> string_expr e
+    | Object.Defexpr (Object.Defrecord (name, field_list)) ->
+      "(record " ^ name ^ String.spacesep field_list ^ ")"
+    | Object.Let (kind, bs, e) ->
+      let str =
+        match kind with
+        | LET -> "let"
+        | LETSTAR -> "let*"
+        | LETREC -> "letrec"
+      in
+      let bindings = String.spacesep (List.map string_of_binding bs) in
+        "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"

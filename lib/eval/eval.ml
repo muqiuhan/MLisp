@@ -29,7 +29,7 @@ let rec unzip l =
   | [] -> ([], [])
   | (a, b) :: rst ->
     let flist, slist = unzip rst in
-    (a :: flist, b :: slist)
+      (a :: flist, b :: slist)
 
 let rec eval_expr expr env =
   let rec eval = function
@@ -59,10 +59,10 @@ let rec eval_expr expr env =
     | Object.Lambda (name, args, body) -> Object.Closure (name, args, body, env)
     | Object.Let (Object.LET, bindings, body) ->
       let eval_binding (n, e) = (n, ref (Some (eval e))) in
-      eval_expr body (extend (List.map eval_binding bindings) env)
+        eval_expr body (extend (List.map eval_binding bindings) env)
     | Object.Let (Object.LETSTAR, bindings, body) ->
       let eval_binding acc (n, e) = Object.bind (n, eval_expr e acc, acc) in
-      eval_expr body (List.fold_left eval_binding env bindings)
+        eval_expr body (List.fold_left eval_binding env bindings)
     | Object.Let (Object.LETREC, bindings, body) ->
       let names, values = unzip bindings in
       let env' =
@@ -72,10 +72,10 @@ let rec eval_expr expr env =
         List.map (fun (n, e) -> (n, Some (eval_expr e env'))) bindings
       in
       let () = List.iter (fun (n, v) -> List.assoc n env' := v) updates in
-      eval_expr body env'
+        eval_expr body env'
     | Object.Defexpr _ -> failwith "This can't happen"
   in
-  eval expr
+    eval expr
 
 and eval_apply fn_expr args env =
   match fn_expr with
@@ -94,7 +94,7 @@ and eval_def def env =
   match def with
   | Object.Setq (name, expr) ->
     let v = eval_expr expr env in
-    (v, Object.bind (name, v, env))
+      (v, Object.bind (name, v, env))
   | Object.Defun (name, args, body) ->
     let formals, body', cl_env =
       match eval_expr (Object.Lambda (name, args, body)) env with
@@ -108,7 +108,7 @@ and eval_def def env =
         (name, formals, body', Object.bind_local (name, loc, cl_env))
     in
     let () = loc := Some clo in
-    (clo, Object.bind_local (name, loc, env))
+      (clo, Object.bind_local (name, loc, env))
   | Defrecord (name, fields) ->
     let constructor =
       Object.Defun
@@ -121,7 +121,7 @@ and eval_def def env =
                    (fun field -> (field, Object.lookup (field, env)))
                    fields )) )
     in
-    eval_def constructor env
+      eval_def constructor env
   | Expr e -> (eval_expr e env, env)
 
 and eval ast env =

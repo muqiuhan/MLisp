@@ -38,4 +38,4 @@ let rec slurp stm env =
 
 let stdlib =
   let stm = Stream_wrapper.make_stringstream Stdlib_string.stdlib_string in
-  slurp stm Basis.basis
+    slurp stm Basis.basis

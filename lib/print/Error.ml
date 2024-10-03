@@ -31,7 +31,7 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
       help = help exn;
     }
   in
-  if stream.stdin then
-    data |> repl_error |> ignore |> flush_all
-  else
-    data |> file_error |> ignore |> flush_all
+    if stream.stdin then
+      data |> repl_error |> ignore |> flush_all
+    else
+      data |> file_error |> ignore |> flush_all

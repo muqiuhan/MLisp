@@ -80,12 +80,20 @@ let object_type = function
 let rec print_sexpr sexpr =
   match sexpr with
   | Fixnum v -> print_int v
-  | Boolean b -> print_string (if b then "#t" else "#f")
+  | Boolean b ->
+    print_string
+      (if b then
+         "#t"
+       else
+         "#f")
   | Symbol s -> print_string s
   | Nil -> print_string "nil"
   | Pair (_, _) ->
     print_string "(";
-    if is_list sexpr then print_list sexpr else print_pair sexpr;
+    if is_list sexpr then
+      print_list sexpr
+    else
+      print_pair sexpr;
     print_string ")"
   | _ -> failwith "print_sexpr"
 
@@ -126,26 +134,36 @@ let rec string_object e =
     | Pair (a, b) -> string_object a ^ " . " ^ string_object b
     | _ -> failwith "This can't happen!!!!"
   in
-  match e with
-  | Fixnum v -> string_of_int v
-  | Boolean b -> if b then "#t" else "#f"
-  | String s -> "\"" ^ s ^ "\""
-  | Symbol s -> s
-  | Nil -> "nil"
-  | Pair _ -> "(" ^ (if is_list e then string_list e else string_pair e) ^ ")\n"
-  | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
-  | Quote expr -> "'" ^ string_object expr
-  | Closure (name, name_list, _, _) ->
-    "#<" ^ name ^ ":(" ^ String.concat " " name_list ^ ")>"
-  | Record (name, fields) ->
-    let fields_string =
-      let to_string (field_name, field_value) =
-        Format.sprintf "%s: %s = %s" field_name (object_type field_value)
-          (string_object field_value)
+    match e with
+    | Fixnum v -> string_of_int v
+    | Boolean b ->
+      if b then
+        "#t"
+      else
+        "#f"
+    | String s -> "\"" ^ s ^ "\""
+    | Symbol s -> s
+    | Nil -> "nil"
+    | Pair _ ->
+      "("
+      ^ (if is_list e then
+           string_list e
+         else
+           string_pair e)
+      ^ ")\n"
+    | Primitive (name, _) -> "#<primitive:" ^ name ^ ">"
+    | Quote expr -> "'" ^ string_object expr
+    | Closure (name, name_list, _, _) ->
+      "#<" ^ name ^ ":(" ^ String.concat " " name_list ^ ")>"
+    | Record (name, fields) ->
+      let fields_string =
+        let to_string (field_name, field_value) =
+          Format.sprintf "%s: %s = %s" field_name (object_type field_value)
+            (string_object field_value)
+        in
+          "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
       in
-      "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
-    in
-    "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"
+        "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"
 
 let rec lookup = function
   | n, [] -> raise (Errors.Runtime_error_exn (Errors.Not_found n))
@@ -177,6 +195,6 @@ let rec env_to_val =
         | None -> Symbol "unspecified"
         | Some v -> v )
   in
-  function
-  | [] -> Nil
-  | b :: bs -> Pair (b_to_val b, env_to_val bs)
+    function
+    | [] -> Nil
+    | b :: bs -> Pair (b_to_val b, env_to_val bs)
