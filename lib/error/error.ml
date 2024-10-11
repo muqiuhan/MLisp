@@ -32,14 +32,10 @@ let file_error {file_name; line_number; column_number; message; help} =
   let split_line {file_name; line_number; column_number; message; help} line_value =
     let char_num =
       List.fold_left
-        (fun max prev ->
-          if prev > max then
-            prev
-          else
-            max)
+        (fun max prev -> if prev > max then prev else max)
         (String.length
            (string_of_int line_number ^ string_of_int column_number ^ file_name)
-         + 31)
+        + 31)
         [String.length message + 9; String.length help + 9; String.length line_value + 8]
     in
       "+" ^ String.make (char_num + 4) '-'
