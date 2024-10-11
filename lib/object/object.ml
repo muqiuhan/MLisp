@@ -1,19 +1,7 @@
 (****************************************************************************)
-(* MLisp                                                                    *)
-(* Copyright (C) 2022 Muqiu Han                                             *)
-(*                                                                          *)
-(* This program is free software: you can redistribute it and/or modify     *)
-(* it under the terms of the GNU Affero General Public License as published *)
-(* by the Free Software Foundation, either version 3 of the License, or     *)
-(* (at your option) any later version.                                      *)
-(*                                                                          *)
-(* This program is distributed in the hope that it will be useful,          *)
-(* but WITHOUT ANY WARRANTY; without even the implied warranty of           *)
-(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *)
-(* GNU Affero General Public License for more details.                      *)
-(*                                                                          *)
-(* You should have received a copy of the GNU Affero General Public License *)
-(* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
+(* This Source Code Form is subject to the terms of the                     *)
+(* Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed *)
+(* with this file, You can obtain one at http://mozilla.org/MPL/2.0/.       *)
 (****************************************************************************)
 
 open Mlisp_error
@@ -64,6 +52,7 @@ let rec is_list = function
   | Nil -> true
   | Pair (_, b) -> is_list b
   | _ -> false
+;;
 
 let object_type = function
   | Fixnum _ -> "int"
@@ -76,6 +65,7 @@ let object_type = function
   | Quote _ -> "quote"
   | Closure _ -> "closure"
   | Record _ -> "record"
+;;
 
 let rec print_sexpr sexpr =
   match sexpr with
@@ -113,12 +103,14 @@ and print_pair pair =
     print_string " . ";
     print_sexpr b
   | _ -> failwith "This can't happen!!!!"
+;;
 
 let rec pair_to_list pair =
   match pair with
   | Nil -> []
   | Pair (a, b) -> a :: pair_to_list b
   | _ -> failwith "This can't happen!!!!"
+;;
 
 let string_of_char a_char = String.make 1 a_char
 
@@ -158,12 +150,16 @@ let rec string_object e =
     | Record (name, fields) ->
       let fields_string =
         let to_string (field_name, field_value) =
-          Format.sprintf "%s: %s = %s" field_name (object_type field_value)
+          Format.sprintf
+            "%s: %s = %s"
+            field_name
+            (object_type field_value)
             (string_object field_value)
         in
           "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
       in
         "#<record:" ^ name ^ "\n\t(" ^ fields_string ^ ")>"
+;;
 
 let rec lookup = function
   | n, [] -> raise (Errors.Runtime_error_exn (Errors.Not_found n))
@@ -172,20 +168,21 @@ let rec lookup = function
     | Some v' -> v'
     | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
   | n, (_, _) :: bs -> lookup (n, bs)
+;;
 
 let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
 let make_local _ = ref None
 let bind_local (n, vor, e) = (n, vor) :: e
 
 let bind_list ns vs env =
-  try List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs
-  with Invalid_argument _ ->
-    raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
+  try List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs with
+  | Invalid_argument _ -> raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
+;;
 
 let bind_local_list ns vs env =
-  try List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
-  with Invalid_argument _ ->
-    raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
+  try List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs with
+  | Invalid_argument _ -> raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
+;;
 
 let rec env_to_val =
   let b_to_val (n, vor) =
@@ -198,3 +195,4 @@ let rec env_to_val =
     function
     | [] -> Nil
     | b :: bs -> Pair (b_to_val b, env_to_val bs)
+;;

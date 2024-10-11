@@ -1,4 +1,4 @@
-profile = conventional
+profile = janestreet
 
 leading-nested-match-parens = false
 space-around-variants = false
