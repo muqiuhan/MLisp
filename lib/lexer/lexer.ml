@@ -1,19 +1,7 @@
 (****************************************************************************)
-(* MLisp                                                                    *)
-(* Copyright (C) 2022 Muqiu Han                                             *)
-(*                                                                          *)
-(* This program is free software: you can redistribute it and/or modify     *)
-(* it under the terms of the GNU Affero General Public License as published *)
-(* by the Free Software Foundation, either version 3 of the License, or     *)
-(* (at your option) any later version.                                      *)
-(*                                                                          *)
-(* This program is distributed in the hope that it will be useful,          *)
-(* but WITHOUT ANY WARRANTY; without even the implied warranty of           *)
-(* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *)
-(* GNU Affero General Public License for more details.                      *)
-(*                                                                          *)
-(* You should have received a copy of the GNU Affero General Public License *)
-(* along with this program.  If not, see <https://www.gnu.org/licenses/>.   *)
+(* This Source Code Form is subject to the terms of the                     *)
+(* Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed *)
+(* with this file, You can obtain one at http://mozilla.org/MPL/2.0/.       *)
 (****************************************************************************)
 
 open Mlisp_utils
@@ -37,6 +25,7 @@ let read_char stream =
   | ch :: rest ->
     stream.chrs <- rest;
     ch
+;;
 
 let unread_char stream ch = stream.chrs <- ch :: stream.chrs
 
@@ -46,27 +35,32 @@ let rec eat_whitespace stream =
       eat_whitespace stream
     else
       unread_char stream ch
+;;
 
 let rec eat_comment stream =
   if read_char stream = '\n' then
     ()
   else
     eat_comment stream
+;;
 
 let read_fixnum stream acc =
   let rec loop acc =
     let num_char = read_char stream in
       if Char.is_digit num_char then
         num_char |> Char.escaped |> ( ^ ) acc |> loop
-      else
+      else (
         let _ = unread_char stream num_char in
           Object.Fixnum (int_of_string acc)
+      )
   in
     loop acc
+;;
 
 let is_symbol_start_char = function
   | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' -> true
   | ch -> Char.is_alpha ch
+;;
 
 let rec read_symbol stream =
   let is_delimiter = function
@@ -74,18 +68,19 @@ let rec read_symbol stream =
     | ch -> Char.is_whitespace ch
   in
   let next_char = read_char stream in
-    if is_delimiter next_char then
+    if is_delimiter next_char then (
       let _ = unread_char stream next_char in
         ""
-    else
+    ) else
       Object.string_of_char next_char ^ read_symbol stream
+;;
 
 let read_boolean stream =
   match read_char stream with
   | 't' -> Object.Boolean true
   | 'f' -> Object.Boolean false
-  | x ->
-    raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
+  | x -> raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
+;;
 
 let read_string stream =
   let rec loop acc =
@@ -96,6 +91,7 @@ let read_string stream =
         ch |> Char.escaped |> ( ^ ) acc |> loop
   in
     loop ""
+;;
 
 (** Read in a whole number *)
 let rec read_sexpr stream =
@@ -142,3 +138,4 @@ and read_list stream =
       let cdr = read_list stream in
         Pair (car, cdr)
     )
+;;
