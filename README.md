@@ -1,4 +1,6 @@
-<div align=center><img width="150" height="150" src="./.github/logo.png"/>
+<div align="center">
+
+![.github/logo.png](.github/logo.png)
 
 # MLisp
 
