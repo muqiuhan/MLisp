@@ -83,8 +83,11 @@ let record_create = function
           record_fields field_1 record @ record_fields field_2 record
         | Object.Pair (Object.Symbol field_name, field_value), Nil
         | Object.Symbol field_name, field_value -> (field_name, field_value) :: record
-        | _ -> failwith "field name must be a symbol")
-      | _ -> failwith "record name must be a list of pairs"
+        | _ ->
+          raise
+            (Errors.Syntax_error_exn
+               (Errors.Record_field_name_must_be_a_symbol record_name)))
+      | _ -> failwith "record fields must be a list of pairs"
   in
         Object.Record (record_name, record_fields fields [])
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
