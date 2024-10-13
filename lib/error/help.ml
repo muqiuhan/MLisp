@@ -12,7 +12,9 @@ let help = function
     | Unexcepted_character _ ->
       "Usually triggered by wrong characters, such as extra parentheses, etc."
     | Invalid_define_expression _ -> "(declare-expr symbol-name (formals) body)"
-    | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals.")
+    | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals."
+    | Record_field_name_must_be_a_symbol record_name ->
+      Format.sprintf "(:: '%s (@ (| 'field-name field-value)))" record_name)
   | Parse_error_exn e -> (
     match e with
     | Unique_error _ ->

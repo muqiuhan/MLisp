@@ -14,6 +14,8 @@ let message = function
     match e with
     | Unexcepted_character c -> "Unexcepted character : '" ^ c ^ "'"
     | Invalid_boolean_literal b -> "Invalid boolean literal : '" ^ b ^ "'"
+    | Record_field_name_must_be_a_symbol record_name ->
+      Format.sprintf "The record %s field name must be a symbol" record_name
     | Invalid_define_expression e -> "Invalid define expression : '" ^ e ^ "'")
   | Parse_error_exn e -> (
     "Parse error -> "
