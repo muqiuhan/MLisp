@@ -30,21 +30,32 @@ let rec repl stream env =
     if stream.repl_mode then print_prompt ();
     let ast = Ast.build_ast (Lexer.read_sexpr stream) in
     let result, env' = Eval.eval ast env in
-      if stream.repl_mode then print_result result;
-      stream.line_num <- 0;
-      repl stream env'
+        if stream.repl_mode then print_result result;
+        stream.line_num <- 0;
+        repl stream env'
   with
-  | Stream.Failure             ->
-    if stream.repl_mode then print_newline () else ()
-  | Errors.Syntax_error_exn e  ->
+  | Stream.Failure ->
+    if stream.repl_mode then
+      print_newline ()
+    else
+      ()
+  | Errors.Syntax_error_exn e ->
     Mlisp_print.Error.print_error stream (Errors.Syntax_error_exn e);
-    if stream.repl_mode then repl stream env else ()
-  | Errors.Parse_error_exn e   ->
+    if stream.repl_mode then
+      repl stream env
+    else
+      ()
+  | Errors.Parse_error_exn e ->
     Mlisp_print.Error.print_error stream (Errors.Parse_error_exn e);
-    if stream.repl_mode then repl stream env else ()
+    if stream.repl_mode then
+      repl stream env
+    else
+      ()
   | Errors.Runtime_error_exn e ->
     Mlisp_print.Error.print_error stream (Errors.Runtime_error_exn e);
-    if stream.repl_mode then repl stream env else ()
-  | e                          ->
-    raise e
+    if stream.repl_mode then
+      repl stream env
+    else
+      ()
+  | e -> raise e
 ;;

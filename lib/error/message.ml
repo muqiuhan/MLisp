@@ -8,34 +8,25 @@ open Errors
 open Mlisp_utils
 
 let message = function
-  | Syntax_error_exn e  -> (
+  | Syntax_error_exn e -> (
     "Syntax error -> "
     ^
     match e with
-    | Unexcepted_character c    ->
-      "Unexcepted character : '" ^ c ^ "'"
-    | Invalid_boolean_literal b ->
-      "Invalid boolean literal : '" ^ b ^ "'")
-  | Parse_error_exn e   -> (
+    | Unexcepted_character c -> "Unexcepted character : '" ^ c ^ "'"
+    | Invalid_boolean_literal b -> "Invalid boolean literal : '" ^ b ^ "'"
+    | Invalid_define_expression e -> "Invalid define expression : '" ^ e ^ "'")
+  | Parse_error_exn e -> (
     "Parse error -> "
     ^
     match e with
-    | Unique_error p           ->
-      "Unique error : " ^ p
-    | Type_error x             ->
-      "Type error : " ^ x
-    | Poorly_formed_expression ->
-      "Poorly formed expression."
-    | Apply_error v            ->
-      Format.sprintf "(apply %s '(args)) or (%s args)" v v)
+    | Unique_error p -> "Unique error : " ^ p
+    | Type_error x -> "Type error : " ^ x
+    | Poorly_formed_expression -> "Poorly formed expression."
+    | Apply_error v -> Format.sprintf "(apply %s '(args)) or (%s args)" v v)
   | Runtime_error_exn e -> (
     match e with
-    | Not_found e           ->
-      "Not found : " ^ e
-    | Unspecified_value e   ->
-      "Unspecified value : " ^ e
-    | Missing_argument args ->
-      "Missing arguments : " ^ String.spacesep args)
-  | _                   ->
-    "None"
+    | Not_found e -> "Not found : " ^ e
+    | Unspecified_value e -> "Unspecified value : " ^ e
+    | Missing_argument args -> "Missing arguments : " ^ String.spacesep args)
+  | _ -> "None"
 ;;

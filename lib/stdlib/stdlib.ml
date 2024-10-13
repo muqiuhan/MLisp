@@ -14,20 +14,18 @@ open Mlisp_primitives
 
 let eval env e =
   match e with
-  | Object.Defexpr d ->
-    Eval.eval_def d env
-  | _                ->
+  | Object.Defexpr d -> Eval.eval_def d env
+  | _ ->
     raise
       (Errors.Parse_error_exn (Errors.Type_error "Can only have definitions in stdlib"))
 ;;
 
 let rec slurp stm env =
   try stm |> Lexer.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm with
-  | Stream.Failure ->
-    env
+  | Stream.Failure -> env
 ;;
 
 let stdlib =
   let stm = Stream_wrapper.make_stringstream Stdlib_string.stdlib_string in
-    slurp stm Basis.basis
+      slurp stm Basis.basis
 ;;
