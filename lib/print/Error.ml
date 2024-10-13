@@ -15,9 +15,11 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
       line_number = stream.line_num;
       column_number = stream.column;
       message = Message.message exn;
-      help = help exn }
-  in
-    if stream.repl_mode
-    then data |> repl_error |> ignore |> flush_all
-    else data |> file_error |> ignore |> flush_all
+      help = help exn
+    }
+in
+      if stream.repl_mode then
+        data |> repl_error |> ignore |> flush_all
+      else
+        data |> file_error |> ignore |> flush_all
 ;;

@@ -12,6 +12,7 @@ type parse_error =
 
 type syntax_error =
   | Invalid_boolean_literal of string
+  | Invalid_define_expression of string
   | Unexcepted_character of string
 
 type runtime_error =

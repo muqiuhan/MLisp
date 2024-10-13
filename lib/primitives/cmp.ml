@@ -10,8 +10,6 @@ open Mlisp_error
 let generate name operator =
   ( name,
     function
-    | [Object.Fixnum a; Object.Fixnum b] ->
-      Object.Boolean (operator a b)
-    | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error ("(" ^ name ^ " int int)"))) )
+    | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Boolean (operator a b)
+    | _ -> raise (Errors.Parse_error_exn (Errors.Type_error ("(" ^ name ^ " int int)"))) )
 ;;

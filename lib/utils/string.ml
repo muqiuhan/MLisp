@@ -11,13 +11,13 @@ let spacesep ns = concat ~sep:" " ns
 let read_lines filename =
   let lines = ref [] in
   let chan = open_in filename in
-    try
-      while true do
-        lines := input_line chan :: !lines
-      done;
-      !lines
-    with
-    | End_of_file ->
-      close_in chan;
-      List.rev !lines
+      try
+        while true do
+          lines := input_line chan :: !lines
+        done;
+        !lines
+      with
+      | End_of_file ->
+        close_in chan;
+        List.rev !lines
 ;;
