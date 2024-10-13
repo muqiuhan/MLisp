@@ -15,7 +15,7 @@
 1. `opam install . --deps-only`
 2. `dune build`
 3. `dune install`
-  
+
 # [License](./LICENSE)
 This Source Code Form is subject to the terms of the
 Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed

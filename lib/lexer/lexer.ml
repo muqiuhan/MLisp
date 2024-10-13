@@ -71,7 +71,7 @@ in
 ;;
 
 let is_symbol_start_char : char -> bool = function
-  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' -> true
+  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' | ':' | '$' | '@' | '|' -> true
   | ch -> Char.is_alpha ch
 ;;
 
