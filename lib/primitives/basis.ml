@@ -22,15 +22,19 @@ let basis =
           Cmp.generate ">=" ( >= );
           Cmp.generate "<=" ( <= );
           "list", Core.list;
+          "@", Core.list;
           "pair", Core.pair;
+          "|", Core.pair;
           "car", Core.car;
           "cdr", Core.cdr;
           "eq", Core.eq;
           "atom?", Core.atomp;
-          "sym?", Core.symp;
+          "symbol?", Core.symp;
           "getchar", Core.getchar;
           "print", Core.print;
           "int->char", Core.int_to_char;
-          "cat", Core.cat
+          "symbol-concat", Core.cat;
+          ":>", Core.record_get;
+          "::", Core.record_create
         ]
 ;;

@@ -41,7 +41,6 @@ and expr =
 and def =
   | Setq of name * expr
   | Defun of name * name list * expr
-  | Defrecord of name * name list
   | Expr of expr
 
 and 'a env = (string * 'a option ref) list

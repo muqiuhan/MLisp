@@ -86,17 +86,6 @@ and eval_def def env =
   in
     let () = loc := Some clo in
         clo, Object.bind_local (name, loc, env)
-  | Defrecord (name, fields) ->
-    let constructor =
-      Object.Defun
-        ( name,
-          fields,
-          Object.Literal
-            (Object.Record
-               (name, List.map (fun field -> field, Object.lookup (field, env)) fields))
-        )
-  in
-        eval_def constructor env
   | Expr e -> eval_expr e env, env
 
 and eval ast env =

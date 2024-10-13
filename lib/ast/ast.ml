@@ -63,8 +63,8 @@ let rec build_ast : Object.lobject -> Object.expr =
     | [ Object.Symbol "and"; cond_x; cond_y ] -> and_expr cond_x cond_y
     | [ Object.Symbol "or"; cond_x; cond_y ] -> or_expr cond_x cond_y
     | [ Object.Symbol "quote"; expr ] -> quote_expr expr
-    | [ Object.Symbol "setq"; Object.Symbol name; expr ] -> setq_expr name expr
-    | [ Object.Symbol "record"; Object.Symbol name; fields ] -> record_expr name fields
+    | [ Object.Symbol "setq"; Object.Symbol name; expr ]
+    | [ Object.Symbol ":="; Object.Symbol name; expr ] -> setq_expr name expr
     | [ Object.Symbol "lambda"; args; body ] when Object.is_list args ->
       lambda_expr args body
     | [ Object.Symbol "apply"; fn_expr; args ] -> apply_expr fn_expr args
@@ -89,7 +89,6 @@ and setq_expr name expr = Object.Defexpr (Object.Setq (name, build_ast expr))
 and if_expr cond if_true if_false =
   If (build_ast cond, build_ast if_true, build_ast if_false)
 
-and record_expr name fields = Defexpr (Defrecord (name, assert_unique_args fields))
 and lambda_expr args body = Lambda ("lambda", assert_unique_args args, build_ast body)
 
 and defun_expr fn_name args body =
@@ -139,8 +138,6 @@ let rec string_expr =
       | Object.Defexpr (Object.Defun (n, ns, e)) ->
         "(defun " ^ n ^ "(" ^ Mlisp_utils.String.spacesep ns ^ ") " ^ string_expr e ^ ")"
       | Object.Defexpr (Object.Expr e) -> string_expr e
-      | Object.Defexpr (Object.Defrecord (name, field_list)) ->
-        "(record " ^ name ^ Mlisp_utils.String.spacesep field_list ^ ")"
       | Object.Let (kind, bs, e) ->
         let str =
           match kind with

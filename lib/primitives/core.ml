@@ -67,3 +67,25 @@ let cat = function
   | [ Object.Symbol a; Object.Symbol b ] -> Object.Symbol (a ^ b)
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(cat sym sym)"))
 ;;
+
+let record_get = function
+  | [ Object.Record (_, fields); Object.Symbol get ] -> List.assoc get fields
+  | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
+;;
+
+let record_create = function
+  | [ Object.Symbol record_name; fields ] ->
+    let rec record_fields fields record =
+      match fields with
+      | Object.Pair (field_name, field_value) -> (
+        match field_name, field_value with
+        | (Object.Pair _ as field_1), (Object.Pair _ as field_2) ->
+          record_fields field_1 record @ record_fields field_2 record
+        | Object.Pair (Object.Symbol field_name, field_value), Nil
+        | Object.Symbol field_name, field_value -> (field_name, field_value) :: record
+        | _ -> failwith "field name must be a symbol")
+      | _ -> failwith "record name must be a list of pairs"
+  in
+        Object.Record (record_name, record_fields fields [])
+  | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
+;;
