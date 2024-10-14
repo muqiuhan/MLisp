@@ -15,6 +15,9 @@ depends: [
   "core"
   "ocolor"
   "camlp-streams"
+  "ocamline"
+  "core_unix"
+  "ppx_string"
   "odoc" {with-doc}
 ]
 build: [
