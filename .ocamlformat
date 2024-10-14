@@ -21,4 +21,3 @@ match-indent-nested=always
 cases-exp-indent=4
 if-then-else=k-r
 break-fun-sig=fit-or-vertical
-margin=120

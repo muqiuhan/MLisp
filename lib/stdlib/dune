@@ -1,9 +1,9 @@
 (library
  (name mlisp_stdlib)
- ;; (preprocessor_deps (stdlib.mlisp))
- ;; (preprocess (pps (ppx_jane ppx_embed_file)))
  (libraries
   core
+  core_unix
+  core_unix.filename_unix
   mlisp_object
   mlisp_error
   mlisp_eval

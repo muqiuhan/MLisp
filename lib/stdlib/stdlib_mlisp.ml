@@ -1,3 +1,7 @@
+let _STDLIB_VERSION_ = "0.2.1"
+
+let _STDLIB_ =
+  {|
 (|= null. (x) (== x '()))
 (|= and. (x y)
   (?? (x (?? (y #t)
@@ -156,3 +160,5 @@
             (first (take half ls))
             (second (drop half ls)))
         (merge (mergesort first) (mergesort second))))))
+|}
+;;

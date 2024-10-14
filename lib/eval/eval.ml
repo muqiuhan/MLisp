@@ -7,7 +7,9 @@
 open Mlisp_object
 open Mlisp_error
 
-let extend newenv oldenv = List.fold_right (fun (b, v) acc -> Object.bind_local (b, v, acc)) newenv oldenv
+let extend newenv oldenv =
+  List.fold_right (fun (b, v) acc -> Object.bind_local (b, v, acc)) newenv oldenv
+;;
 
 let rec unzip l =
   match l with
@@ -80,7 +82,8 @@ and eval_apply fn_expr args env =
   | fn_expr ->
       raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
 
-and eval_closure names expr args clenv env = eval_expr expr (extend (Object.bind_list names args clenv) env)
+and eval_closure names expr args clenv env =
+  eval_expr expr (extend (Object.bind_list names args clenv) env)
 
 and eval_def def env =
   match def with
@@ -96,10 +99,18 @@ and eval_def def env =
             raise (Errors.Parse_error_exn (Errors.Type_error "Expecting closure."))
     in
       let loc = Object.make_local () in
-      let clo = Object.Closure (name, formals, body', Object.bind_local (name, loc, cl_env)) in
+      let clo =
+        Object.Closure (name, formals, body', Object.bind_local (name, loc, cl_env))
+    in
       let () = loc := Some clo in
           clo, Object.bind_local (name, loc, env)
   | Expr e ->
       eval_expr e env, env
 
-and eval ast env = match ast with Object.Defexpr def_expr -> eval_def def_expr env | expr -> eval_expr expr env, env
+and eval ast env =
+  match ast with
+  | Object.Defexpr def_expr ->
+      eval_def def_expr env
+  | expr ->
+      eval_expr expr env, env
+;;

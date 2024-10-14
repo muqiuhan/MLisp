@@ -22,8 +22,8 @@ let help = function
       | Unique_error _ ->
           "A conflict error caused by duplicate parameter names when defining closure."
       | Type_error _ ->
-          "Possible type error due to a function call with parameters of a type different from that specified in the \
-           function definition."
+          "Possible type error due to a function call with parameters of a type \
+           different from that specified in the function definition."
       | Poorly_formed_expression ->
           "Syntactically incorrect or redundant elements."
       | Apply_error v ->
@@ -35,7 +35,10 @@ let help = function
       | Unspecified_value _ ->
           "Accessing an identifier that is not explicitly defined in the context."
       | Missing_argument _ ->
-          "It is possible that the actual parameter quantity is inconsistent with the formal parameter quantity")
+          "It is possible that the actual parameter quantity is inconsistent with the \
+           formal parameter quantity"
+      | Non_definition_in_stdlib _ ->
+          "Can only have definitions in stdlib")
   | _ ->
       "None"
 ;;

@@ -8,38 +8,38 @@ open Errors
 open Mlisp_utils
 
 let message = function
-  | Syntax_error_exn e -> (
-      "Syntax error -> "
-      ^
+  | Syntax_error_exn e -> begin
       match e with
       | Unexcepted_character c ->
-          "Unexcepted character : '" ^ c ^ "'"
+          [%string "Unexcepted character : '%{c}'"]
       | Invalid_boolean_literal b ->
-          "Invalid boolean literal : '" ^ b ^ "'"
+          [%string "Invalid boolean literal : '%{b}"]
       | Record_field_name_must_be_a_symbol record_name ->
-          Format.sprintf "The record %s field name must be a symbol" record_name
+          [%string "The record %{record_name} field name must be a symbol"]
       | Invalid_define_expression e ->
-          "Invalid define expression : '" ^ e ^ "'")
-  | Parse_error_exn e -> (
-      "Parse error -> "
-      ^
+          [%string "Invalid define expression : '%{e}"]
+      end
+  | Parse_error_exn e -> begin
       match e with
       | Unique_error p ->
-          "Unique error : " ^ p
+          [%string "Unique error : %{p}"]
       | Type_error x ->
-          "Type error : " ^ x
+          [%string "Type error : %{x}"]
       | Poorly_formed_expression ->
           "Poorly formed expression."
       | Apply_error v ->
-          Format.sprintf "(apply %s '(args)) or (%s args)" v v)
+          [%string "(>> %{v} '(args)) or (%{v} args)"]
+      end
   | Runtime_error_exn e -> (
       match e with
       | Not_found e ->
-          "Not found : " ^ e
+          [%string "Not found : %{e}"]
       | Unspecified_value e ->
-          "Unspecified value : " ^ e
+          [%string "Unspecified value : %{e}"]
       | Missing_argument args ->
-          "Missing arguments : " ^ String.spacesep args)
+          [%string "Missing arguments : %{String.spacesep args}"]
+      | Non_definition_in_stdlib expr ->
+          [%string "This expression is not a defining expression: %{expr}"])
   | exn ->
       raise exn
 ;;

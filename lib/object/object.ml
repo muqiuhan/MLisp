@@ -118,7 +118,13 @@ and print_pair pair =
 ;;
 
 let rec pair_to_list pair =
-  match pair with Nil -> [] | Pair (a, b) -> a :: pair_to_list b | _ -> failwith "This can't happen!!!!"
+  match pair with
+  | Nil ->
+      []
+  | Pair (a, b) ->
+      a :: pair_to_list b
+  | _ ->
+      failwith "This can't happen!!!!"
 ;;
 
 let string_of_char a_char = String.make 1 a_char
@@ -134,7 +140,11 @@ let rec string_object e =
         failwith "This can't happen!!!!"
 in
   let string_pair p =
-    match p with Pair (a, b) -> string_object a ^ " . " ^ string_object b | _ -> failwith "This can't happen!!!!"
+    match p with
+    | Pair (a, b) ->
+        string_object a ^ " . " ^ string_object b
+    | _ ->
+        failwith "This can't happen!!!!"
 in
       match e with
       | Fixnum v ->
@@ -166,7 +176,11 @@ in
       | Record (name, fields) ->
           let fields_string =
             let to_string (field_name, field_value) =
-              Format.sprintf "%s: %s = %s" field_name (object_type field_value) (string_object field_value)
+              Format.sprintf
+                "%s: %s = %s"
+                field_name
+                (object_type field_value)
+                (string_object field_value)
           in
                 "\n\t\t" ^ String.concat "\n\t\t" (List.map to_string fields) ^ "\n\t"
         in
@@ -177,7 +191,11 @@ let rec lookup = function
   | n, [] ->
       raise (Errors.Runtime_error_exn (Errors.Not_found n))
   | n, (n', v) :: _ when n = n' -> (
-      match !v with Some v' -> v' | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
+      match !v with
+      | Some v' ->
+          v'
+      | None ->
+          raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
   | n, (_, _) :: bs ->
       lookup (n, bs)
 ;;
@@ -199,6 +217,8 @@ let bind_local_list ns vs env =
 ;;
 
 let rec env_to_val =
-  let b_to_val (n, vor) = Pair (Symbol n, match !vor with None -> Symbol "unspecified" | Some v -> v) in
+  let b_to_val (n, vor) =
+    Pair (Symbol n, match !vor with None -> Symbol "unspecified" | Some v -> v)
+in
       function [] -> Nil | b :: bs -> Pair (b_to_val b, env_to_val bs)
 ;;

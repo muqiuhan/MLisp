@@ -19,7 +19,7 @@
  (name mlisp)
  (synopsis "A Lisp implementation in OCaml")
  (description "A Lisp implementation in OCaml")
- (depends ocaml dune (core (>= 0.17.0)) ocolor camlp-streams)
+ (depends ocaml dune core ocolor camlp-streams)
  (tags
   (lisp interpreter compiler)))
 

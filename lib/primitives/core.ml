@@ -57,7 +57,9 @@ let symp = function
 
 let getchar = function
   | [] -> (
-      try Object.Fixnum (int_of_char @@ input_char stdin) with End_of_file -> Object.Fixnum (-1))
+      try Object.Fixnum (int_of_char @@ input_char stdin) with
+      | End_of_file ->
+          Object.Fixnum (-1))
   | _ ->
       raise (Errors.Parse_error_exn (Errors.Type_error "(getchar)"))
 ;;
@@ -99,10 +101,13 @@ let record_create = function
             match field_name, field_value with
             | (Object.Pair _ as field_1), (Object.Pair _ as field_2) ->
                 record_fields field_1 record @ record_fields field_2 record
-            | Object.Pair (Object.Symbol field_name, field_value), Nil | Object.Symbol field_name, field_value ->
+            | Object.Pair (Object.Symbol field_name, field_value), Nil
+            | Object.Symbol field_name, field_value ->
                 (field_name, field_value) :: record
             | _ ->
-                raise (Errors.Syntax_error_exn (Errors.Record_field_name_must_be_a_symbol record_name)))
+                raise
+                  (Errors.Syntax_error_exn
+                     (Errors.Record_field_name_must_be_a_symbol record_name)))
         | _ ->
             failwith "record fields must be a list of pairs"
     in
