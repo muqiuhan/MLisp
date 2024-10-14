@@ -11,7 +11,7 @@
 
 (maintainers "Muqiu Han")
 
-(license AGPL-3.0-only)
+(license MPL-2.0)
 
 (documentation https://github.com/muqiuhan/MLisp)
 
@@ -19,7 +19,7 @@
  (name mlisp)
  (synopsis "A Lisp implementation in OCaml")
  (description "A Lisp implementation in OCaml")
- (depends ocaml dune core ocolor camlp-streams)
+ (depends ocaml dune (core (>= 0.17.0)) ocolor camlp-streams)
  (tags
   (lisp interpreter compiler)))
 
