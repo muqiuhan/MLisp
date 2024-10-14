@@ -16,8 +16,8 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun fib (x)
-  (if (or (= x 1) (= x 0))
+(|= fib (x)
+  (? (|| (= x 1) (= x 0))
       x
       (+ (fib (- x 1)) (fib (- x 2)))))
 

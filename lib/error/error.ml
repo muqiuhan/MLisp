@@ -38,20 +38,13 @@ let file_error { file_name; line_number; column_number; message; help } =
             prev
           else
             max)
-        (String.length
-           (string_of_int line_number ^ string_of_int column_number ^ file_name)
-         + 31)
-        [ String.length message + 9;
-          String.length help + 9;
-          String.length line_value + 8
-        ]
+        (String.length (string_of_int line_number ^ string_of_int column_number ^ file_name) + 31)
+        [ String.length message + 9; String.length help + 9; String.length line_value + 8 ]
   in
         "+" ^ String.make (char_num + 4) '-'
 in
   let line_value = List.nth (String.read_lines file_name) (line_number - 1) in
-  let split_line =
-    split_line { file_name; line_number; column_number; message; help } line_value
-in
+  let split_line = split_line { file_name; line_number; column_number; message; help } line_value in
   let tip_mark = "+" ^ String.make (String.length line_value + 5) '-' ^ "^" in
       Ocolor_format.printf
         "\n\

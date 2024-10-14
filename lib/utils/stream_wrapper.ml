@@ -22,11 +22,8 @@ let make_stream (type a) : ?file_name:string -> bool -> a Stream.t -> a stream =
   { chars = []; line_num = 1; repl_mode = is_stdin; stream; file_name; column = 0 }
 ;;
 
-let make_stringstream : string -> char stream =
-  fun s -> make_stream false @@ Stream.of_string s
-;;
+let make_stringstream : string -> char stream = fun s -> make_stream false @@ Stream.of_string s
 
 let make_filestream : ?file_name:string -> In_channel.t -> char stream =
-  fun ?(file_name = "stdin") f ->
-  make_stream ~file_name (phys_equal f In_channel.stdin) @@ Stream.of_channel f
+  fun ?(file_name = "stdin") f -> make_stream ~file_name (phys_equal f In_channel.stdin) @@ Stream.of_channel f
 ;;

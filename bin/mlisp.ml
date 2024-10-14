@@ -8,10 +8,7 @@ open Mlisp_utils
 open Mlisp_repl
 open Mlisp_stdlib
 
-let get_input_channel () =
-  try open_in Sys.argv.(1) with
-  | Invalid_argument _ -> stdin
-;;
+let get_input_channel () = try open_in Sys.argv.(1) with Invalid_argument _ -> stdin
 
 let () =
   let input_channel = get_input_channel () in
@@ -24,9 +21,9 @@ let () =
 in
       try Repl.repl stream Stdlib.stdlib with
       | e ->
-        if input_channel <> stdin then
-          close_in input_channel
-        else
-          print_endline "Goodbye!";
-        raise e
+          if input_channel <> stdin then
+            close_in input_channel
+          else
+            print_endline "Goodbye!";
+          raise e
 ;;
