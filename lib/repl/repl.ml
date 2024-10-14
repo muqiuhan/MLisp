@@ -12,11 +12,6 @@ open Mlisp_error
 open Mlisp_utils.Stream_wrapper
 open Mlisp_vars.Repl
 
-let print_prompt () =
-  Printf.printf "%s " prompt_tip;
-  flush_all ()
-;;
-
 let print_result result =
   Printf.printf
     "- : %s = %s\n\n"
@@ -27,11 +22,25 @@ let print_result result =
 
 let rec repl stream env =
   try
-    if stream.repl_mode then print_prompt ();
-    let ast = Ast.build_ast (Lexer.read_sexpr stream) in
+    let ast =
+      begin
+        if stream.repl_mode then begin
+          Ocamline.read
+            ~brackets:[ '(', ')' ]
+            ~prompt:prompt_tip
+            ~trim_delim:false
+            ~history_loc:".mlisp-repl-history"
+            ()
+          |> Mlisp_utils.Stream_wrapper.make_stringstream
+        end else
+          stream
+      end
+      |> Lexer.read_sexpr
+      |> Ast.build_ast
+  in
     let result, env' = Eval.eval ast env in
         if stream.repl_mode then print_result result;
-        stream.line_num <- 0;
+        stream.line_num := 0;
         repl stream env'
   with
   | Stream.Failure ->
@@ -57,6 +66,8 @@ let rec repl stream env =
         repl stream env
       else
         ()
+  | End_of_file ->
+      print_endline "Goodbye!"
   | e ->
       raise e
 ;;

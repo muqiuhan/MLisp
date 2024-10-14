@@ -7,7 +7,6 @@
 open Mlisp_object
 open Mlisp_error
 open Mlisp_utils.Stream_wrapper
-open Mlisp_vars
 open Core
 
 let read_char : char stream -> char =
@@ -15,14 +14,14 @@ let read_char : char stream -> char =
   match stream.chars with
   | [] ->
       let next_char = Stream.next stream.stream in
-          if Char.(next_char = '\n') then (
-            stream.line_num <- stream.line_num + 1;
-            stream.column <- 0;
+          if Char.(next_char = '\n') then begin
+            incr stream.line_num;
+            stream.column := 0;
             next_char
-          ) else (
-            stream.column <- stream.column + 1;
+          end else begin
+            incr stream.column;
             next_char
-          )
+          end
   | current_char :: rest ->
       stream.chars <- rest;
       current_char
@@ -157,13 +156,6 @@ let rec read_sexpr : char stream -> Object.lobject =
 
 and read_list : char stream -> Object.lobject =
   fun stream ->
-  (* Better REPL *)
-  (let ch = read_char stream in
-       if stream.repl_mode && Char.equal ch '\n' then (
-         print_string (String.make (String.length Repl.prompt_tip - 1) ' ' ^ "| ");
-         Out_channel.flush stdout
-       ) else
-         unread_char stream ch);
   eat_whitespace stream;
   let ch = read_char stream in
       if Char.(ch = ')') then

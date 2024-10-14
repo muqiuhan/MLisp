@@ -12,8 +12,8 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
   let open Mlisp_error.Help in
   let data =
     { file_name = stream.file_name;
-      line_number = stream.line_num;
-      column_number = stream.column;
+      line_number = !(stream.line_num);
+      column_number = !(stream.column);
       message = Message.message exn;
       help = help exn
     }
