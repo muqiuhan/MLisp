@@ -118,7 +118,7 @@
 (|= getline ()
   (%== ((ic (getchar))
          (c (int->char ic)))
-    (? (or (== c newline) (== ic ~1))
+    (? (|| (== c newline) (== ic ~1))
       empty-symbol
       (cat c (getline)))))
 
@@ -129,11 +129,11 @@
     (+ 1 (length (cdr ls)))))
 
 (|= take (n ls)
-  (? (or (< n 1) (null? ls))
+  (? (|| (< n 1) (null? ls))
     '()
     ($ (car ls) (take (- n 1) (cdr ls)))))
 (|= drop (n ls)
-  (? (or (< n 1) (null? ls))
+  (? (|| (< n 1) (null? ls))
     ls
     (drop (- n 1) (cdr ls))))
 
@@ -152,7 +152,7 @@
     (? (null? (cdr ls))
       ls
       (%== ((size (length ls))
-             (half (/ size 2))
-             (first (take half ls))
-             (second (drop half ls)))
+            (half (/ size 2))
+            (first (take half ls))
+            (second (drop half ls)))
         (merge (mergesort first) (mergesort second))))))

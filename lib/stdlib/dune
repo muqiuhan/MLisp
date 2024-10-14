@@ -1,5 +1,7 @@
 (library
  (name mlisp_stdlib)
+ ;; (preprocessor_deps (stdlib.mlisp))
+ ;; (preprocess (pps (ppx_jane ppx_embed_file)))
  (libraries
   core
   mlisp_object
