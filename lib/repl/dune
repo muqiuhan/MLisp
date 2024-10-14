@@ -1,6 +1,7 @@
 (library
  (name mlisp_repl)
  (libraries
+  ocamline
   core
   mlisp_object
   mlisp_utils

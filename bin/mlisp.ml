@@ -13,17 +13,19 @@ let get_input_channel () = try open_in Sys.argv.(1) with Invalid_argument _ -> s
 let () =
   let input_channel = get_input_channel () in
   let stream =
-    if input_channel = stdin then (
-      print_endline "o- MLisp v0.2.1 (main, 2024-10-14 9:41 PM) [OCaml 5.2.0]\n";
+    if input_channel = stdin then begin
+      print_endline "o- MLisp v0.3.0 (main, 2024-10-14 10:25 PM) [OCaml 5.2.0]\n";
       Stream_wrapper.make_filestream input_channel
-    ) else
+    end else begin
+      print_endline (Format.sprintf "o- Running %s ..." Sys.argv.(1));
       Stream_wrapper.make_filestream input_channel ~file_name:Sys.argv.(1)
+    end
 in
-      try Repl.repl stream Stdlib.stdlib with
-      | e ->
-          if input_channel <> stdin then
-            close_in input_channel
-          else
-            print_endline "Goodbye!";
-          raise e
+      begin
+        try Repl.repl stream Stdlib.stdlib with
+        | e ->
+            if input_channel <> stdin then close_in input_channel;
+            raise e
+      end;
+      if input_channel <> stdin then close_in input_channel
 ;;
