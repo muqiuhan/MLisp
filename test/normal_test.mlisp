@@ -1,62 +1,43 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MLisp								    ;;
-;; Copyright (C) 2022 Muqiu Han						    ;;
-;; 									    ;;
-;; This program is free software: you can redistribute it and/or modify	    ;;
-;; it under the terms of the GNU Affero General Public License as published ;;
-;; by the Free Software Foundation, either version 3 of the License, or	    ;;
-;; (at your option) any later version.					    ;;
-;; 									    ;;
-;; This program is distributed in the hope that it will be useful,	    ;;
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of	    ;;
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the	    ;;
-;; GNU Affero General Public License for more details.			    ;;
-;; 									    ;;
-;; You should have received a copy of the GNU Affero General Public License ;;
-;; along with this program.  If not, see <https://www.gnu.org/licenses/>.   ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (env)
 
 (+ 3 5)
 
-(and #t #f)
+(&& #t #f)
 
-(and #f #f)
+(&& #f #f)
 
-(or #f #t)
+(|| #f #t)
 
-(or #f #f)
+(|| #f #f)
 
-(if (and #t #f) 3 4)
+(? (&& #t #f) 3 4)
 
-(if (or #t #f) 3 4)
+(? (|| #t #f) 3 4)
 
-(setq x 3)
-
-(env)
+(:= x 3)
 
 (+ x 7)
 
-(apply pair (list 3 4))
+(>> $ (@ 3 4))
 
-(pair 5 6)
+($ 5 6)
 
-(setq x (lambda (y) (+ y 1)))
-
-(x 10)
-
-(defun x (y) (+ y 1))
+(:= x (=> (y) (+ y 1)))
 
 (x 10)
 
-(defun f (x)
-  (if (< x 2)
+(|= x (y) (+ y 1))
+
+(x 10)
+
+(|= f (x)
+  (? (< x 2)
       1
       (g (- x 1))))
 
-(defun g (x)
-  (if (< x 2)
+(|= g (x)
+  (? (< x 2)
       3
       (f (- x 2))))
 
@@ -66,16 +47,16 @@
 
 (f (g 10))
 
-(let ((x 10)
-      (y 20))
+(%= ((x 10)
+     (y 20))
   (+ x y))
 
-(let* ((x 10)
-       (y x))
+(%== ((x 10)
+      (y x))
   (+ x y))
 
-(letrec ((f (lambda (x) (g (+ x 1))))
-         (g (lambda (x) (+ x 3))))                                                                       
+(=%= ((f (=> (x) (g (+ x 1))))
+      (g (=> (x) (+ x 3))))
   (f 0))
 
 (:: 'x (@ (| 'y 1) (| 'z 2)))

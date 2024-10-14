@@ -21,13 +21,11 @@ let basis =
           Cmp.generate ">" ( > );
           Cmp.generate ">=" ( >= );
           Cmp.generate "<=" ( <= );
-          "list", Core.list;
           "@", Core.list;
-          "pair", Core.pair;
-          "|", Core.pair;
+          "$", Core.pair;
           "car", Core.car;
           "cdr", Core.cdr;
-          "eq", Core.eq;
+          "==", Core.eq;
           "atom?", Core.atomp;
           "symbol?", Core.symp;
           "getchar", Core.getchar;

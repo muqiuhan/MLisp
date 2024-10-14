@@ -18,10 +18,7 @@ let print_prompt () =
 ;;
 
 let print_result result =
-  Printf.printf
-    "- : %s = %s\n\n"
-    (Object.object_type result)
-    (Object.string_object result);
+  Printf.printf "- : %s = %s\n\n" (Object.object_type result) (Object.string_object result);
   flush_all ()
 ;;
 
@@ -35,27 +32,28 @@ let rec repl stream env =
         repl stream env'
   with
   | Stream.Failure ->
-    if stream.repl_mode then
-      print_newline ()
-    else
-      ()
+      if stream.repl_mode then
+        print_newline ()
+      else
+        ()
   | Errors.Syntax_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Syntax_error_exn e);
-    if stream.repl_mode then
-      repl stream env
-    else
-      ()
+      Mlisp_print.Error.print_error stream (Errors.Syntax_error_exn e);
+      if stream.repl_mode then
+        repl stream env
+      else
+        ()
   | Errors.Parse_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Parse_error_exn e);
-    if stream.repl_mode then
-      repl stream env
-    else
-      ()
+      Mlisp_print.Error.print_error stream (Errors.Parse_error_exn e);
+      if stream.repl_mode then
+        repl stream env
+      else
+        ()
   | Errors.Runtime_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Runtime_error_exn e);
-    if stream.repl_mode then
-      repl stream env
-    else
-      ()
-  | e -> raise e
+      Mlisp_print.Error.print_error stream (Errors.Runtime_error_exn e);
+      if stream.repl_mode then
+        repl stream env
+      else
+        ()
+  | e ->
+      raise e
 ;;

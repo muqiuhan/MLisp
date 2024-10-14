@@ -14,23 +14,21 @@ let read_char : char stream -> char =
   fun stream ->
   match stream.chars with
   | [] ->
-    let next_char = Stream.next stream.stream in
-        if Char.(next_char = '\n') then (
-          stream.line_num <- stream.line_num + 1;
-          stream.column <- 0;
-          next_char
-        ) else (
-          stream.column <- stream.column + 1;
-          next_char
-        )
+      let next_char = Stream.next stream.stream in
+          if Char.(next_char = '\n') then (
+            stream.line_num <- stream.line_num + 1;
+            stream.column <- 0;
+            next_char
+          ) else (
+            stream.column <- stream.column + 1;
+            next_char
+          )
   | current_char :: rest ->
-    stream.chars <- rest;
-    current_char
+      stream.chars <- rest;
+      current_char
 ;;
 
-let unread_char : 'a stream -> char -> unit =
-  fun stream current_char -> stream.chars <- current_char :: stream.chars
-;;
+let unread_char : 'a stream -> char -> unit = fun stream current_char -> stream.chars <- current_char :: stream.chars
 
 let rec eat_whitespace : char stream -> unit =
   fun stream ->
@@ -71,16 +69,15 @@ in
 ;;
 
 let is_symbol_start_char : char -> bool = function
-  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' | ':' | '$' | '@' | '|' -> true
-  | ch -> Char.is_alpha ch
+  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' | ':' | '$' | '@' | '|' | '\\' | '`' | '&' | '%' ->
+      true
+  | ch ->
+      Char.is_alpha ch
 ;;
 
 let rec read_symbol : char stream -> string =
   fun stream ->
-  let is_delimiter = function
-    | '(' | ')' | '{' | '}' | ';' -> true
-    | ch -> Char.is_whitespace ch
-in
+  let is_delimiter = function '(' | ')' | '{' | '}' | ';' -> true | ch -> Char.is_whitespace ch in
   let next_char = read_char stream in
       if is_delimiter next_char then (
         let _ = unread_char stream next_char in
@@ -92,9 +89,12 @@ in
 let read_boolean : char stream -> Object.lobject =
   fun stream ->
   match read_char stream with
-  | 't' -> Object.Boolean true
-  | 'f' -> Object.Boolean false
-  | x -> raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
+  | 't' ->
+      Object.Boolean true
+  | 'f' ->
+      Object.Boolean false
+  | x ->
+      raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
 ;;
 
 let read_string : char stream -> Object.lobject =
@@ -115,16 +115,22 @@ let rec read_sexpr : char stream -> Object.lobject =
   eat_whitespace stream;
   match read_char stream with
   | ch when Char.(ch = ';') ->
-    eat_comment stream;
-    read_sexpr stream
-  | ch when Char.(is_digit ch || ch = '~') -> read_fixnum stream ch
-  | ch when Char.(ch = '(') -> read_list stream
-  | ch when Char.(ch = '#') -> read_boolean stream
-  | ch when Char.(ch = '\'') -> Quote (read_sexpr stream)
-  | ch when Char.(ch = '\"') -> read_string stream
+      eat_comment stream;
+      read_sexpr stream
+  | ch when Char.(is_digit ch || ch = '~') ->
+      read_fixnum stream ch
+  | ch when Char.(ch = '(') ->
+      read_list stream
+  | ch when Char.(ch = '#') ->
+      read_boolean stream
+  | ch when Char.(ch = '\'') ->
+      Quote (read_sexpr stream)
+  | ch when Char.(ch = '\"') ->
+      read_string stream
   | ch when is_symbol_start_char ch ->
-    Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
-  | ch -> raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
+      Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
+  | ch ->
+      raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
 
 and read_list : char stream -> Object.lobject =
   fun stream ->
