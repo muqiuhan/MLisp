@@ -10,7 +10,7 @@ open Mlisp_eval
 open Mlisp_lexer
 open Mlisp_ast
 open Mlisp_utils
-open Mlisp_primitives
+open Core
 
 let eval env e =
   match e with
@@ -18,8 +18,8 @@ let eval env e =
       Eval.eval_def d env
   | expr ->
       raise
-        (Errors.Parse_error_exn
-           (Errors.Type_error ("Can only have definitions in stdlib: " ^ Mlisp_ast.Ast.string_expr expr)))
+        (Errors.Runtime_error_exn
+           (Errors.Non_definition_in_stdlib (Mlisp_ast.Ast.string_expr expr)))
 ;;
 
 let rec slurp stm env =
@@ -31,9 +31,10 @@ let rec slurp stm env =
 ;;
 
 let stdlib =
-  let stm =
-    Stream_wrapper.make_stringstream
-      (In_channel.input_all (In_channel.open_text "/home/muqiu/Workspace/mlisp/lib/stdlib/stdlib.mlisp"))
-in
-      slurp stm Basis.basis
+  print_endline
+    (Format.sprintf
+       "o- Loading standard library (MLisp stdlib.v%s) ..."
+       Stdlib_mlisp._STDLIB_VERSION_);
+  let stm = Stdlib_mlisp._STDLIB_ |> Stream_wrapper.make_stringstream in
+      slurp stm Mlisp_primitives.Basis.basis
 ;;

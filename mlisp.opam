@@ -4,7 +4,7 @@ synopsis: "A Lisp implementation in OCaml"
 description: "A Lisp implementation in OCaml"
 maintainer: ["Muqiu Han"]
 authors: ["Muqiu Han"]
-license: "AGPL-3.0-only"
+license: "MPL-2.0"
 tags: ["lisp" "interpreter" "compiler"]
 homepage: "https://github.com/muqiuhan/MLisp"
 doc: "https://github.com/muqiuhan/MLisp"

@@ -28,7 +28,9 @@ let read_char : char stream -> char =
       current_char
 ;;
 
-let unread_char : 'a stream -> char -> unit = fun stream current_char -> stream.chars <- current_char :: stream.chars
+let unread_char : 'a stream -> char -> unit =
+  fun stream current_char -> stream.chars <- current_char :: stream.chars
+;;
 
 let rec eat_whitespace : char stream -> unit =
   fun stream ->
@@ -69,7 +71,23 @@ in
 ;;
 
 let is_symbol_start_char : char -> bool = function
-  | '*' | '/' | '>' | '<' | '=' | '?' | '!' | '-' | '+' | ':' | '$' | '@' | '|' | '\\' | '`' | '&' | '%' ->
+  | '*'
+  | '/'
+  | '>'
+  | '<'
+  | '='
+  | '?'
+  | '!'
+  | '-'
+  | '+'
+  | ':'
+  | '$'
+  | '@'
+  | '|'
+  | '\\'
+  | '`'
+  | '&'
+  | '%' ->
       true
   | ch ->
       Char.is_alpha ch
@@ -77,7 +95,12 @@ let is_symbol_start_char : char -> bool = function
 
 let rec read_symbol : char stream -> string =
   fun stream ->
-  let is_delimiter = function '(' | ')' | '{' | '}' | ';' -> true | ch -> Char.is_whitespace ch in
+  let is_delimiter = function
+    | '(' | ')' | '{' | '}' | ';' ->
+        true
+    | ch ->
+        Char.is_whitespace ch
+in
   let next_char = read_char stream in
       if is_delimiter next_char then (
         let _ = unread_char stream next_char in

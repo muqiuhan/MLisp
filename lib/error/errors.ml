@@ -20,6 +20,7 @@ type runtime_error =
   | Not_found of string
   | Unspecified_value of string
   | Missing_argument of string list
+  | Non_definition_in_stdlib of string
 
 exception This_can't_happen_exn
 exception Undefined_symbol_exn of string

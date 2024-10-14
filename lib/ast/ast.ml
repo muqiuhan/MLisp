@@ -26,23 +26,38 @@ let assert_unique_args : Object.lobject -> string list =
         | Object.Symbol s ->
             s
         | _ ->
-            raise (Errors.Parse_error_exn (Type_error "(declare-expr symbol-name (formals) body)")))
+            raise
+              (Errors.Parse_error_exn
+                 (Type_error "(declare-expr symbol-name (formals) body)")))
       (Object.pair_to_list args)
 in
   let () = assert_unique names in
       names
 ;;
 
-let let_kinds : (string * Object.let_kind) list = [ "%=", Object.LET; "%==", Object.LETSTAR; "=%=", Object.LETREC ]
-let valid_let : string -> bool = fun s -> List.Assoc.mem ~equal:(fun k s -> String.equal k s) let_kinds s
-let to_kind : string -> Object.let_kind = fun s -> List.Assoc.find_exn ~equal:(fun k s -> String.equal k s) let_kinds s
+let let_kinds : (string * Object.let_kind) list =
+  [ "%=", Object.LET; "%==", Object.LETSTAR; "=%=", Object.LETREC ]
+;;
+
+let valid_let : string -> bool =
+  fun s -> List.Assoc.mem ~equal:(fun k s -> String.equal k s) let_kinds s
+;;
+
+let to_kind : string -> Object.let_kind =
+  fun s -> List.Assoc.find_exn ~equal:(fun k s -> String.equal k s) let_kinds s
+;;
 
 let rec build_ast : Object.lobject -> Object.expr =
   fun sexpr ->
   match sexpr with
   | Object.Primitive _ | Object.Closure _ ->
       raise Errors.This_can't_happen_exn
-  | Object.Fixnum _ | Object.Boolean _ | Object.Quote _ | Object.String _ | Object.Record _ | Object.Nil ->
+  | Object.Fixnum _
+  | Object.Boolean _
+  | Object.Quote _
+  | Object.String _
+  | Object.Record _
+  | Object.Nil ->
       literal_expr sexpr
   | Object.Symbol s ->
       symbol_expr s
@@ -84,12 +99,16 @@ and and_expr : Object.lobject -> Object.lobject -> Object.expr =
 and or_expr cond_x cond_y = Object.Or (build_ast cond_x, build_ast cond_y)
 and quote_expr expr = Object.Literal (Quote expr)
 and setq_expr name expr = Object.Defexpr (Object.Setq (name, build_ast expr))
-and if_expr cond if_true if_false = If (build_ast cond, build_ast if_true, build_ast if_false)
+
+and if_expr cond if_true if_false =
+  If (build_ast cond, build_ast if_true, build_ast if_false)
+
 and lambda_expr args body = Lambda ("lambda", assert_unique_args args, build_ast body)
 
 and defun_expr fn_name args body =
   let lam = Object.Lambda (fn_name, assert_unique_args args, build_ast body) in
-      Object.Defexpr (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
+      Object.Defexpr
+        (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
 
 and apply_expr fn_expr args = Apply (build_ast fn_expr, build_ast args)
 
@@ -141,11 +160,19 @@ let rec string_expr =
       | Object.Defexpr (Object.Setq (n, e)) ->
           [%string "(:= %{n} %{string_expr e})"]
       | Object.Defexpr (Object.Defun (n, ns, e)) ->
-          "(defun " ^ n ^ "(" ^ Mlisp_utils.String.spacesep ns ^ ") " ^ string_expr e ^ ")"
+          "(defun "
+          ^ n
+          ^ "("
+          ^ Mlisp_utils.String.spacesep ns
+          ^ ") "
+          ^ string_expr e
+          ^ ")"
       | Object.Defexpr (Object.Expr e) ->
           string_expr e
       | Object.Let (kind, bs, e) ->
-          let str = match kind with LET -> "let" | LETSTAR -> "let*" | LETREC -> "letrec" in
+          let str =
+            match kind with LET -> "let" | LETSTAR -> "let*" | LETREC -> "letrec"
+        in
           let bindings = Mlisp_utils.String.spacesep (List.map ~f:string_of_binding bs) in
               "(" ^ str ^ " (" ^ bindings ^ ") " ^ string_expr e ^ ")"
 ;;
