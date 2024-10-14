@@ -1,65 +1,61 @@
-
+;; Get all definitions in the current environment
 (env)
 
+;; Integer operations
 (+ 3 5)
+(- 3 5)
+(* 3 5)
+(/ 3 5)
+(mod 3 5)
 
+;; Logical operations
 (&& #t #f)
-
-(&& #f #f)
-
-(|| #f #t)
-
 (|| #f #f)
-
 (? (&& #t #f) 3 4)
+(> 3 5)
+(< 3 5)
+(>= 3 5)
+(<= 3 5)
+(== 3 5)
 
-(? (|| #t #f) 3 4)
-
+;; variable definition
 (:= x 3)
 
-(+ x 7)
-
-(>> $ (@ 3 4))
-
+;; cons
 ($ 5 6)
 
+;; list
+(@ 1 2 3 4 5)
+
+;; apply
+(>> $ (@ 3 4))
+
+;; application
+(x 10)
+
+;; lambda
 (:= x (=> (y) (+ y 1)))
 
-(x 10)
-
+;; function definition
 (|= x (y) (+ y 1))
 
-(x 10)
-
-(|= f (x)
-  (? (< x 2)
-      1
-      (g (- x 1))))
-
-(|= g (x)
-  (? (< x 2)
-      3
-      (f (- x 2))))
-
-(f 10)
-
-(g 10)
-
-(f (g 10))
-
+;; let
 (%= ((x 10)
      (y 20))
   (+ x y))
 
+;; let*
 (%== ((x 10)
       (y x))
   (+ x y))
 
+;; letrec
 (=%= ((f (=> (x) (g (+ x 1))))
       (g (=> (x) (+ x 3))))
   (f 0))
 
-(:: 'x (@ (| 'y 1) (| 'z 2)))
+;; record
 (:= record-x (:: 'x (@ (| 'y 1) (| 'z 2))))
+
+;; record-getter
 (:> record-x 'y)
-(:> record-x 'z)
