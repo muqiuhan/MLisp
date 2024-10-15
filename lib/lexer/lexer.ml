@@ -36,10 +36,10 @@ let unread_char : 'a stream -> char -> unit =
 let rec eat_whitespace : char stream -> unit =
   fun stream ->
   let ch = read_char stream in
-      if Char.is_whitespace ch then
-        eat_whitespace stream
-      else
-        unread_char stream ch
+    if Char.is_whitespace ch then
+      eat_whitespace stream
+    else
+      unread_char stream ch
 ;;
 
 let rec eat_comment : char stream -> unit =
@@ -61,14 +61,14 @@ let read_fixnum : char stream -> char -> Object.lobject =
   in
   let rec loop acc =
     let num_char = read_char stream in
-        if Char.is_digit num_char then
-          num_char |> Char.escaped |> ( ^ ) acc |> loop
-        else (
-          let _ = unread_char stream num_char in
-              Object.Fixnum (int_of_string acc)
-        )
+      if Char.is_digit num_char then
+        num_char |> Char.escaped |> ( ^ ) acc |> loop
+      else (
+        let _ = unread_char stream num_char in
+          Object.Fixnum (int_of_string acc)
+      )
   in
-      loop acc
+    loop acc
 ;;
 
 let is_symbol_start_char : char -> bool = function
@@ -97,13 +97,13 @@ let rec read_symbol : char stream -> string =
   let is_delimiter = function
     | '(' | ')' | '{' | '}' | ';' -> true
     | ch -> Char.is_whitespace ch
-in
+  in
   let next_char = read_char stream in
-      if is_delimiter next_char then begin
-        let _ = unread_char stream next_char in
-            ""
-      end else
-        Object.string_of_char next_char ^ read_symbol stream
+    if is_delimiter next_char then begin
+      let _ = unread_char stream next_char in
+        ""
+    end else
+      Object.string_of_char next_char ^ read_symbol stream
 ;;
 
 let read_boolean : char stream -> Object.lobject =
@@ -111,19 +111,20 @@ let read_boolean : char stream -> Object.lobject =
   match read_char stream with
   | 't' -> Object.Boolean true
   | 'f' -> Object.Boolean false
-  | x -> raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
+  | x ->
+    raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
 ;;
 
 let read_string : char stream -> Object.lobject =
   fun stream ->
   let rec loop acc =
     let ch = read_char stream in
-        if Char.equal ch '"' then
-          Object.String acc
-        else
-          ch |> Char.escaped |> ( ^ ) acc |> loop
+      if Char.equal ch '"' then
+        Object.String acc
+      else
+        ch |> Char.escaped |> ( ^ ) acc |> loop
   in
-      loop ""
+    loop ""
 ;;
 
 (** Read in a whole number *)
@@ -141,18 +142,19 @@ let rec read_sexpr : char stream -> Object.lobject =
   | ch when Char.(ch = '\"') -> read_string stream
   | ch when is_symbol_start_char ch ->
     Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
-  | ch -> raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
+  | ch ->
+    raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
 
 and read_list : char stream -> Object.lobject =
   fun stream ->
   eat_whitespace stream;
   let ch = read_char stream in
-      if Char.(ch = ')') then
-        Nil
-      else (
-        unread_char stream ch;
-        let car = read_sexpr stream in
-        let cdr = read_list stream in
-            Pair (car, cdr)
-      )
+    if Char.(ch = ')') then
+      Nil
+    else (
+      unread_char stream ch;
+      let car = read_sexpr stream in
+      let cdr = read_list stream in
+        Pair (car, cdr)
+    )
 ;;

@@ -8,8 +8,11 @@ open Mlisp_object
 open Mlisp_error
 
 let generate name operator =
-  ( name,
-    function
+  ( name
+  , function
     | [ Object.Fixnum a; Object.Fixnum b ] -> Object.Fixnum (operator a b)
-    | _ -> raise (Errors.Parse_error_exn (Errors.Type_error ("(" ^ name ^ " int int)"))) )
+    | _ ->
+      raise
+        (Errors.Parse_error_exn
+           (Errors.Type_error [%string "(%{name} int int)"])) )
 ;;

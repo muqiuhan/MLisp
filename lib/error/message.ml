@@ -14,7 +14,8 @@ let message = function
     | Invalid_boolean_literal b -> [%string "Invalid boolean literal : '%{b}"]
     | Record_field_name_must_be_a_symbol record_name ->
       [%string "The record %{record_name} field name must be a symbol"]
-    | Invalid_define_expression e -> [%string "Invalid define expression : '%{e}"]
+    | Invalid_define_expression e ->
+      [%string "Invalid define expression : '%{e}"]
   end
   | Parse_error_exn e -> begin
     match e with
@@ -27,7 +28,8 @@ let message = function
     match e with
     | Not_found e -> [%string "Not found : %{e}"]
     | Unspecified_value e -> [%string "Unspecified value : %{e}"]
-    | Missing_argument args -> [%string "Missing arguments : %{String.spacesep args}"]
+    | Missing_argument args ->
+      [%string "Missing arguments : %{String.spacesep args}"]
     | Non_definition_in_stdlib expr ->
       [%string "This expression is not a defining expression: %{expr}"])
   | exn -> raise exn

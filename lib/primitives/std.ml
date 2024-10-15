@@ -54,7 +54,7 @@ let getchar = function
 let print = function
   | [ v ] ->
     let () = print_string @@ Object.string_object v in
-        Object.Symbol "ok"
+      Object.Symbol "ok"
   | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(print object)"))
 ;;
 
@@ -70,7 +70,8 @@ let cat = function
 
 let record_get = function
   | [ Object.Record (_, fields); Object.Symbol get ] -> List.assoc get fields
-  | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
 ;;
 
 let record_create = function
@@ -82,13 +83,15 @@ let record_create = function
         | (Object.Pair _ as field_1), (Object.Pair _ as field_2) ->
           record_fields field_1 record @ record_fields field_2 record
         | Object.Pair (Object.Symbol field_name, field_value), Nil
-        | Object.Symbol field_name, field_value -> (field_name, field_value) :: record
+        | Object.Symbol field_name, field_value ->
+          (field_name, field_value) :: record
         | _ ->
           raise
             (Errors.Syntax_error_exn
                (Errors.Record_field_name_must_be_a_symbol record_name)))
       | _ -> failwith "record fields must be a list of pairs"
     in
-        Object.Record (record_name, record_fields fields [])
-  | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
+      Object.Record (record_name, record_fields fields [])
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
 ;;
