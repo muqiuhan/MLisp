@@ -86,18 +86,18 @@ let _STDLIB_ =
          ((== (car e) '*) (* (eval. (cadr e) env) (eval. (caddr e) env)))
          ((== (car e) '-) (- (eval. (cadr e) env) (eval. (caddr e) env)))
          ((== (car e) '<) (< (eval. (cadr e) env) (eval. (caddr e) env)))
-         
+
          ; ...else, try and evaluate the function as a user-defined function,
          ; applying it to the arguments.
          (#t (eval. ($ (lookup. (car e) env) (cdr e)) env))))
-         
+
       ; If it's a compound expression in which the first element is a
       ; label-expression,
       ((== (caar e) 'label)
         ; ...evaluate the expression in environment with a new recursive
         ; binding.
        (eval. ($ (caddar e) (cdr e)) ($ (list. (cadar e) (car e)) env)))
-      
+
       ; If it's a compound expression in which the first element is a
       ; lambda-expresison,
       ((== (caar e) 'lambda)
@@ -117,14 +117,14 @@ let _STDLIB_ =
 (|= println (s)
   (%= ((ok (print s)))
     (print newline)))
-    
+
 ; This is less awkward because we actually use ic and c.
 (|= getline ()
   (%== ((ic (getchar))
          (c (int->char ic)))
     (? (|| (== c newline) (== ic ~1))
       empty-symbol
-      (cat c (getline)))))
+      (symbol-concat c (getline)))))
 
 (|= null? (xs) (== xs '()))
 (|= length (ls)

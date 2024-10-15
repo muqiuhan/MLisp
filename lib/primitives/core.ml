@@ -81,7 +81,7 @@ let int_to_char = function
 
 let cat = function
   | [ Object.Symbol a; Object.Symbol b ] ->
-      Object.Symbol (a ^ b)
+      Object.Symbol [%string "%{a}%{b}"]
   | _ ->
       raise (Errors.Parse_error_exn (Errors.Type_error "(cat sym sym)"))
 ;;
