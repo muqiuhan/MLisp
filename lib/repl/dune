@@ -1,5 +1,7 @@
 (library
  (name mlisp_repl)
+ (preprocess
+  (pps ppx_string))
  (libraries
   ocamline
   core

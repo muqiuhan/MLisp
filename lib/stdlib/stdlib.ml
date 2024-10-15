@@ -14,20 +14,17 @@ open Core
 
 let eval env e =
   match e with
-  | Object.Defexpr d ->
-      Eval.eval_def d env
+  | Object.Defexpr d -> Eval.eval_def d env
   | expr ->
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Non_definition_in_stdlib (Mlisp_ast.Ast.string_expr expr)))
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Non_definition_in_stdlib (Mlisp_ast.Ast.string_expr expr)))
 ;;
 
 let rec slurp stm env =
   try stm |> Lexer.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm with
-  | Stream.Failure ->
-      env
-  | exn ->
-      failwith (Mlisp_error.Message.message exn)
+  | Stream.Failure -> env
+  | exn -> failwith (Mlisp_error.Message.message exn)
 ;;
 
 let stdlib =
