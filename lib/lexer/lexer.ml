@@ -13,20 +13,20 @@ let read_char : char stream -> char =
   fun stream ->
   match stream.chars with
   | [] -> begin
-      match Stream.next stream.stream with
-      | next_char when Char.(next_char = '\n') -> begin
-          incr stream.line_num;
-          stream.column := 0;
-          next_char
-          end
-      | next_char -> begin
-          incr stream.column;
-          next_char
-          end
-      end
+    match Stream.next stream.stream with
+    | next_char when Char.(next_char = '\n') -> begin
+      incr stream.line_num;
+      stream.column := 0;
+      next_char
+    end
+    | next_char -> begin
+      incr stream.column;
+      next_char
+    end
+  end
   | current_char :: rest ->
-      stream.chars <- rest;
-      current_char
+    stream.chars <- rest;
+    current_char
 ;;
 
 let unread_char : 'a stream -> char -> unit =
@@ -58,7 +58,7 @@ let read_fixnum : char stream -> char -> Object.lobject =
      else
        prefix)
     |> Char.escaped
-in
+  in
   let rec loop acc =
     let num_char = read_char stream in
         if Char.is_digit num_char then
@@ -67,7 +67,7 @@ in
           let _ = unread_char stream num_char in
               Object.Fixnum (int_of_string acc)
         )
-in
+  in
       loop acc
 ;;
 
@@ -88,19 +88,15 @@ let is_symbol_start_char : char -> bool = function
   | '\\'
   | '`'
   | '&'
-  | '%' ->
-      true
-  | ch ->
-      Char.is_alpha ch
+  | '%' -> true
+  | ch -> Char.is_alpha ch
 ;;
 
 let rec read_symbol : char stream -> string =
   fun stream ->
   let is_delimiter = function
-    | '(' | ')' | '{' | '}' | ';' ->
-        true
-    | ch ->
-        Char.is_whitespace ch
+    | '(' | ')' | '{' | '}' | ';' -> true
+    | ch -> Char.is_whitespace ch
 in
   let next_char = read_char stream in
       if is_delimiter next_char then begin
@@ -113,12 +109,9 @@ in
 let read_boolean : char stream -> Object.lobject =
   fun stream ->
   match read_char stream with
-  | 't' ->
-      Object.Boolean true
-  | 'f' ->
-      Object.Boolean false
-  | x ->
-      raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
+  | 't' -> Object.Boolean true
+  | 'f' -> Object.Boolean false
+  | x -> raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
 ;;
 
 let read_string : char stream -> Object.lobject =
@@ -129,7 +122,7 @@ let read_string : char stream -> Object.lobject =
           Object.String acc
         else
           ch |> Char.escaped |> ( ^ ) acc |> loop
-in
+  in
       loop ""
 ;;
 
@@ -139,22 +132,16 @@ let rec read_sexpr : char stream -> Object.lobject =
   eat_whitespace stream;
   match read_char stream with
   | ch when Char.(ch = ';') ->
-      eat_comment stream;
-      read_sexpr stream
-  | ch when Char.(is_digit ch || ch = '~') ->
-      read_fixnum stream ch
-  | ch when Char.(ch = '(') ->
-      read_list stream
-  | ch when Char.(ch = '#') ->
-      read_boolean stream
-  | ch when Char.(ch = '\'') ->
-      Quote (read_sexpr stream)
-  | ch when Char.(ch = '\"') ->
-      read_string stream
+    eat_comment stream;
+    read_sexpr stream
+  | ch when Char.(is_digit ch || ch = '~') -> read_fixnum stream ch
+  | ch when Char.(ch = '(') -> read_list stream
+  | ch when Char.(ch = '#') -> read_boolean stream
+  | ch when Char.(ch = '\'') -> Quote (read_sexpr stream)
+  | ch when Char.(ch = '\"') -> read_string stream
   | ch when is_symbol_start_char ch ->
-      Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
-  | ch ->
-      raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
+    Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
+  | ch -> raise (Errors.Syntax_error_exn (Unexcepted_character (Char.escaped ch)))
 
 and read_list : char stream -> Object.lobject =
   fun stream ->

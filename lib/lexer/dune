@@ -1,5 +1,7 @@
 (library
  (name mlisp_lexer)
+ (preprocess
+  (pps ppx_string))
  (libraries
   core
   camlp-streams

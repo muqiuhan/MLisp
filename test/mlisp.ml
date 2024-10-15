@@ -8,7 +8,9 @@ let exec_path = "../bin/main.exe"
 let test_path = "../../../test/"
 
 let is_mlisp_file file_name =
-  match String.split_on_char '.' file_name with _ :: [ "mlisp" ] -> true | _ -> false
+  match String.split_on_char '.' file_name with
+  | _ :: [ "mlisp" ] -> true
+  | _ -> false
 ;;
 
 let test_mlisp_file file_name =

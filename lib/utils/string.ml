@@ -18,6 +18,6 @@ let read_lines filename =
         !lines
       with
       | End_of_file ->
-          close_in chan;
-          List.rev !lines
+        close_in chan;
+        List.rev !lines
 ;;

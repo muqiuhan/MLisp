@@ -17,7 +17,7 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
       message = Message.message exn;
       help = help exn
     }
-in
+  in
       if stream.repl_mode then
         data |> repl_error |> ignore |> flush_all
       else
