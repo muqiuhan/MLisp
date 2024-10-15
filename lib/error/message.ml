@@ -16,6 +16,7 @@ let message = function
       [%string "The record %{record_name} field name must be a symbol"]
     | Invalid_define_expression e ->
       [%string "Invalid define expression : '%{e}"]
+    | Illegal_if_expression expr -> [%string "Illegal if expression: %{expr}"]
   end
   | Parse_error_exn e -> begin
     match e with

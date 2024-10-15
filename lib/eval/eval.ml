@@ -28,12 +28,15 @@ let rec eval_expr expr env =
     | Object.Literal (Object.Quote expr) -> expr
     | Object.Literal l -> l
     | Object.Var n -> Object.lookup (n, env)
-    | Object.If (cond, if_true, _)
-      when phys_equal (eval cond) (Object.Boolean true) -> eval if_true
-    | Object.If (cond, _, if_false)
-      when phys_equal (eval cond) (Object.Boolean false) -> eval if_false
-    | Object.If _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(? bool e1 e2)"))
+    | Object.If (cond, if_true, if_false) as expr -> begin
+      match eval cond with
+      | Object.Boolean true -> eval if_true
+      | Object.Boolean false -> eval if_false
+      | _ ->
+        raise
+          (Errors.Syntax_error_exn
+             (Errors.Illegal_if_expression (Mlisp_ast.Ast.string_expr expr)))
+    end
     | Object.And (cond_x, cond_y) -> begin
       match eval cond_x, eval cond_y with
       | Object.Boolean x, Object.Boolean y -> Object.Boolean (x && y)

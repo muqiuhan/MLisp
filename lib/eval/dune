@@ -1,3 +1,7 @@
 (library
  (name mlisp_eval)
- (libraries core mlisp_object))
+ (preprocess
+  (pps ppx_string))
+ (flags
+  (:standard -w -21))
+ (libraries core mlisp_object mlisp_ast))

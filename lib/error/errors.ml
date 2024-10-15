@@ -15,6 +15,7 @@ type syntax_error =
   | Invalid_define_expression of string
   | Unexcepted_character of string
   | Record_field_name_must_be_a_symbol of string
+  | Illegal_if_expression of string
 
 type runtime_error =
   | Not_found of string
