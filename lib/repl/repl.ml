@@ -22,11 +22,14 @@ let print_result result =
 ;;
 
 let drop_rackets input =
-  input |> String.strip ~drop:(Char.equal '(') |> String.strip ~drop:(Char.equal ')')
+  input
+  |> String.strip ~drop:(Char.equal '(')
+  |> String.strip ~drop:(Char.equal ')')
 ;;
 
 let hints
-  : Object.lobject Object.env -> string -> (string * LNoise.hint_color * bool) option
+  :  Object.lobject Object.env -> string
+  -> (string * LNoise.hint_color * bool) option
   =
   fun env input ->
   let find t ~equal key =
@@ -34,15 +37,17 @@ let hints
     | None -> None
     | Some x -> Some (fst x)
   in
-      input
-      |> find
-           ~equal:(fun input definition ->
-             String.is_substring ~substring:(drop_rackets input) definition)
-           env
-      |> Option.map ~f:(fun definition -> definition, LNoise.Blue, true)
+    input
+    |> find
+         ~equal:(fun input definition ->
+           String.is_substring ~substring:(drop_rackets input) definition)
+         env
+    |> Option.map ~f:(fun definition -> definition, LNoise.Blue, true)
 ;;
 
-let completion : Object.lobject Object.env -> string -> LNoise.completions -> unit =
+let completion
+  : Object.lobject Object.env -> string -> LNoise.completions -> unit
+  =
   fun env input completions ->
   env
   |> List.map ~f:fst
@@ -59,7 +64,7 @@ let completion : Object.lobject Object.env -> string -> LNoise.completions -> un
         ~with_:completion
         input
     in
-        LNoise.add_completion completions completion)
+      LNoise.add_completion completions completion)
 ;;
 
 let rec repl stream env =
@@ -87,11 +92,12 @@ let rec repl stream env =
       |> Ast.build_ast
     in
     let result, env' = Eval.eval ast env in
-        if stream.repl_mode then print_result result;
-        stream.line_num := 0;
-        repl stream env'
+      if stream.repl_mode then print_result result;
+      stream.line_num := 0;
+      repl stream env'
   with
-  | Stream.Failure -> if stream.repl_mode then Out_channel.newline Out_channel.stdout
+  | Stream.Failure ->
+    if stream.repl_mode then Out_channel.newline Out_channel.stdout
   | Errors.Syntax_error_exn e ->
     Mlisp_print.Error.print_error stream (Errors.Syntax_error_exn e);
     if stream.repl_mode then repl stream env

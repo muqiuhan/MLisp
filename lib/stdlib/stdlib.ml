@@ -22,7 +22,9 @@ let eval env e =
 ;;
 
 let rec slurp stm env =
-  try stm |> Lexer.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm with
+  try
+    stm |> Lexer.read_sexpr |> Ast.build_ast |> eval env |> snd |> slurp stm
+  with
   | Stream.Failure -> env
   | exn -> failwith (Mlisp_error.Message.message exn)
 ;;
@@ -33,5 +35,5 @@ let stdlib =
        "o- Loading standard library (MLisp stdlib.v%s) ..."
        Stdlib_mlisp._STDLIB_VERSION_);
   let stm = Stdlib_mlisp._STDLIB_ |> Stream_wrapper.make_stringstream in
-      slurp stm Mlisp_primitives.Basis.basis
+    slurp stm Mlisp_primitives.Basis.basis
 ;;

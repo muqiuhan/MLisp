@@ -7,24 +7,24 @@
 open Core
 
 type 'a stream =
-  { line_num : int ref;
-    column : int ref;
-    mutable chars : char list;
-    stream : 'a Stream.t;
-    repl_mode : bool;
-    file_name : string
+  { line_num : int ref
+  ; column : int ref
+  ; mutable chars : char list
+  ; stream : 'a Stream.t
+  ; repl_mode : bool
+  ; file_name : string
   }
 
 type 'a t = 'a stream
 
 let make_stream (type a) : ?file_name:string -> bool -> a Stream.t -> a stream =
   fun ?(file_name = "stdin") is_stdin stream ->
-  { chars = [];
-    line_num = ref 1;
-    repl_mode = is_stdin;
-    stream;
-    file_name;
-    column = ref 0
+  { chars = []
+  ; line_num = ref 1
+  ; repl_mode = is_stdin
+  ; stream
+  ; file_name
+  ; column = ref 0
   }
 ;;
 
