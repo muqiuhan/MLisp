@@ -15,6 +15,8 @@ let help = function
     | Invalid_boolean_literal _ -> "Raised by incorrect boolean literals."
     | Record_field_name_must_be_a_symbol record_name ->
       [%string "(:: '%{record_name} (@ (| 'field-name field-value)))"]
+    | Illegal_if_expression _ ->
+      "The return value of the conditional expression must be bool"
   end
   | Parse_error_exn e -> begin
     match e with
