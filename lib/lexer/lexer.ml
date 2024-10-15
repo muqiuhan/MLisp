@@ -12,16 +12,18 @@ open Core
 let read_char : char stream -> char =
   fun stream ->
   match stream.chars with
-  | [] ->
-      let next_char = Stream.next stream.stream in
-          if Char.(next_char = '\n') then begin
-            incr stream.line_num;
-            stream.column := 0;
-            next_char
-          end else begin
-            incr stream.column;
-            next_char
+  | [] -> begin
+      match Stream.next stream.stream with
+      | next_char when Char.(next_char = '\n') -> begin
+          incr stream.line_num;
+          stream.column := 0;
+          next_char
           end
+      | next_char -> begin
+          incr stream.column;
+          next_char
+          end
+      end
   | current_char :: rest ->
       stream.chars <- rest;
       current_char
@@ -101,10 +103,10 @@ let rec read_symbol : char stream -> string =
         Char.is_whitespace ch
 in
   let next_char = read_char stream in
-      if is_delimiter next_char then (
+      if is_delimiter next_char then begin
         let _ = unread_char stream next_char in
             ""
-      ) else
+      end else
         Object.string_of_char next_char ^ read_symbol stream
 ;;
 
