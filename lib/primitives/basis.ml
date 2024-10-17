@@ -5,37 +5,14 @@
 (****************************************************************************)
 
 open Mlisp_object
-open Core
 
 let basis =
   let newprim acc (name, func) =
     Object.bind (name, Object.Primitive (name, func), acc)
   in
-    List.fold_left
-      ~f:newprim
-      ~init:[ "empty-symbol", ref (Some (Object.Symbol "")) ]
-      [ Num.generate "+" ( + )
-      ; Num.generate "-" ( - )
-      ; Num.generate "*" ( * )
-      ; Num.generate "/" ( / )
-      ; Num.generate "%%" ( mod )
-      ; Cmp.generate "=" ( = )
-      ; Cmp.generate "<" ( < )
-      ; Cmp.generate ">" ( > )
-      ; Cmp.generate ">=" ( >= )
-      ; Cmp.generate "<=" ( <= )
-      ; "@", Std.list
-      ; "$", Std.pair
-      ; "car", Std.car
-      ; "cdr", Std.cdr
-      ; "==", Std.eq
-      ; "atom?", Std.atomp
-      ; "symbol?", Std.symp
-      ; "getchar", Std.getchar
-      ; "print", Std.print
-      ; "int->char", Std.int_to_char
-      ; "symbol-concat", Std.cat
-      ; ":>", Std.record_get
-      ; "::", Std.record_create
-      ]
+    [ Num.basis; String.basis; Std.basis ]
+    |> Core.List.concat
+    |> Core.List.fold_left
+         ~f:newprim
+         ~init:[ "empty-symbol", ref (Some (Object.Symbol "")) ]
 ;;
