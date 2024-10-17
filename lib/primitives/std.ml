@@ -95,3 +95,20 @@ let record_create = function
   | _ ->
     raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
 ;;
+
+let basis =
+  [ "@", list
+  ; "$", pair
+  ; "car", car
+  ; "cdr", cdr
+  ; "==", eq
+  ; "atom?", atomp
+  ; "symbol?", symp
+  ; "getchar", getchar
+  ; "print", print
+  ; "int->char", int_to_char
+  ; "symbol-concat", cat
+  ; ":>", record_get
+  ; "::", record_create
+  ]
+;;
