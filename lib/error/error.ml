@@ -32,8 +32,8 @@ let repl_error : error_info -> unit =
 
 let file_error { file_name; line_number; column_number; message; help } =
   let split_line
-    { file_name; line_number; column_number; message; help }
-    line_value
+        { file_name; line_number; column_number; message; help }
+        line_value
     =
     let char_num =
       [ String.length message + 9

@@ -28,7 +28,8 @@ let drop_rackets input =
 ;;
 
 let hints
-  :  Object.lobject Object.env -> string
+  :  Object.lobject Object.env
+  -> string
   -> (string * LNoise.hint_color * bool) option
   =
   fun env input ->
@@ -77,6 +78,7 @@ let rec repl stream env =
       begin
         if stream.repl_mode then
           Ocamline.read
+            ~delim:";;"
             ~brackets:[ '(', ')' ]
             ~prompt:prompt_tip
             ~trim_delim:false
