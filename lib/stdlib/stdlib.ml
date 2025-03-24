@@ -29,11 +29,11 @@ let rec slurp stm env =
   | exn -> failwith (Mlisp_error.Message.message exn)
 ;;
 
-let stdlib =
+let stdlib_core =
   print_endline
     (Format.sprintf
-       "o- Loading standard library (MLisp stdlib.v%s) ..."
-       Stdlib_mlisp._STDLIB_VERSION_);
-  let stm = Stdlib_mlisp._STDLIB_ |> Stream_wrapper.make_stringstream in
+       "o- Loading standard core library (MLisp stdlib_core.v%s) ..."
+       Stdlib_core._STDLIB_CORE_VERSION_);
+  let stm = Stdlib_core._STDLIB_CORE_ |> Stream_wrapper.make_stringstream in
     slurp stm Mlisp_primitives.Basis.basis
 ;;

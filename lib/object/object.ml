@@ -150,9 +150,9 @@ let rec string_object e =
              field_value)}"]
         in
           [%string
-            {|\n\t\t%{String.concat ~sep:"\n\t\t" (List.map ~f:to_string fields)}\n\t|}]
+            {|%{String.concat ~sep:"\n\t" (List.map ~f:to_string fields)}|}]
       in
-        [%string "#<record:%{name}\n\t(%{fields_string})>"]
+        [%string "#<record:%{name}(\n\t%{fields_string}\n)>"]
 ;;
 
 let rec lookup = function
