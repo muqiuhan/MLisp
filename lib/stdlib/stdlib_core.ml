@@ -1,6 +1,6 @@
-let _STDLIB_VERSION_ = "0.2.1"
+let _STDLIB_CORE_VERSION_ = "0.2.1"
 
-let _STDLIB_ =
+let _STDLIB_CORE_ =
   {|
 (|= null. (x) (== x '()))
 (|= and. (x y)

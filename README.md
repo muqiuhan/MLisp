@@ -75,7 +75,7 @@
   (f 0))
 
 ;; record
-(:= record-x (:: 'x (@ (| 'y 1) (| 'z 2))))
+(:= record-x (:: 'x (@ ($ 'y 1) ($ 'z 2))))
 
 ;; record-getter
 (:> record-x 'y)

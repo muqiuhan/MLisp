@@ -26,7 +26,7 @@ let () =
     end
   in
     begin
-      try Repl.repl stream Stdlib.stdlib with
+      try Repl.repl stream Stdlib.stdlib_core with
       | e ->
         if input_channel <> stdin then close_in input_channel;
         raise e

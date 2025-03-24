@@ -83,7 +83,8 @@ and eval_apply fn_expr args env =
   | Object.Primitive (_, fn) -> fn args
   | Object.Closure (fn_name, names, expr, clenv) ->
     (* Check if the closure exists *)
-    Object.lookup (fn_name, env) |> ignore;
+    if String.equal fn_name "lambda" |> not then
+      Object.lookup (fn_name, env) |> ignore;
     eval_closure names expr args clenv env
   | fn_expr ->
     raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
