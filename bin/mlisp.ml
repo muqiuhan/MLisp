@@ -18,7 +18,7 @@ let () =
   let stream =
     if input_channel = stdin then begin
       print_endline
-        "o- MLisp v0.3.3 (main, 2024-10-15 11:07 PM) [OCaml 5.2.0]\n";
+        "o- MLisp v0.3.4 (main, 2025-04-14 21:49 PM) [OCaml 5.2.1]\n";
       Stream_wrapper.make_filestream input_channel
     end else begin
       print_endline (Format.sprintf "o- Running %s ..." Sys.argv.(1));

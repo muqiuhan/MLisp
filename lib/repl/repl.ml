@@ -94,8 +94,10 @@ let rec repl stream env =
       |> Ast.build_ast
     in
     let result, env' = Eval.eval ast env in
-      if stream.repl_mode then print_result result;
-      stream.line_num := 0;
+      if stream.repl_mode then begin
+        print_result result;
+        stream.line_num := 0
+      end;
       repl stream env'
   with
   | Stream.Failure ->
