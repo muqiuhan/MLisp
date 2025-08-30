@@ -12,18 +12,15 @@ open Core
 let read_char : char stream -> char =
   fun stream ->
   match stream.chars with
-  | [] -> begin
+  | [] -> (
     match Stream.next stream.stream with
-    | next_char when Char.(next_char = '\n') -> begin
+    | next_char when Char.(next_char = '\n') ->
       incr stream.line_num;
       stream.column := 0;
       next_char
-    end
-    | next_char -> begin
+    | next_char ->
       incr stream.column;
-      next_char
-    end
-  end
+      next_char)
   | current_char :: rest ->
     stream.chars <- rest;
     current_char
@@ -88,29 +85,39 @@ let is_symbol_start_char : char -> bool = function
   | '\\'
   | '`'
   | '&'
-  | '%' -> true
-  | ch -> Char.is_alpha ch
+  | '%' ->
+    true
+  | ch ->
+    Char.is_alpha ch
 ;;
 
 let rec read_symbol : char stream -> string =
   fun stream ->
   let is_delimiter = function
-    | '(' | ')' | '{' | '}' | ';' -> true
-    | ch -> Char.is_whitespace ch
+    | '('
+    | ')'
+    | '{'
+    | '}'
+    | ';' ->
+      true
+    | ch ->
+      Char.is_whitespace ch
   in
   let next_char = read_char stream in
-    if is_delimiter next_char then begin
+    if is_delimiter next_char then (
       let _ = unread_char stream next_char in
         ""
-    end else
+    ) else
       Object.string_of_char next_char ^ read_symbol stream
 ;;
 
 let read_boolean : char stream -> Object.lobject =
   fun stream ->
   match read_char stream with
-  | 't' -> Object.Boolean true
-  | 'f' -> Object.Boolean false
+  | 't' ->
+    Object.Boolean true
+  | 'f' ->
+    Object.Boolean false
   | x ->
     raise (Errors.Syntax_error_exn (Invalid_boolean_literal (Char.escaped x)))
 ;;
@@ -135,11 +142,16 @@ let rec read_sexpr : char stream -> Object.lobject =
   | ch when Char.(ch = ';') ->
     eat_comment stream;
     read_sexpr stream
-  | ch when Char.(is_digit ch || ch = '~') -> read_fixnum stream ch
-  | ch when Char.(ch = '(') -> read_list stream
-  | ch when Char.(ch = '#') -> read_boolean stream
-  | ch when Char.(ch = '\'') -> Quote (read_sexpr stream)
-  | ch when Char.(ch = '\"') -> read_string stream
+  | ch when Char.(is_digit ch || ch = '~') ->
+    read_fixnum stream ch
+  | ch when Char.(ch = '(') ->
+    read_list stream
+  | ch when Char.(ch = '#') ->
+    read_boolean stream
+  | ch when Char.(ch = '\'') ->
+    Quote (read_sexpr stream)
+  | ch when Char.(ch = '\"') ->
+    read_string stream
   | ch when is_symbol_start_char ch ->
     Object.Symbol (Object.string_of_char ch ^ read_symbol stream)
   | ch ->
