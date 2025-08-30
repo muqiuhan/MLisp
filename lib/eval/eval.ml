@@ -8,6 +8,23 @@ open Mlisp_object
 open Mlisp_error
 open Core
 
+(** MLisp expression evaluator with optimized environment handling.
+
+    This module implements the core evaluation engine for MLisp with
+    performance optimizations including hash-based environments and
+    selective closure variable capture.
+*)
+
+(** Extend an environment with a list of variable bindings.
+
+    Creates a new child environment and populates it with the provided
+    variable bindings. This function is optimized to work with the
+    hash-table based environment system.
+
+    @param newenv List of (name, value_ref) pairs to bind
+    @param oldenv Parent environment to extend
+    @return New extended environment
+*)
 let extend newenv oldenv =
   let new_env = Object.extend_env oldenv in
     List.iter newenv ~f:(fun (b, v) ->
@@ -51,6 +68,21 @@ let rec eval_expr expr env =
       eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Object.Call (Var "env", []) -> Object.env_to_val env
     | Object.Call (fn, args) -> eval_apply (eval fn) (List.map ~f:eval args) env
+    (** Evaluate lambda expressions with optimized closure creation.
+
+        Creates function closures with intelligent variable capture strategy:
+        - If no free variables: use legacy full environment capture
+        - If free variables exist: use optimized selective capture
+
+        This optimization significantly reduces memory usage and improves
+        performance for closures with many captured variables.
+
+        @param name Function name (for debugging/named functions)
+        @param args Parameter names
+        @param body Function body expression
+        @param env Environment where lambda is defined
+        @return Closure object with optimized or legacy environment
+    *)
     | Object.Lambda (name, args, body) ->
       let free_vars = Object.analyze_free_vars body (name :: args) in
         if List.is_empty free_vars then
@@ -89,6 +121,18 @@ let rec eval_expr expr env =
   in
     eval expr
 
+(** Apply a function to arguments with optimized closure handling.
+
+    Dispatches function application based on the function type:
+    - Primitive functions: direct application
+    - Closures: optimized environment handling
+    - Other types: error reporting
+
+    @param fn_expr Function to apply
+    @param args Arguments to pass to the function
+    @param env Current environment
+    @return Result of function application
+*)
 and eval_apply fn_expr args env =
   match fn_expr with
   | Object.Primitive (_, fn) -> fn args
@@ -100,6 +144,19 @@ and eval_apply fn_expr args env =
   | fn_expr ->
     raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
 
+(** Execute closure body with optimized environment handling.
+
+    Handles both legacy full environment capture and optimized
+    selective variable capture, ensuring compatibility while
+    providing performance benefits.
+
+    @param names Parameter names to bind
+    @param expr Closure body to execute
+    @param args Arguments to bind to parameters
+    @param closure_data Environment data (legacy or optimized)
+    @param env Current call environment
+    @return Result of closure execution
+*)
 and eval_closure names expr args closure_data env =
   match closure_data with
   | Object.Legacy cl_env ->

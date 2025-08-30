@@ -7,26 +7,44 @@
 open Mlisp_error
 open Core
 
+(** Core Lisp object types and environment management.
+
+    This module defines the fundamental data structures for the MLisp interpreter,
+    including Lisp objects, expressions, environments, and optimized closure handling.
+*)
+
+(** The core Lisp object type representing all possible values in MLisp. *)
 type lobject =
-  | Fixnum of int
-  | Boolean of bool
-  | Symbol of string
-  | String of string
-  | Nil
-  | Pair of lobject * lobject
-  | Record of name * (name * lobject) list
-  | Primitive of string * (lobject list -> lobject)
-  | Quote of value
-  | Closure of name * name list * expr * closure_data
+  | Fixnum of int (** Integer values *)
+  | Boolean of bool (** Boolean values (#t or #f) *)
+  | Symbol of string (** Symbol atoms used as identifiers *)
+  | String of string (** String literals *)
+  | Nil (** Empty list / nil value *)
+  | Pair of lobject * lobject (** Cons pairs forming lists *)
+  | Record of name * (name * lobject) list (** Record structures *)
+  | Primitive of string * (lobject list -> lobject) (** Built-in functions *)
+  | Quote of value (** Quoted expressions *)
+  | Closure of name * name list * expr * closure_data (** Function closures *)
 
+(** Closure data supporting both legacy and optimized environments.
+
+    This variant allows backward compatibility while enabling performance
+    optimizations for closure capture.
+*)
 and closure_data =
-  | Legacy of lobject env (* old full environment *)
-  | Optimized of closure_env (* new optimized environment *)
+  | Legacy of lobject env (** Traditional full environment capture *)
+  | Optimized of closure_env (** Optimized selective variable capture *)
 
+(** Optimized closure environment with selective variable capture.
+
+    This structure captures only the free variables actually used by a closure,
+    significantly reducing memory overhead and improving performance.
+*)
 and closure_env =
-  { captured_vars :
-      (string * lobject option ref) list (* only capture needed variables *)
-  ; parent_env : lobject env option (* reference parent environment *)
+  { captured_vars : (string * lobject option ref) list
+    (** Variables captured from parent scopes *)
+  ; parent_env : lobject env option
+    (** Reference to parent environment for lookups *)
   }
 
 and value = lobject
@@ -54,10 +72,18 @@ and def =
   | Defun of name * name list * expr
   | Expr of expr
 
+(** Optimized environment structure with O(1) variable lookup.
+
+    This hash-table based environment provides:
+    - Constant-time variable lookup and binding
+    - Lexical scoping through parent environment chaining
+    - Efficient memory usage compared to list-based environments
+*)
 and 'a env =
   { bindings : (string, 'a option ref) Hashtbl.t
-  ; parent : 'a env option
-  ; level : int
+    (** Variable bindings hash table *)
+  ; parent : 'a env option (** Parent environment for scoping *)
+  ; level : int (** Environment nesting level *)
   }
 
 type t = lobject
@@ -183,24 +209,65 @@ let rec lookup (name, env) =
     | None -> raise (Errors.Runtime_error_exn (Errors.Not_found name)))
 ;;
 
-(* create new empty environment *)
+(** Create a new empty environment with optional parent linkage.
+
+    Initializes a fresh environment with an empty hash table for bindings.
+    Used for creating root environments or extending existing ones.
+
+    @param parent Optional parent environment for scoping
+    @param level Nesting level (defaults to 0)
+    @return Fresh environment ready for variable bindings
+*)
 let create_env ?parent ?(level = 0) () =
   { bindings = Hashtbl.create (module String); parent; level }
 ;;
 
-(* extend environment, create sub environment *)
+(** Extend an existing environment by creating a child environment.
+
+    Creates a new environment that inherits from the parent, enabling
+    lexical scoping for nested code blocks and function definitions.
+
+    @param parent_env Parent environment to extend
+    @return New child environment with incremented nesting level
+*)
 let extend_env parent_env =
   create_env ~parent:parent_env ~level:(parent_env.level + 1) ()
 ;;
 
-(* bind function *)
+(** Bind a variable to a value in the environment.
+
+    Creates a new binding or updates an existing one in the current environment.
+    This operation has O(1) time complexity due to hash table usage.
+
+    @param name Variable name to bind
+    @param value Value to bind to the variable
+    @param env Environment to modify
+    @return Modified environment (same reference)
+*)
 let bind (name, value, env) =
   Hashtbl.set env.bindings ~key:name ~data:(ref (Some value));
   env
 ;;
 
+(** Create a local variable reference for uninitialized bindings.
+
+    Used in letrec and similar constructs where variables may be
+    referenced before they are fully initialized.
+
+    @return Reference to None representing an uninitialized variable
+*)
 let make_local _ = ref None
 
+(** Bind a local variable reference in the environment.
+
+    Associates a variable name with a reference that may be uninitialized.
+    Used for implementing letrec semantics and forward references.
+
+    @param name Variable name to bind
+    @param value_ref Reference to potentially uninitialized value
+    @param env Environment to modify
+    @return Modified environment (same reference)
+*)
 let bind_local (name, value_ref, env) =
   Hashtbl.set env.bindings ~key:name ~data:value_ref;
   env
@@ -280,7 +347,16 @@ let analyze_free_vars expr bound_vars =
     !free_vars
 ;;
 
-(* create optimized closure environment *)
+(** Create an optimized closure environment with selective variable capture.
+
+    Builds a closure environment that contains only the free variables
+    actually used by the closure, significantly reducing memory footprint
+    and improving performance compared to capturing entire environments.
+
+    @param free_vars List of variable names that the closure actually uses
+    @param env Environment from which to capture variables
+    @return Optimized closure environment with selective capture
+*)
 let create_closure_env free_vars env =
   let captured =
     List.filter_map free_vars ~f:(fun var_name ->
@@ -291,7 +367,17 @@ let create_closure_env free_vars env =
     { captured_vars = captured; parent_env = Some env }
 ;;
 
-(* lookup variable in closure environment *)
+(** Look up a variable in an optimized closure environment.
+
+    Performs variable resolution in closure environments with fallback
+    to parent environments. This function enables efficient variable
+    access in optimized closures.
+
+    @param name Variable name to look up
+    @param closure_env Optimized closure environment to search
+    @return The bound value
+    @raise Errors.Runtime_error_exn if variable is not found
+*)
 let lookup_in_closure name closure_env =
   (* first lookup in captured variables *)
   let rec find_in_list = function
