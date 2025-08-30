@@ -27,6 +27,16 @@ let drop_rackets input =
   |> String.strip ~drop:(Char.equal ')')
 ;;
 
+(** Generate completion hints for REPL input using optimized environment lookup.
+
+    Provides intelligent code completion suggestions by searching through
+    the current environment's bindings. Utilizes the hash-table based
+    environment for O(1) lookups during hint generation.
+
+    @param env Current environment with hash-table based bindings
+    @param input User input string to generate hints for
+    @return Optional hint tuple (text, color, completion_flag)
+*)
 let hints
   :  Object.lobject Object.env
   -> string
@@ -42,6 +52,16 @@ let hints
     !result |> Option.map ~f:(fun definition -> definition, LNoise.Blue, true)
 ;;
 
+(** Generate tab completion suggestions using optimized environment traversal.
+
+    Provides comprehensive code completion by iterating through all bindings
+    in the hash-table based environment. Optimized for performance with
+    efficient substring matching and completion generation.
+
+    @param env Environment containing all available bindings
+    @param input Current user input for completion
+    @param completions LNoise completion object to populate
+*)
 let completion
   : Object.lobject Object.env -> string -> LNoise.completions -> unit
   =

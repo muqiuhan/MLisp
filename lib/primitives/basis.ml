@@ -6,6 +6,32 @@
 
 open Mlisp_object
 
+(** Initialize the base environment with primitive functions and core bindings.
+
+    Creates the foundation environment that contains all built-in MLisp functions
+    and essential symbols. This environment serves as the root for all MLisp
+    program execution and provides access to core language primitives.
+
+    The initialization process:
+    1. Creates a fresh hash-table based environment
+    2. Binds the empty symbol for string operations
+    3. Loads all primitive function collections (numeric, string, standard)
+    4. Returns the fully populated base environment
+
+    This module is critical for bootstrapping the MLisp interpreter and
+    establishing the core language functionality.
+*)
+
+(** The base environment containing all MLisp primitive functions and symbols.
+
+    This environment includes:
+    - Arithmetic operations (Num.basis)
+    - String manipulation functions (String.basis)
+    - Core Lisp operations (Std.basis)
+    - Essential symbols like "empty-symbol"
+
+    All MLisp programs start with this environment as their foundation.
+*)
 let basis =
   let newprim acc (name, func) =
     Object.bind (name, Object.Primitive (name, func), acc)
