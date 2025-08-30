@@ -20,12 +20,13 @@ type lobject =
   | Closure of name * name list * expr * closure_data
 
 and closure_data =
-  | Legacy of lobject env (* 旧的完整环境 *)
-  | Optimized of closure_env (* 新的优化环境 *)
+  | Legacy of lobject env (* old full environment *)
+  | Optimized of closure_env (* new optimized environment *)
 
 and closure_env =
-  { captured_vars : (string * lobject option ref) list (* 只捕获需要的变量 *)
-  ; parent_env : lobject env option (* 引用父环境 *)
+  { captured_vars :
+      (string * lobject option ref) list (* only capture needed variables *)
+  ; parent_env : lobject env option (* reference parent environment *)
   }
 
 and value = lobject
@@ -173,24 +174,26 @@ let rec lookup (name, env) =
   | Some v -> (
     match !v with
     | Some v' -> v'
-    | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value name)))
+    | None ->
+      (* for uninitialized variables, return a special unspecified value *)
+      Symbol "unspecified")
   | None -> (
     match env.parent with
     | Some parent -> lookup (name, parent)
     | None -> raise (Errors.Runtime_error_exn (Errors.Not_found name)))
 ;;
 
-(* 创建新的空环境 *)
+(* create new empty environment *)
 let create_env ?parent ?(level = 0) () =
   { bindings = Hashtbl.create (module String); parent; level }
 ;;
 
-(* 扩展环境，创建子环境 *)
+(* extend environment, create sub environment *)
 let extend_env parent_env =
   create_env ~parent:parent_env ~level:(parent_env.level + 1) ()
 ;;
 
-(* 绑定函数 *)
+(* bind function *)
 let bind (name, value, env) =
   Hashtbl.set env.bindings ~key:name ~data:(ref (Some value));
   env
@@ -234,7 +237,7 @@ let env_to_val env =
     !bindings
 ;;
 
-(* 简化的自由变量分析 *)
+(* simplified free variable analysis *)
 let analyze_free_vars expr bound_vars =
   let free_vars = ref [] in
   let rec collect_vars expr =
@@ -262,11 +265,12 @@ let analyze_free_vars expr bound_vars =
       match def with
       | Setq (_name, expr) -> collect_vars expr
       | Defun (_name, _params, body) ->
-        collect_vars body (* 注意：这里没有添加函数名到bound_vars *)
+        collect_vars
+          body (* note: here we don't add function name to bound_vars *)
       | Expr expr -> collect_vars expr
     end
     | Lambda (_name, _params, body) ->
-      collect_vars body (* 注意：这里没有添加参数到bound_vars *)
+      collect_vars body (* note: here we don't add parameters to bound_vars *)
     | Let (_kind, bindings, body) ->
       List.iter bindings ~f:(fun (_name, expr) -> collect_vars expr);
       collect_vars body
@@ -276,7 +280,7 @@ let analyze_free_vars expr bound_vars =
     !free_vars
 ;;
 
-(* 创建优化的闭包环境 *)
+(* create optimized closure environment *)
 let create_closure_env free_vars env =
   let captured =
     List.filter_map free_vars ~f:(fun var_name ->
@@ -287,9 +291,9 @@ let create_closure_env free_vars env =
     { captured_vars = captured; parent_env = Some env }
 ;;
 
-(* 在闭包环境中查找变量 *)
+(* lookup variable in closure environment *)
 let lookup_in_closure name closure_env =
-  (* 首先在捕获的变量中查找 *)
+  (* first lookup in captured variables *)
   let rec find_in_list = function
     | [] -> None
     | (n, value_ref) :: rest ->
@@ -305,7 +309,7 @@ let lookup_in_closure name closure_env =
       | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value name))
     end
     | None -> (
-      (* 如果不在捕获变量中，在父环境中查找 *)
+      (* if not in captured variables, lookup in parent environment *)
       match closure_env.parent_env with
       | Some parent -> lookup (name, parent)
       | None -> raise (Errors.Runtime_error_exn (Errors.Not_found name)))
