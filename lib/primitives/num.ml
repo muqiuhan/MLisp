@@ -43,10 +43,10 @@ let basis =
   ; Operator.generate ">>>" ( lsl )
   ; Operator.generate "<<<" ( lsr )
   ; Operator.generate "%%%" ( mod )
-  ; Compare.generate "int=" ( = )
-  ; Compare.generate "int<" ( < )
-  ; Compare.generate "int>" ( > )
-  ; Compare.generate "int>=" ( >= )
-  ; Compare.generate "int<=" ( <= )
+  ; Compare.generate "=" ( = )
+  ; Compare.generate "<" ( < )
+  ; Compare.generate ">" ( > )
+  ; Compare.generate ">=" ( >= )
+  ; Compare.generate "<=" ( <= )
   ]
 ;;
