@@ -10,26 +10,24 @@ open Mlisp_stdlib
 
 let get_input_channel () =
   try open_in Sys.argv.(1) with
-  | Invalid_argument _ -> stdin
+  | Invalid_argument _ ->
+    stdin
 ;;
 
 let () =
   let input_channel = get_input_channel () in
   let stream =
-    if input_channel = stdin then begin
-      print_endline
-        "o- MLisp v0.3.4 (main, 2025-04-14 21:49 PM) [OCaml 5.2.1]\n";
+    if input_channel = stdin then (
+      print_endline "o- MLisp v0.3.4 (main, 2025-04-14 21:49 PM) [OCaml 5.2.1]\n";
       Stream_wrapper.make_filestream input_channel
-    end else begin
+    ) else (
       print_endline (Format.sprintf "o- Running %s ..." Sys.argv.(1));
       Stream_wrapper.make_filestream input_channel ~file_name:Sys.argv.(1)
-    end
+    )
   in
-    begin
-      try Repl.repl stream Stdlib.stdlib_core with
-      | e ->
-        if input_channel <> stdin then close_in input_channel;
-        raise e
-    end;
+    (try Repl.repl stream Stdlib.stdlib_core with
+     | e ->
+       if input_channel <> stdin then close_in input_channel;
+       raise e);
     if input_channel <> stdin then close_in input_channel
 ;;

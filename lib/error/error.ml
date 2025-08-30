@@ -31,15 +31,9 @@ let repl_error : error_info -> unit =
 ;;
 
 let file_error { file_name; line_number; column_number; message; help } =
-  let split_line
-        { file_name; line_number; column_number; message; help }
-        line_value
-    =
+  let split_line { file_name; line_number; column_number; message; help } line_value =
     let char_num =
-      [ String.length message + 9
-      ; String.length help + 9
-      ; String.length line_value + 8
-      ]
+      [ String.length message + 9; String.length help + 9; String.length line_value + 8 ]
       |> List.fold_left
            ~f:(fun _max prev ->
              if Int.(prev > _max) then
@@ -49,23 +43,16 @@ let file_error { file_name; line_number; column_number; message; help } =
            ~init:
              (String.length
                 [%string
-                  "%{string_of_int line_number}%{string_of_int \
-                   column_number}%{file_name}"]
+                  "%{string_of_int line_number}%{string_of_int column_number}%{file_name}"]
               + 31)
     in
       [%string "+%{String.make (char_num + 4) '-'}"]
   in
-  let line_value =
-    List.nth_exn (In_channel.read_lines file_name) (line_number - 1)
-  in
+  let line_value = List.nth_exn (In_channel.read_lines file_name) (line_number - 1) in
   let split_line =
-    split_line
-      { file_name; line_number; column_number; message; help }
-      line_value
+    split_line { file_name; line_number; column_number; message; help } line_value
   in
-  let tip_mark =
-    [%string "+%{String.make (String.length line_value + 5) '-'}^"]
-  in
+  let tip_mark = [%string "+%{String.make (String.length line_value + 5) '-'}^"] in
     Ocolor_format.printf
       "\n\
        @{<hi_white>%s@}\n\
