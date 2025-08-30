@@ -6,7 +6,7 @@
 (- 3 5)
 (* 3 5)
 (/ 3 5)
-(mod 3 5)
+(%%% 3 5)
 
 ;; Logical operations
 (&& #t #f)
@@ -30,14 +30,14 @@
 ;; apply
 (>> $ (@ 3 4))
 
-;; application
-(x 10)
-
 ;; lambda
 (:= x (=> (y) (+ y 1)))
 
 ;; function definition
 (|= x (y) (+ y 1))
+
+;; application
+(x 10)
 
 ;; let
 (%= ((x 10)
@@ -55,7 +55,7 @@
   (f 0))
 
 ;; record
-(:= record-x (:: 'x (@ (| 'y 1) (| 'z 2))))
+(:= record-x (:: 'x (@ (@ 'y 1) (@ 'z 2))))
 
 ;; record-getter
 (:> record-x 'y)
