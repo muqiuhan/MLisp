@@ -17,7 +17,16 @@ type lobject =
   | Record of name * (name * lobject) list
   | Primitive of string * (lobject list -> lobject)
   | Quote of value
-  | Closure of name * name list * expr * value env
+  | Closure of name * name list * expr * closure_data
+
+and closure_data =
+  | Legacy of lobject env (* 旧的完整环境 *)
+  | Optimized of closure_env (* 新的优化环境 *)
+
+and closure_env =
+  { captured_vars : (string * lobject option ref) list (* 只捕获需要的变量 *)
+  ; parent_env : lobject env option (* 引用父环境 *)
+  }
 
 and value = lobject
 and name = string
@@ -44,7 +53,11 @@ and def =
   | Defun of name * name list * expr
   | Expr of expr
 
-and 'a env = (string * 'a option ref) list
+and 'a env =
+  { bindings : (string, 'a option ref) Hashtbl.t
+  ; parent : 'a env option
+  ; level : int
+  }
 
 type t = lobject
 
@@ -155,42 +168,145 @@ let rec string_object e =
         [%string "#<record:%{name}(\n\t%{fields_string}\n)>"]
 ;;
 
-let rec lookup = function
-  | n, [] -> raise (Errors.Runtime_error_exn (Errors.Not_found n))
-  | n, (n', v) :: _ when String.(n = n') -> (
+let rec lookup (name, env) =
+  match Hashtbl.find env.bindings name with
+  | Some v -> (
     match !v with
     | Some v' -> v'
-    | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value n)))
-  | n, (_, _) :: bs -> lookup (n, bs)
+    | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value name)))
+  | None -> (
+    match env.parent with
+    | Some parent -> lookup (name, parent)
+    | None -> raise (Errors.Runtime_error_exn (Errors.Not_found name)))
 ;;
 
-let bind (name, value, sexpr) = (name, ref (Some value)) :: sexpr
+(* 创建新的空环境 *)
+let create_env ?parent ?(level = 0) () =
+  { bindings = Hashtbl.create (module String); parent; level }
+;;
+
+(* 扩展环境，创建子环境 *)
+let extend_env parent_env =
+  create_env ~parent:parent_env ~level:(parent_env.level + 1) ()
+;;
+
+(* 绑定函数 *)
+let bind (name, value, env) =
+  Hashtbl.set env.bindings ~key:name ~data:(ref (Some value));
+  env
+;;
+
 let make_local _ = ref None
-let bind_local (n, vor, e) = (n, vor) :: e
+
+let bind_local (name, value_ref, env) =
+  Hashtbl.set env.bindings ~key:name ~data:value_ref;
+  env
+;;
 
 let bind_list ns vs env =
-  try Stdlib.List.fold_left2 (fun acc n v -> bind (n, v, acc)) env ns vs with
+  try
+    List.iter2_exn ns vs ~f:(fun n v -> bind (n, v, env) |> ignore);
+    env
+  with
   | Invalid_argument _ ->
     raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
 ;;
 
 let bind_local_list ns vs env =
   try
-    Stdlib.List.fold_left2 (fun acc n v -> bind_local (n, v, acc)) env ns vs
+    List.iter2_exn ns vs ~f:(fun n v -> bind_local (n, v, env) |> ignore);
+    env
   with
   | Invalid_argument _ ->
     raise (Errors.Runtime_error_exn (Errors.Missing_argument ns))
 ;;
 
-let rec env_to_val =
-  let b_to_val (n, vor) =
-    Pair
-      ( Symbol n
-      , match !vor with
+let env_to_val env =
+  let bindings = ref Nil in
+    Hashtbl.iteri env.bindings ~f:(fun ~key:n ~data:vor ->
+      let value =
+        match !vor with
         | None -> Symbol "unspecified"
-        | Some v -> v )
+        | Some v -> v
+      in
+      let binding = Pair (Symbol n, value) in
+        bindings := Pair (binding, !bindings));
+    !bindings
+;;
+
+(* 简化的自由变量分析 *)
+let analyze_free_vars expr bound_vars =
+  let free_vars = ref [] in
+  let rec collect_vars expr =
+    match expr with
+    | Var name ->
+      if
+        (not (List.mem bound_vars name ~equal:String.equal))
+        && not (List.mem !free_vars name ~equal:String.equal)
+      then
+        free_vars := name :: !free_vars
+    | If (cond, if_true, if_false) ->
+      collect_vars cond;
+      collect_vars if_true;
+      collect_vars if_false
+    | And (left, right) | Or (left, right) ->
+      collect_vars left;
+      collect_vars right
+    | Apply (fn, args) ->
+      collect_vars fn;
+      collect_vars args
+    | Call (fn, args) ->
+      collect_vars fn;
+      List.iter args ~f:collect_vars
+    | Defexpr def -> begin
+      match def with
+      | Setq (_name, expr) -> collect_vars expr
+      | Defun (_name, _params, body) ->
+        collect_vars body (* 注意：这里没有添加函数名到bound_vars *)
+      | Expr expr -> collect_vars expr
+    end
+    | Lambda (_name, _params, body) ->
+      collect_vars body (* 注意：这里没有添加参数到bound_vars *)
+    | Let (_kind, bindings, body) ->
+      List.iter bindings ~f:(fun (_name, expr) -> collect_vars expr);
+      collect_vars body
+    | Literal _ -> ()
   in
-    function
-    | [] -> Nil
-    | b :: bs -> Pair (b_to_val b, env_to_val bs)
+    collect_vars expr;
+    !free_vars
+;;
+
+(* 创建优化的闭包环境 *)
+let create_closure_env free_vars env =
+  let captured =
+    List.filter_map free_vars ~f:(fun var_name ->
+      match Hashtbl.find env.bindings var_name with
+      | Some value_ref -> Some (var_name, value_ref)
+      | None -> None)
+  in
+    { captured_vars = captured; parent_env = Some env }
+;;
+
+(* 在闭包环境中查找变量 *)
+let lookup_in_closure name closure_env =
+  (* 首先在捕获的变量中查找 *)
+  let rec find_in_list = function
+    | [] -> None
+    | (n, value_ref) :: rest ->
+      if String.equal n name then
+        Some value_ref
+      else
+        find_in_list rest
+  in
+    match find_in_list closure_env.captured_vars with
+    | Some value_ref -> begin
+      match !value_ref with
+      | Some v -> v
+      | None -> raise (Errors.Runtime_error_exn (Errors.Unspecified_value name))
+    end
+    | None -> (
+      (* 如果不在捕获变量中，在父环境中查找 *)
+      match closure_env.parent_env with
+      | Some parent -> lookup (name, parent)
+      | None -> raise (Errors.Runtime_error_exn (Errors.Not_found name)))
 ;;
