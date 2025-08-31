@@ -2,4 +2,4 @@
  (name mlisp_error)
  (preprocess
   (pps ppx_string))
- (libraries core ocolor mlisp_utils))
+ (libraries core mlisp_utils))

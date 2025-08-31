@@ -5,6 +5,7 @@
 (****************************************************************************)
 
 open Core
+open Diagnose.Diagnose
 
 type error_info =
   { file_name : string
@@ -16,59 +17,96 @@ type error_info =
 
 type t = error_info
 
-let repl_error : error_info -> unit =
-  fun { file_name; line_number; column_number; message; help } ->
-  Ocolor_format.printf
-    "\n\
-     @{<hi_white>|@} @{<hi_cyan>From : \"%s\" , Line: %d , Column: %d@}\n\
-     @{<hi_white>|@} @{<hi_red>| Error: %s@}\n\
-     @{<hi_white>|@} @{<hi_green>| Help : %s@}\n\n"
-    file_name
-    line_number
-    column_number
-    message
-    help
-;;
+(* Configure diagnose modules *)
+module AnsiStyle = ConsoleAnsiStyle
+module Doc = MakeAnnotatedDoc (AnsiStyle)
+module Themes = MakeThemes (AnsiStyle)
 
-let file_error { file_name; line_number; column_number; message; help } =
-  let split_line { file_name; line_number; column_number; message; help } line_value =
-    let char_num =
-      [ String.length message + 9; String.length help + 9; String.length line_value + 8 ]
-      |> List.fold_left
-           ~f:(fun _max prev ->
-             if Int.(prev > _max) then
-               prev
-             else
-               _max)
-           ~init:
-             (String.length
-                [%string
-                  "%{string_of_int line_number}%{string_of_int column_number}%{file_name}"]
-              + 31)
+module Report =
+  MakeReport (AnsiStyle) (Doc)
+    (struct
+      let style = Themes.default_style
+    end)
+
+let rec repl_error : error_info -> unit =
+  fun { file_name; line_number; column_number; message; help } ->
+  let readonly_file_map = FilenameMap.empty in
+  let report : string Report.t =
+    { code = None
+    ; message = help
+    ; markers =
+        [ ( { file = Some file_name
+            ; begin_line = line_number
+            ; end_line = line_number
+            ; begin_col = 0 (* TODO: use column_number *)
+            ; end_col = column_number + 1
+            }
+          , This message )
+        ]
+    ; blurbs = [ (* Hint help *) ]
+    ; is_error = true
+    }
+  in
+    print_endline
+      (Report.pretty_report ~readonly_file_map ~with_unicode:true ~tab_size:4 report)
+
+and file_error : error_info -> unit =
+  fun ({ file_name; line_number; column_number; message; help } as err_info) ->
+  try
+    let source_lines = In_channel.read_lines file_name in
+    let line_value = List.nth_exn source_lines (line_number - 1) in
+    let get_end_col line start_col =
+      let len = String.length line in
+      let start_idx = start_col - 1 in
+        if start_idx < 0 || start_idx >= len then
+          start_col + 1
+        else (
+          let rec find_end i =
+            if i >= len then
+              len
+            else (
+              match String.get line i with
+              | ' '
+              | '\t'
+              | '\n'
+              | '\r'
+              | '('
+              | ')' ->
+                i
+              | _ ->
+                find_end (i + 1)
+            )
+          in
+          let end_idx = find_end start_idx in
+            if end_idx = start_idx then
+              start_idx + 2
+            else
+              end_idx + 1
+        )
     in
-      [%string "+%{String.make (char_num + 4) '-'}"]
-  in
-  let line_value = List.nth_exn (In_channel.read_lines file_name) (line_number - 1) in
-  let split_line =
-    split_line { file_name; line_number; column_number; message; help } line_value
-  in
-  let tip_mark = [%string "+%{String.make (String.length line_value + 5) '-'}^"] in
-    Ocolor_format.printf
-      "\n\
-       @{<hi_white>%s@}\n\
-       @{<hi_white>|@} @{<hi_cyan>From : \"%s\" , Line: %d , Column: %d@}\n\
-       @{<hi_white>|@}------> @{<hi_white>%s@}\n\
-       @{<hi_white>|@} @{<hi_red>%s@}\n\
-       @{<hi_white>|@} @{<hi_red>| Error: %s@}\n\
-       @{<hi_white>|@} @{<hi_green>| Help : %s@}\n\
-       @{<hi_white>%s@}\n"
-      split_line
-      file_name
-      line_number
-      column_number
-      line_value
-      tip_mark
-      message
-      help
-      split_line
+    let end_col = get_end_col line_value column_number in
+    let readonly_file_map =
+      FilenameMap.singleton (Some file_name) (Array.of_list source_lines)
+    in
+    let report : string Report.t =
+      { code = None
+      ; message = help
+      ; markers =
+          [ ( { file = Some file_name
+              ; begin_line = line_number
+              ; end_line = line_number
+              ; begin_col = 0 (* TODO: use column_number *)
+              ; end_col
+              }
+            , This message )
+          ]
+      ; blurbs = [ (* Hint help *) ]
+      ; is_error = true
+      }
+    in
+      print_endline
+        (Report.pretty_report ~readonly_file_map ~with_unicode:true ~tab_size:4 report)
+  with
+  | _ ->
+    repl_error err_info
 ;;
