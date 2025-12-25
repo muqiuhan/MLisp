@@ -40,7 +40,13 @@ let help = function
       "It is possible that the actual parameter quantity is inconsistent with the formal \
        parameter quantity"
     | Non_definition_in_stdlib _ ->
-      "Can only have definitions in stdlib")
+      "Can only have definitions in stdlib"
+    | Not_a_module _ ->
+      "The symbol is not bound to a module object. Use (module ...) to define a module."
+    | Export_not_found _ ->
+      "The specified symbol is not exported by the module. Check the module's export list."
+    | Module_load_error _ ->
+      "Failed to load module from file. Check file path and module syntax.")
   | _ ->
     "None"
 ;;

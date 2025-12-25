@@ -25,6 +25,11 @@ type lobject =
   | Primitive of string * (lobject list -> lobject) (** Built-in functions *)
   | Quote of value (** Quoted expressions *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
+  | Module of
+      { name : string (** Module name *)
+      ; env : lobject env (** Module's internal environment *)
+      ; exports : string list (** List of exported symbol names *)
+      } (** Module objects *)
 
 (** Closure data supporting both legacy and optimized environments.
 
@@ -63,11 +68,19 @@ and expr =
   | Defexpr of def
   | Lambda of name * name list * expr
   | Let of let_kind * (name * expr) list * expr
+  | ModuleDef of name * string list * expr list (** Module definition: name, exports, body *)
+  | Import of import_spec (** Module import *)
 
 and def =
   | Setq of name * expr
   | Defun of name * name list * expr
   | Expr of expr
+
+(** Import specification for module imports. *)
+and import_spec =
+  | ImportAll of name (** Import all exported symbols *)
+  | ImportSelective of name * name list (** Import specific symbols *)
+  | ImportAs of name * name (** Import all with alias *)
 
 (** Optimized environment structure with O(1) variable lookup.
 
@@ -113,6 +126,8 @@ let object_type = function
     "closure"
   | Record _ ->
     "record"
+  | Module _ ->
+    "module"
 ;;
 
 let rec print_sexpr sexpr =
@@ -220,6 +235,9 @@ let rec string_object e =
           [%string {|%{String.concat ~sep:"\n\t" (List.map ~f:to_string fields)}|}]
       in
         [%string "#<record:%{name}(\n\t%{fields_string}\n)>"]
+    | Module { name; exports; _ } ->
+      let exports_str = String.concat ~sep:" " exports in
+        [%string "#<module:%{name}(exports: %{exports_str})>"]
 ;;
 
 let rec lookup (name, env) =
@@ -367,6 +385,10 @@ let analyze_free_vars expr bound_vars =
     | Let (_kind, bindings, body) ->
       List.iter bindings ~f:(fun (_name, expr) -> collect_vars expr);
       collect_vars body
+    | ModuleDef (_name, _exports, body_exprs) ->
+      List.iter body_exprs ~f:collect_vars
+    | Import _ ->
+      () (* Imports don't capture variables *)
     | Literal _ ->
       ()
   in

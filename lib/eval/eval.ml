@@ -116,6 +116,12 @@ let rec eval_expr expr env =
           updates
       in
         eval_expr body env'
+    | Object.ModuleDef (name, exports, body_exprs) ->
+      let module_obj, _ = eval_module name exports body_exprs env in
+        module_obj
+    | Object.Import import_spec ->
+      let () = eval_import import_spec env in
+        Object.Symbol "ok"
     | Object.Defexpr _ ->
       raise (Errors.Syntax_error_exn (Invalid_define_expression ""))
   in
@@ -196,8 +202,135 @@ and eval_def def env =
       clo, Object.bind_local (name, loc, env)
   | Expr e -> eval_expr e env, env
 
+(** Evaluate a module definition.
+
+    Creates a new isolated environment for the module, evaluates all body
+    expressions in that environment, and creates a module object with the
+    specified exports. The module is automatically bound to its name in the
+    parent environment.
+
+    @param name Module name
+    @param exports List of symbol names to export
+    @param body_exprs List of expressions to evaluate in module scope
+    @param env Parent environment (for imports and closures)
+    @return Module object and updated environment with module bound *)
+and eval_module name exports body_exprs env =
+  let module_env = Object.extend_env env in
+  (* Pre-bind the module to itself for recursive references *)
+  let module_obj_ref = ref None in
+  let temp_module_obj = Object.Module { name; env = module_env; exports = [] } in
+  let () = module_obj_ref := Some temp_module_obj in
+  let () = Object.bind (name, temp_module_obj, module_env) |> ignore in
+  let () =
+    List.iter body_exprs ~f:(fun expr ->
+      match expr with
+      | Object.Defexpr def_expr ->
+        let _, updated_env = eval_def def_expr module_env in
+          ignore updated_env
+      | _ ->
+        let _, updated_env = eval expr module_env in
+          ignore updated_env)
+  in
+  (* Verify all exports exist in module environment *)
+  let () =
+    List.iter exports ~f:(fun export_name ->
+      try
+        Object.lookup (export_name, module_env) |> ignore
+      with
+      | Errors.Runtime_error_exn _ ->
+        raise
+          (Errors.Runtime_error_exn
+             (Errors.Export_not_found (name, export_name))))
+  in
+  (* Create final module object with correct exports *)
+  let final_module_obj = Object.Module { name; env = module_env; exports } in
+  (* Update the module reference in module_env *)
+  let () = Object.bind (name, final_module_obj, module_env) |> ignore in
+    final_module_obj, Object.bind (name, final_module_obj, env)
+
+(** Evaluate an import expression.
+
+    Imports symbols from a module into the current environment. Supports
+    three import modes:
+    - ImportAll: import all exported symbols
+    - ImportSelective: import only specified symbols
+    - ImportAs: import all symbols with a namespace prefix
+
+    @param import_spec Import specification
+    @param env Current environment
+    @return Unit (imports modify environment in place)
+    @raise Errors.Runtime_error_exn if module not found or export not found *)
+and eval_import import_spec env =
+  let module_obj, import_name =
+    match import_spec with
+    | Object.ImportAll module_name ->
+      let mod_obj = Object.lookup (module_name, env) in
+        (match mod_obj with
+         | Object.Module _ -> mod_obj, module_name
+         | _ ->
+           raise
+             (Errors.Runtime_error_exn
+                (Errors.Not_a_module module_name)))
+    | Object.ImportSelective (module_name, _) ->
+      let mod_obj = Object.lookup (module_name, env) in
+        (match mod_obj with
+         | Object.Module _ -> mod_obj, module_name
+         | _ ->
+           raise
+             (Errors.Runtime_error_exn
+                (Errors.Not_a_module module_name)))
+    | Object.ImportAs (module_name, _) ->
+      let mod_obj = Object.lookup (module_name, env) in
+        (match mod_obj with
+         | Object.Module _ -> mod_obj, module_name
+         | _ ->
+           raise
+             (Errors.Runtime_error_exn
+                (Errors.Not_a_module module_name)))
+  in
+    match module_obj, import_spec with
+    | Object.Module { name = _; env = module_env; exports }, Object.ImportAll _ ->
+      (* Import all exported symbols *)
+      List.iter exports ~f:(fun export_name ->
+        let value = Object.lookup (export_name, module_env) in
+          Object.bind (export_name, value, env) |> ignore)
+    | Object.Module { name = mod_name; env = module_env; exports }, Object.ImportSelective (_, import_names) ->
+      (* Import only specified symbols *)
+      List.iter import_names ~f:(fun import_name ->
+        if List.mem exports import_name ~equal:String.equal then (
+          let value = Object.lookup (import_name, module_env) in
+            Object.bind (import_name, value, env) |> ignore
+        ) else
+          raise
+            (Errors.Runtime_error_exn
+               (Errors.Export_not_found (mod_name, import_name))))
+    | Object.Module { name = _; env = module_env; exports }, Object.ImportAs (_, alias) ->
+      (* Import all with namespace prefix *)
+      List.iter exports ~f:(fun export_name ->
+        let prefixed_name = [%string "%{alias}.%{export_name}"] in
+        let value = Object.lookup (export_name, module_env) in
+          Object.bind (prefixed_name, value, env) |> ignore)
+    | _ ->
+      raise (Errors.Runtime_error_exn (Errors.Not_a_module import_name))
+
+(** Evaluate a module definition at the top level.
+
+    Handles module definitions that appear at the top level of a program.
+    Modules are bound to their names in the environment.
+
+    @param name Module name
+    @param exports List of exported symbol names
+    @param body_exprs List of body expressions
+    @param env Current environment
+    @return Module object and updated environment *)
+and eval_module_def name exports body_exprs env =
+  eval_module name exports body_exprs env
+
 and eval ast env =
   match ast with
   | Object.Defexpr def_expr -> eval_def def_expr env
+  | Object.ModuleDef (name, exports, body_exprs) ->
+    let _, updated_env = eval_module_def name exports body_exprs env in
+      Object.Symbol "ok", updated_env
   | expr -> eval_expr expr env, env
 ;;

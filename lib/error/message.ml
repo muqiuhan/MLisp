@@ -39,7 +39,13 @@ let message = function
     | Missing_argument args ->
       [%string "Missing arguments : %{String.spacesep args}"]
     | Non_definition_in_stdlib expr ->
-      [%string "This expression is not a defining expression: %{expr}"])
+      [%string "This expression is not a defining expression: %{expr}"]
+    | Not_a_module name ->
+      [%string "Not a module : %{name}"]
+    | Export_not_found (mod_name, export_name) ->
+      [%string "Export '%{export_name}' not found in module '%{mod_name}'"]
+    | Module_load_error (mod_name, reason) ->
+      [%string "Failed to load module '%{mod_name}': %{reason}"])
   | exn ->
     raise exn
 ;;

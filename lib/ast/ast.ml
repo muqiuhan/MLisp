@@ -51,7 +51,8 @@ let rec build_ast : Object.lobject -> Object.expr =
   fun sexpr ->
   match sexpr with
   | Object.Primitive _
-  | Object.Closure _ ->
+  | Object.Closure _
+  | Object.Module _ ->
     raise Errors.This_can't_happen_exn
   | Object.Fixnum _
   | Object.Boolean _
@@ -82,6 +83,10 @@ let rec build_ast : Object.lobject -> Object.expr =
       apply_expr fn_expr args
     | [ Object.Symbol "|="; Object.Symbol fn_name; args; body ] ->
       defun_expr fn_name args body
+    | [ Object.Symbol "module"; Object.Symbol name; exports; body ] when Object.is_list exports && Object.is_list body ->
+      module_expr name exports body
+    | [ Object.Symbol "import"; import_spec ] ->
+      import_expr import_spec
     | [ Object.Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
       let_expr s bindings expr
     | fn_expr :: args ->
@@ -133,6 +138,35 @@ and cond_to_if = function
     If (build_ast cond, build_ast res, cond_to_if condpairs)
   | _ ->
     raise (Errors.Parse_error_exn (Errors.Type_error "(cond conditions)"))
+
+and module_expr name exports body =
+  let extract_symbol = function
+    | Object.Symbol s -> s
+    | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(module name (export ...) body ...)"))
+  in
+  let export_list = List.map ~f:extract_symbol (Object.pair_to_list exports) in
+  let body_exprs = List.map ~f:build_ast (Object.pair_to_list body) in
+    Object.ModuleDef (name, export_list, body_exprs)
+
+and import_expr import_spec =
+  let parse_import = function
+    | Object.Symbol module_name ->
+      Object.Import (Object.ImportAll module_name)
+    | Object.Pair (Object.Symbol module_name, rest) when Object.is_list rest -> (
+      match Object.pair_to_list rest with
+      | [ Object.Symbol ":as"; Object.Symbol alias ] ->
+        Object.Import (Object.ImportAs (module_name, alias))
+      | symbols ->
+        let export_names = List.map ~f:(function
+          | Object.Symbol s -> s
+          | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name symbol ...)"))
+        ) symbols in
+          Object.Import (Object.ImportSelective (module_name, export_names))
+    )
+    | _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
+  in
+    parse_import import_spec
 ;;
 
 let rec string_expr =
@@ -176,4 +210,20 @@ let rec string_expr =
       in
       let bindings = Mlisp_utils.String.spacesep (List.map ~f:string_of_binding bs) in
         [%string "(%{str} (%{bindings}) %{string_expr e})"]
+    | Object.ModuleDef (name, exports, body_exprs) ->
+      let exports_str = Mlisp_utils.String.spacesep exports in
+      let body_str = Mlisp_utils.String.spacesep (List.map ~f:string_expr body_exprs) in
+        [%string "(module %{name} (%{exports_str}) %{body_str})"]
+    | Object.Import import_spec ->
+      let import_str =
+        match import_spec with
+        | Object.ImportAll name ->
+          [%string "(import %{name})"]
+        | Object.ImportSelective (name, symbols) ->
+          let symbols_str = Mlisp_utils.String.spacesep symbols in
+            [%string "(import %{name} %{symbols_str})"]
+        | Object.ImportAs (name, alias) ->
+          [%string "(import %{name} :as %{alias})"]
+      in
+        import_str
 ;;

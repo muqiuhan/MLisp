@@ -1,0 +1,14 @@
+(library
+ (name mlisp_module_loader)
+ (preprocess
+  (pps ppx_string))
+ (libraries
+  core
+  core_unix
+  unix
+  mlisp_object
+  mlisp_error
+  mlisp_eval
+  mlisp_lexer
+  mlisp_ast
+  mlisp_utils))

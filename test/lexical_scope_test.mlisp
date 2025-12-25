@@ -6,7 +6,7 @@
 ;; Test nested scopes
 (%= ((x 10)     ;; Outer scope x = 10
      (y 20))    ;; Outer scope y = 20
-  (+ 
+  (+
     ;; Inner scope, x is shadowed
     (%= ((x 50)   ;; Inner scope x = 50
          (z 30))  ;; Inner scope z = 30
@@ -14,9 +14,9 @@
     x))          ;; Here x=10 (outer scope)
 
 ;; Closure captures lexical scope variables
-(:= make-adder 
+(:= make-adder
   (=> (increment)
-    (=> (x) 
+    (=> (x)
       (+ x increment))))  ;; 'increment' is captured from the lexical scope at definition time
 
 (:= add5 (make-adder 5))

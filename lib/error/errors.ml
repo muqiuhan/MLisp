@@ -22,6 +22,9 @@ type runtime_error =
   | Unspecified_value of string
   | Missing_argument of string list
   | Non_definition_in_stdlib of string
+  | Not_a_module of string
+  | Export_not_found of string * string
+  | Module_load_error of string * string
 
 exception This_can't_happen_exn
 exception Undefined_symbol_exn of string
