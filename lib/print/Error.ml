@@ -25,3 +25,22 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
       data |> file_error |> ignore;
     Out_channel.flush Out_channel.stdout
 ;;
+
+(** Print a warning without stream information.
+
+    Used when stream information is not available (e.g., during module evaluation).
+    Prints a simple warning message to stderr with ANSI color codes for visibility.
+
+    @param module_name Name of the module where warning occurs
+    @param expr_str String representation of the expression
+    @param message Warning message *)
+let print_module_warning module_name expr_str message =
+  let warning_msg =
+    [%string
+      "\027[33m[warning]\027[0m Module '%{module_name}': Non-definition expression in module body: %{expr_str}. %{message}"]
+  in
+    (* Always output to stderr, even if stdout is redirected *)
+    Out_channel.output_string Out_channel.stderr warning_msg;
+    Out_channel.newline Out_channel.stderr;
+    Out_channel.flush Out_channel.stderr
+;;

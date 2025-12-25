@@ -6,6 +6,7 @@
 
 open Mlisp_object
 open Mlisp_error
+open Mlisp_ast
 open Core
 
 (** MLisp expression evaluator with optimized environment handling.
@@ -228,8 +229,16 @@ and eval_module name exports body_exprs env =
         let _, updated_env = eval_def def_expr module_env in
           ignore updated_env
       | _ ->
-        let _, updated_env = eval expr module_env in
-          ignore updated_env)
+        (* Non-definition expression in module body - issue warning *)
+        let expr_str = Ast.string_expr expr in
+        let warning_msg =
+          [%string
+            "Expression result will be discarded. Module bodies should contain only definitions (:=, |=, module, import)."]
+        in
+        (* Print warning to stderr before evaluating the expression *)
+        Mlisp_print.Error.print_module_warning name expr_str warning_msg;
+        let _ = eval_expr expr module_env in
+          ())
   in
   (* Verify all exports exist in module environment *)
   let () =

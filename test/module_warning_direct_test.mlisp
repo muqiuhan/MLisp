@@ -1,0 +1,4 @@
+(module test (export x) 
+  (:= x 42)
+  (+ 1 2)
+  (* 3 4))

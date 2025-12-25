@@ -1,3 +1,5 @@
 (library
  (name mlisp_print)
+ (preprocess
+  (pps ppx_string))
  (libraries mlisp_error mlisp_utils core))
