@@ -1,0 +1,7 @@
+;; Test simple closure outside module
+
+(:= value 42)
+(:= get-value (=> () value))
+
+;; This should return 42
+(get-value)

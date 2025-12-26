@@ -30,3 +30,5 @@ _opam/
 
 
 .mlisp-repl-history
+
+.mlisp-repl-history.bak/

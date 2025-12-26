@@ -85,25 +85,57 @@ let rec repl stream env =
   LNoise.set_completion_callback (completion env);
   LNoise.set_multiline true;
   LNoise.history_load ~filename:".mlisp-repl-history" |> ignore;
+  (* For file mode, populate recent_input with file contents once *)
+  if (not stream.repl_mode) && List.is_empty stream.recent_input then (
+    try
+      let lines = In_channel.read_lines stream.file_name in
+      stream.recent_input <- lines
+    with _ -> ()
+  );
+  let input_stream =
+    if stream.repl_mode then (
+      let input = Ocamline.read
+        ~delim:";;"
+        ~brackets:[ '(', ')' ]
+        ~prompt:prompt_tip
+        ~trim_delim:false
+        ~history_loc:".mlisp-repl-history"
+        ~completion_callback:(completion env)
+        ~hints_callback:(hints env)
+        ()
+      in
+      let input_stream = Mlisp_utils.Stream_wrapper.make_stringstream input in
+      (* Save input for error context *)
+      let lines = String.split input ~on:'\n' in
+      stream.recent_input <- lines;
+      input_stream
+    ) else
+      stream
+  in
   try
+    (* Save position before reading expression for error reporting *)
+    (* Note: read_sexpr calls eat_whitespace which may change position,
+       so we save position before calling read_sexpr *)
+    let saved_line = !(input_stream.line_num) in
+    let saved_column = !(input_stream.column) in
     let ast =
-      (if stream.repl_mode then
-         Ocamline.read
-           ~delim:";;"
-           ~brackets:[ '(', ')' ]
-           ~prompt:prompt_tip
-           ~trim_delim:false
-           ~history_loc:".mlisp-repl-history"
-           ~completion_callback:(completion env)
-           ~hints_callback:(hints env)
-           ()
-         |> Mlisp_utils.Stream_wrapper.make_stringstream
-       else
-         stream)
+      input_stream
       |> Lexer.read_sexpr
       |> Ast.build_ast
     in
+    (* Save the position after reading (for next iteration) *)
+    let final_line = !(input_stream.line_num) in
+    let final_column = !(input_stream.column) in
+    (* Restore position for error reporting (in case of runtime errors) *)
+    let _ = input_stream.line_num := saved_line in
+    let _ = input_stream.column := saved_column in
+    (* Set stream context for warnings *)
+    Eval.set_stream stream;
     let result, env' = Eval.eval ast env in
+    Eval.clear_stream ();
+      (* Restore final position for next iteration *)
+      input_stream.line_num := final_line;
+      input_stream.column := final_column;
       if stream.repl_mode then (
         print_result result;
         stream.line_num := 0
@@ -113,13 +145,14 @@ let rec repl stream env =
   | Stream.Failure ->
     if stream.repl_mode then Out_channel.newline Out_channel.stdout
   | Errors.Syntax_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Syntax_error_exn e);
+    Mlisp_print.Error.print_error input_stream (Errors.Syntax_error_exn e);
     if stream.repl_mode then repl stream env
   | Errors.Parse_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Parse_error_exn e);
+    Mlisp_print.Error.print_error input_stream (Errors.Parse_error_exn e);
     if stream.repl_mode then repl stream env
   | Errors.Runtime_error_exn e ->
-    Mlisp_print.Error.print_error stream (Errors.Runtime_error_exn e);
+    (* Use input_stream position for error reporting, which has the correct position *)
+    Mlisp_print.Error.print_error input_stream (Errors.Runtime_error_exn e);
     if stream.repl_mode then repl stream env
   | End_of_file ->
     print_endline "Goodbye!"

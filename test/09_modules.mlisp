@@ -1,0 +1,66 @@
+;; ============================================================================
+;; Test Suite: Module System
+;; Description: Tests for module definition, import, and exports
+;; ============================================================================
+
+;; Test: Simple module with variable export
+(module math-constants (export pi e)
+  (:= pi 3.14159)
+  (:= e 2.71828))
+
+(import math-constants)
+pi                            ;; Expected: 3.14159
+e                             ;; Expected: 2.71828
+
+;; Test: Module with function export
+(module arithmetic (export add subtract multiply)
+  (:= add (=> (x y) (+ x y)))
+  (:= subtract (=> (x y) (- x y)))
+  (:= multiply (=> (x y) (* x y))))
+
+(import arithmetic)
+(add 10 5)                    ;; Expected: 15
+(subtract 10 5)               ;; Expected: 5
+(multiply 10 5)               ;; Expected: 50
+
+;; Test: Selective import
+(module utils (export public-fn private-fn)
+  (:= public-fn (=> (x) (* x 2)))
+  (:= private-fn (=> (x) (+ x 1))))
+
+(import utils public-fn)
+(public-fn 5)                 ;; Expected: 10
+
+;; Test: Module with internal state
+(module counter-mod (export increment get-count reset)
+  (:= count 0)
+  (:= increment (=> ()
+    (:= count (+ count 1))
+    count))
+  (:= get-count (=> () count))
+  (:= reset (=> ()
+    (:= count 0)
+    count)))
+
+(import counter-mod)
+(increment)                   ;; Expected: 1
+(increment)                   ;; Expected: 2
+(get-count)                   ;; Expected: 2
+(reset)                       ;; Expected: 0
+(increment)                   ;; Expected: 1
+
+;; Test: Module with closure
+(module closure-mod (export get-value)
+  (:= value 42)
+  (:= get-value (=> () value)))
+
+(import closure-mod)
+(get-value)                   ;; Expected: 42
+
+;; Test: Import with alias
+(module string-utils (export concat length)
+  (:= concat (=> (a b) (@ a b)))
+  (:= length (=> (s) 5)))
+
+(import string-utils :as str)
+str                           ;; Should be module object

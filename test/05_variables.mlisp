@@ -1,0 +1,41 @@
+;; ============================================================================
+;; Test Suite: Variable Definitions
+;; Description: Tests for variable definition and lookup
+;; ============================================================================
+
+;; Test: Simple variable definition
+(:= x 42)
+x                             ;; Expected: 42
+
+;; Test: Variable redefinition
+(:= y 10)
+y                             ;; Expected: 10
+(:= y 20)
+y                             ;; Expected: 20
+
+;; Test: Variable with expression
+(:= z (+ 5 3))
+z                             ;; Expected: 8
+
+;; Test: Variable referencing another variable
+(:= a 5)
+(:= b (* a 2))
+b                             ;; Expected: 10
+
+;; Test: Multiple variables
+(:= num1 10)
+(:= num2 20)
+(:= sum (+ num1 num2))
+sum                           ;; Expected: 30
+
+;; Test: String variables
+(:= greeting "Hello")
+(:= name "World")
+greeting                      ;; Expected: "Hello"
+name                          ;; Expected: "World"
+
+;; Test: Boolean variables
+(:= is-true #t)
+(:= is-false #f)
+is-true                       ;; Expected: #t
+is-false                      ;; Expected: #f

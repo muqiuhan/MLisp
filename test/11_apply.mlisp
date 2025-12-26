@@ -1,0 +1,17 @@
+;; ============================================================================
+;; Test Suite: Apply Function
+;; Description: Tests for the apply function
+;; ============================================================================
+
+;; Test: Apply with built-in function
+(:= nums (` (1 2 3 4 5)))
+(>> + nums)                   ;; Expected: 15
+
+;; Test: Apply with lambda
+(:= multiply (=> (x y) (* x y)))
+(:= args (` (6 7)))
+(>> multiply args)            ;; Expected: 42
+
+;; Test: Apply with variable number of arguments
+(:= list-of-nums (` (10 20 30)))
+(>> + list-of-nums)           ;; Expected: 60

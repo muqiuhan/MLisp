@@ -1,0 +1,26 @@
+;; ============================================================================
+;; Test Suite: Basic Types
+;; Description: Tests for primitive data types and literals
+;; ============================================================================
+
+;; Test: Integer literals
+42
+-17
+0
+
+;; Test: Boolean literals
+#t
+#f
+
+;; Test: String literals
+"hello"
+"world"
+""
+"with spaces"
+
+;; Test: Nil
+nil
+
+;; Test: Symbols (through quote)
+(` foo)
+(` bar)

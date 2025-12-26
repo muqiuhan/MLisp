@@ -73,59 +73,59 @@ end
 
 (** This module exports all the needed data types to use this library. It should
       be sufficient to only [open Diagnose.Diagnose].
-  
+
       {2 How to use this module}
-  
+
       This library is intended to provide a very simple way of creating beautiful
       errors, by exposing a small yet simple API to the user.
-  
+
       The basic idea is that a diagnostic is a collection of reports (which embody
       errors or warnings) along with the files which can be referenced in those
       reports.
-  
+
       {2 Generating a report}
-  
+
       A report contains:
-  
+
       - A message, to be shown at the top
-  
+
       - A list of located markers, used to underline parts of the source code and
         to emphasize it with a message
-  
+
       - A list of hints, shown at the very bottom
-  
+
       __Note__: The message type contained in a report is abstracted by a type
       variable. In order to render the report, the message must also be able to be
       rendered in some way (that we'll see later).
-  
+
       This library allows defining two kinds of reports:
-  
+
       - Errors, using 'Err'
-  
+
       - Warnings, using 'Warn'
-  
+
       Both take an optional error code, a message, a list of located markers and a
       list of hints.
-  
+
       A minimal example is:
-  
+
       {[
         module AnsiStyle = MlFront_Thunk.Diagnose.Diagnose.ConsoleAnsiStyle
         (** Configure your style renderer. Another option is ConsolePlainStyle. *)
-  
+
         module Doc = MlFront_Thunk.Diagnose.Diagnose.MakeAnnotatedDoc (AnsiStyle)
         (** Configure your document monad. *)
-  
+
         module Themes = MlFront_Thunk.Diagnose.Diagnose.MakeThemes (AnsiStyle)
         (** Configure your color theme. *)
-  
+
         (** Make a report printer. *)
         module Report =
           MlFront_Thunk.Diagnose.Diagnose.MakeReport (AnsiStyle) (Doc)
             (struct
               let style = Themes.default_style
             end)
-  
+
         (** Define a report. *)
         let example_report : string Report.t =
           {
@@ -147,7 +147,7 @@ end
             blurbs = [];
             is_error = true;
           }
-  
+
         (** Read the source code (ex. "some_test.txt"). *)
         let source =
           String.trim
@@ -156,63 +156,63 @@ end
         Did gyre and gimble in the wabe:
           All mimsy were the borogoves,
           And the mome raths outgrabe.|}
-  
+
         (** Map the source code into lines. *)
         let readonly_file_map =
           let line_array = String.split_on_char '\n' source |> Array.of_list in
           MlFront_Thunk.Diagnose.Diagnose.FilenameMap.add (Some "some_test.txt")
             line_array MlFront_Thunk.Diagnose.Diagnose.FilenameMap.empty
-  
+
         (* Print the report. *)
         let () =
           print_endline
             (Report.pretty_report ~readonly_file_map ~with_unicode:true
                ~tab_size:4 example_report)
       ]}
-  
+
       That produces:
-  
+
       {v
         [error]: This is my first error report
-        
+
             ╭──▶ some_test.txt
             │
           1 │Twas brillig, and the slithy toves
-            •     ┬────── 
+            •     ┬──────
             •     ╰╸ Some text under the marker
-        ────╯  
+        ────╯
       v}
-  
+
       In general, 'Position's are returned by either a lexer or a parser, so that
       you never have to construct them directly in the code.
-  
+
       __Note__: If using any parser library, you will have to convert from the
       internal positioning system to a 'Position' to be able to use this library.
-  
+
       Markers put in the report can be one of (the colors specified are used only
       when pretty-printing):
-  
+
       - A 'Error.Diagnose.Report.This' marker, which is the primary marker of the
         report. While it is allowed to have multiple of these inside one report,
         it is encouraged not to, because the position at the top of the report
         will only be the one of the /first/ 'Error.Diagnose.Report.This' marker,
         and because the resulting report may be harder to understand. This marker
         is output in red in an error report, and yellow in a warning report.
-  
+
       - A 'Error.Diagnose.Report.Where' marker contains additional
         information\/provides context to the error\/warning report. For example,
         it may underline where a given variable [@x@] is bound to emphasize it.
         This marker is output in blue.
-  
+
       - A 'Error.Diagnose.Report.Maybe' marker may contain possible fixes (if the
         text is short, else hints are recommended for this use). This marker is
         output in magenta.
-  
+
       - A 'Error.Diagnose.Report.Blank' marker is useful only to output additional
         lines of code in the report. This marker is not output and has no color.
-  
+
       {2 Creating diagnostics from reports}
-  
+
       To create a new diagnostic, you need to use its 'Data.Default.Default'
       instance (which exposes a 'def' function, returning a new empty
       'Diagnostic'). Once the 'Diagnostic' is created, you can use either
@@ -221,25 +221,25 @@ end
       diagnostic, or 'addFile' (which takes a 'Diagnostic', a 'FilePath' and a
       [String], and returns a 'Diagnostic') to insert a new file reference in the
       diagnostic.
-  
+
       You can then either pretty-print the diagnostic obtained (which requires all
       messages to be instances of the 'Prettyprinter.Pretty') -- directly onto a
       file handle or as a plain 'Prettyprinter.Doc'ument -- or export it to a lazy
       JSON 'Data.Bytestring.Lazy.ByteString' (e.g. in a LSP context).
-  
+
       {3 Pretty-printing a diagnostic}
-  
+
       'Diagnostic's can be output using the 'printDiagnostic' function. This
       function takes several parameters:
-  
+
       - The 'AnsiSyle' onto which to output the 'Diagnostic'.
-  
+
       - A 'Bool' used to indicate whether you want to output the 'Diagnostic' with
         unicode characters, or simple ASCII characters.
-  
+
       {v
            Here are two examples of the same diagnostic, the first output with unicode characters, and the second output with ASCII characters:
-  
+
            > [error]: Error with one marker in bounds
            >      ╭──▶ test.zc@1:25-1:30
            >      │
@@ -247,7 +247,7 @@ end
            >      •                         ┬────
            >      •                         ╰╸ Required here
            > ─────╯
-  
+
            > [error]: Error with one marker in bounds
            >      +--> test.zc@1:25-1:30
            >      |
@@ -256,19 +256,19 @@ end
            >      :                         `- Required here
            > -----+
       v}
-  
+
       - A 'Bool' set to 'False' if you don't want colors in the end result.
-  
+
       - A 'Int' describing the number of spaces with which to output a TAB
         character.
-  
+
       - The [Style] describing colors of the report. See the module
         "Error.Diagnose.Style" for how to define new styles.
-  
+
       - And finally the 'Diagnostic' to output.
-  
+
       {3 Pretty-printing a diagnostic as a document}
-  
+
       'Diagnostic's can be “output” (at least ready to be rendered) to a
       'Prettyprinter.Doc' using 'prettyDiagnostic', which allows it to be easily
       added to other 'Prettyprinter.Doc' outputs. This makes it easy to customize
@@ -276,16 +276,16 @@ end
       it). As a 'Prettyprinter.Doc', there is also the possibility of altering
       internal annotations (styles) much easier (although this is already possible
       when printing the diagnostic).
-  
+
       The arguments of the function mostly follow the ones from 'printDiagnostic'.
       The style is not one, as it can be applied by simply applying the styling
       function to the resulting function (if wanted).
-  
+
       {3 Exporting a diagnostic to JSON}
-  
+
       'Diagnostic's can be exported to a JSON record of the following type, using
       the 'diagnosticToJson' function:
-  
+
       {v
        { files:
            { name: string
@@ -308,11 +308,11 @@ end
            }[]
        }
       v}
-  
+
       This is particularly useful in the context of a LSP server, where outputting
       or parsing a raw error yields strange results or is unnecessarily
       complicated.
-  
+
       Please note that this requires the flag [diagnose:json] to be enabled. *)
 module Diagnose = struct
   type ansi_color =
@@ -346,7 +346,7 @@ module Diagnose = struct
 
     (** Changes the {!color} or {!color_dull} that immediately follows the
           [bold] to a bold color.
-  
+
           A {!color} or {!color_dull} that does not have a immediately preceding
           {!bold} is styled as a regular color.*)
     val bold : 'a t
@@ -597,28 +597,28 @@ module Diagnose = struct
   end
 
   (** Custom style definitions.
-  
+
         {1 Defining new style}
-  
+
         Defining new color styles (one may call them "themes") is actually rather
         easy.
-  
+
         A [Style] is a function from an annotated [Doc]ument to another annotated
         [Doc]ument. Note that only the annotation type changes, hence the need of
         only providing a unidirectional mapping between those.
-  
+
         [Annotation]s are used when creating a [Doc]ument and are simply
         placeholders to specify custom colors. [AnsiStyle] is the concrete
         annotation to specify custom colors when rendering a [Doc]ument.
-  
+
         One may define additional styles as follows:
-  
+
         {v
           myNewCustomStyle :: Style
           myNewCustomStyle = reAnnotate \case
             -- all cases for all annotations
         v}
-  
+
         For simplicity's sake, a default style is given as {!default_style}. *)
   module MakeThemes (AnsiStyle : ANSI_STYLE) = struct
     include MakeAnnotatedDoc (AnsiStyle)
@@ -643,7 +643,7 @@ module Diagnose = struct
     ;;
 
     (** The default style for diagnostics, where:
-  
+
           - 'Error.Diagnose.Report.This' markers are colored in red for errors and yellow for warnings
           - 'Error.Diagnose.Report.Where' markers are colored in dull blue
           - 'Error.Diagnose.Report.Maybe' markers are colored in magenta
@@ -1167,19 +1167,19 @@ module Diagnose = struct
     (** [pretty_sub_report ~readonly_file_map ~with_unicode ~is_error ~tab_size
            ~max_line_number_length ~is_first markers] pretty-prints a sub-report,
           which is a part of the report spanning across a single file.
-  
+
           [~readonly_file_map]: The content of files in the diagnostics
-  
+
           [~with_unicode]: Is the output done with Unicode characters?
-  
+
           [~is_error]: Is the current report an error report?
-  
+
           [~tab_size]: The number of spaces each TAB character will span
-  
+
           [~max_line_number_length]: The size of the biggest line number
-  
+
           [~is_first]: Is this sub-report the first one in the list?
-  
+
           [markers]: The list of line-ordered markers appearing in a single file
       *)
     and pretty_sub_report
@@ -1342,7 +1342,7 @@ module Diagnose = struct
             if is_error then
               Annotation.MarkerStyle (markerstyle marker)
             else
-              Annotation.ThisColor true
+              Annotation.ThisColor false
           in
             [ AnsiStyle.text s, ann ]
         | None ->
@@ -1514,7 +1514,7 @@ module Diagnose = struct
               (if is_error then
                  Annotation.MarkerStyle (markerstyle marker)
                else
-                 Annotation.ThisColor true)
+                 Annotation.ThisColor false)
           | None ->
             None
         in
@@ -1552,7 +1552,7 @@ module Diagnose = struct
               if is_error then
                 Annotation.MarkerStyle (markerstyle marker)
               else
-                Annotation.ThisColor true
+                Annotation.ThisColor false
             in
               annotate_doc
                 ann
@@ -1660,7 +1660,7 @@ module Diagnose = struct
                     if is_error then
                       MarkerStyle (ThisColor true)
                     else
-                      ThisColor true
+                      ThisColor false
                   | Some (_, Where _) ->
                     if is_error then
                       MarkerStyle WhereColor
@@ -1722,7 +1722,7 @@ module Diagnose = struct
         let len = end_col - begin_col in
           (* Invalid argument raised when:
              pos < 0, or len < 0, or pos + len > length a
-             
+
              This is Diagnose. Do not raise an error even for programmer incorrectness. *)
           if pos < 0 || len < 0 || pos + len > Array.length widths then
             0
@@ -1777,7 +1777,7 @@ module Diagnose = struct
                     if is_error then
                       Annotation.MarkerStyle (markerstyle marker)
                     else
-                      Annotation.ThisColor true)
+                      Annotation.ThisColor false)
               in
               let message_doc =
                 show_messages
@@ -1796,7 +1796,7 @@ module Diagnose = struct
                     if is_error then
                       Annotation.MarkerStyle (markerstyle marker)
                     else
-                      Annotation.ThisColor true)
+                      Annotation.ThisColor false)
                   ~widths_between
               in
                 marker_doc
@@ -2047,7 +2047,7 @@ module Diagnose = struct
             (* also pre-render pipes which are before the message text bounds, because they will be shown if the message is on
                  multiple lines *)
             (* Haskell source code:
-              
+
   lineStart pipesBeforeRendered
                       <> annotate (markerColor isError msg) (currentPipe <> pretty (replicate lineLen lineChar) <> pointChar)
                       <+> annotate (markerColor isError msg) (replaceLinesWith (space <> lineStart pipesBeforeMessageRendered <+> if List.null pipesBeforeMessageStart then "  " else " ") 0 $ annotated $ markerMessage msg)
@@ -2160,7 +2160,7 @@ module Diagnose = struct
       if is_error then
         Annotation.MarkerStyle (markerstyle marker)
       else
-        Annotation.ThisColor true
+        Annotation.ThisColor false
     ;;
   end
   end

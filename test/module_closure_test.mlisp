@@ -1,0 +1,10 @@
+;; Test closure capture in modules
+
+(module outer (export get-value)
+  (:= value 42)
+  (:= get-value (=> () value)))
+
+(import outer)
+
+;; This should return 42
+(get-value)

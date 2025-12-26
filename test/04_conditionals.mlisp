@@ -1,0 +1,40 @@
+;; ============================================================================
+;; Test Suite: Conditional Expressions
+;; Description: Tests for if, cond, and, or expressions
+;; ============================================================================
+
+;; Test: Simple if expressions
+(? #t 1 2)                    ;; Expected: 1
+(? #f 1 2)                    ;; Expected: 2
+(? (> 5 3) "yes" "no")        ;; Expected: "yes"
+(? (< 5 3) "yes" "no")        ;; Expected: "no"
+
+;; Test: Nested if expressions
+(? #t (? #t 1 2) 3)           ;; Expected: 1
+(? #f 1 (? #t 2 3))           ;; Expected: 2
+(? (> 10 5) (+ 1 2) (* 3 4))  ;; Expected: 3
+
+;; Test: And expressions
+(&& #t #t)                    ;; Expected: #t
+(&& #t #f)                    ;; Expected: #f
+(&& #f #t)                    ;; Expected: #f
+(&& (> 5 3) (< 2 4))          ;; Expected: #t
+
+;; Test: Or expressions
+(|| #t #f)                    ;; Expected: #t
+(|| #f #t)                    ;; Expected: #t
+(|| #f #f)                    ;; Expected: #f
+(|| (> 5 10) (< 2 4))         ;; Expected: #t
+
+;; Test: Cond expressions
+(?? ((< 5 3) 1)
+    ((> 5 3) 2)
+    ((== 5 3) 3))             ;; Expected: 2
+
+(?? ((== 1 2) "first")
+    ((== 2 2) "second")
+    ((== 3 3) "third"))       ;; Expected: "second"
+
+;; Test: Complex conditions
+(? (&& (> 10 5) (< 3 7)) "both true" "not both")    ;; Expected: "both true"
+(? (|| (> 10 5) (< 7 3)) "at least one" "none")     ;; Expected: "at least one"

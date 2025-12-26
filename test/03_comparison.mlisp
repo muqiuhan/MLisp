@@ -1,0 +1,40 @@
+;; ============================================================================
+;; Test Suite: Comparison Operations
+;; Description: Tests for comparison and equality operations
+;; ============================================================================
+
+;; Test: Equality
+(== 5 5)          ;; Expected: #t
+(== 5 6)          ;; Expected: #f
+(== 0 0)          ;; Expected: #t
+(== -1 -1)        ;; Expected: #t
+
+;; Test: Inequality
+(!= 5 6)          ;; Expected: #t
+(!= 5 5)          ;; Expected: #f
+(!= 0 1)          ;; Expected: #t
+
+;; Test: Less than
+(< 5 10)          ;; Expected: #t
+(< 10 5)          ;; Expected: #f
+(< 5 5)           ;; Expected: #f
+(< -5 0)          ;; Expected: #t
+
+;; Test: Less than or equal
+(<= 5 10)         ;; Expected: #t
+(<= 10 10)        ;; Expected: #t
+(<= 10 5)         ;; Expected: #f
+
+;; Test: Greater than
+(> 10 5)          ;; Expected: #t
+(> 5 10)          ;; Expected: #f
+(> 5 5)           ;; Expected: #f
+
+;; Test: Greater than or equal
+(>= 10 5)         ;; Expected: #t
+(>= 5 5)          ;; Expected: #t
+(>= 5 10)         ;; Expected: #f
+
+;; Test: Comparison chains
+(< 1 (+ 2 3))     ;; Expected: #t
+(> (* 3 4) (+ 5 5))   ;; Expected: #t

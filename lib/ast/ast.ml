@@ -83,10 +83,11 @@ let rec build_ast : Object.lobject -> Object.expr =
       apply_expr fn_expr args
     | [ Object.Symbol "|="; Object.Symbol fn_name; args; body ] ->
       defun_expr fn_name args body
-    | [ Object.Symbol "module"; Object.Symbol name; exports; body ] when Object.is_list exports && Object.is_list body ->
-      module_expr name exports body
-    | [ Object.Symbol "import"; import_spec ] ->
-      import_expr import_spec
+    | Object.Symbol "module" :: Object.Symbol name :: exports :: body_exprs
+      when Object.is_list exports ->
+      module_expr name exports body_exprs
+    | Object.Symbol "import" :: import_args ->
+      import_expr import_args
     | [ Object.Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
       let_expr s bindings expr
     | fn_expr :: args ->
@@ -139,34 +140,42 @@ and cond_to_if = function
   | _ ->
     raise (Errors.Parse_error_exn (Errors.Type_error "(cond conditions)"))
 
-and module_expr name exports body =
+and module_expr name exports body_exprs =
   let extract_symbol = function
     | Object.Symbol s -> s
     | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(module name (export ...) body ...)"))
   in
-  let export_list = List.map ~f:extract_symbol (Object.pair_to_list exports) in
-  let body_exprs = List.map ~f:build_ast (Object.pair_to_list body) in
-    Object.ModuleDef (name, export_list, body_exprs)
-
-and import_expr import_spec =
-  let parse_import = function
-    | Object.Symbol module_name ->
-      Object.Import (Object.ImportAll module_name)
-    | Object.Pair (Object.Symbol module_name, rest) when Object.is_list rest -> (
-      match Object.pair_to_list rest with
-      | [ Object.Symbol ":as"; Object.Symbol alias ] ->
-        Object.Import (Object.ImportAs (module_name, alias))
-      | symbols ->
-        let export_names = List.map ~f:(function
-          | Object.Symbol s -> s
-          | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name symbol ...)"))
-        ) symbols in
-          Object.Import (Object.ImportSelective (module_name, export_names))
-    )
-    | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
+  let export_list =
+    match Object.pair_to_list exports with
+    | Object.Symbol "export" :: symbols ->
+      (* Skip the 'export' keyword and extract the rest *)
+      List.map ~f:extract_symbol symbols
+    | symbols ->
+      (* No 'export' keyword, treat all as export symbols *)
+      List.map ~f:extract_symbol symbols
   in
-    parse_import import_spec
+  (* body_exprs is now already an OCaml list of lobjects *)
+  let body_ast_list = List.map ~f:build_ast body_exprs in
+    Object.ModuleDef (name, export_list, body_ast_list)
+
+and import_expr import_args =
+  (* import_args is now an OCaml list of lobjects *)
+  match import_args with
+  | [ Object.Symbol module_name ] ->
+    (* (import module-name) - import all *)
+    Object.Import (Object.ImportAll module_name)
+  | Object.Symbol module_name :: Object.Symbol ":as" :: Object.Symbol alias :: [] ->
+    (* (import module-name :as alias) - import with alias *)
+    Object.Import (Object.ImportAs (module_name, alias))
+  | Object.Symbol module_name :: symbols ->
+    (* (import module-name symbol1 symbol2 ...) - selective import *)
+    let export_names = List.map symbols ~f:(function
+      | Object.Symbol s -> s
+      | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name symbol ...)"))
+    ) in
+      Object.Import (Object.ImportSelective (module_name, export_names))
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
 ;;
 
 let rec string_expr =

@@ -7,7 +7,17 @@
 open Mlisp_object
 open Mlisp_error
 open Mlisp_ast
+open Mlisp_utils
 open Core
+
+(** Global reference to current execution stream for error/warning context *)
+let current_stream : char Stream_wrapper.t option ref = ref None
+
+(** Set the current stream context for error/warning reporting *)
+let set_stream stream = current_stream := Some stream
+
+(** Clear the current stream context *)
+let clear_stream () = current_stream := None
 
 (** MLisp expression evaluator with optimized environment handling.
 
@@ -170,10 +180,21 @@ and eval_closure names expr args closure_data env =
     (* use the old full environment *)
     let call_env = Object.bind_list names args cl_env in
       eval_expr expr call_env
-  | Object.Optimized _cl_env ->
+  | Object.Optimized cl_env ->
     (* use the optimized closure environment *)
-    let call_env = Object.bind_list names args env in
-      eval_expr expr call_env
+    (* Get the parent environment from the closure *)
+    let parent_env = match cl_env.parent_env with
+      | Some p -> p
+      | None -> env  (* fallback to call environment if no parent *)
+    in
+    (* Create a new environment for the call, extending the parent *)
+    let call_env = Object.extend_env parent_env in
+    (* Bind captured variables to the call environment *)
+    List.iter cl_env.captured_vars ~f:(fun (var_name, value_ref) ->
+      Object.bind_local (var_name, value_ref, call_env) |> ignore);
+    (* Bind parameters to their arguments *)
+    let call_env_with_args = Object.bind_list names args call_env in
+      eval_expr expr call_env_with_args
 
 and eval_def def env =
   match def with
@@ -236,7 +257,15 @@ and eval_module name exports body_exprs env =
             "Expression result will be discarded. Module bodies should contain only definitions (:=, |=, module, import)."]
         in
         (* Print warning to stderr before evaluating the expression *)
-        Mlisp_print.Error.print_module_warning name expr_str warning_msg;
+        (* Pass stream context if available for better source code display *)
+        (match !current_stream with
+        | Some stream ->
+          Mlisp_print.Error.print_module_warning
+            ~file_name:stream.file_name
+            ~source_lines:stream.recent_input
+            name expr_str warning_msg
+        | None ->
+          Mlisp_print.Error.print_module_warning name expr_str warning_msg);
         let _ = eval_expr expr module_env in
           ())
   in
@@ -314,6 +343,8 @@ and eval_import import_spec env =
             (Errors.Runtime_error_exn
                (Errors.Export_not_found (mod_name, import_name))))
     | Object.Module { name = _; env = module_env; exports }, Object.ImportAs (_, alias) ->
+      (* Bind the alias to the module object *)
+      Object.bind (alias, module_obj, env) |> ignore;
       (* Import all with namespace prefix *)
       List.iter exports ~f:(fun export_name ->
         let prefixed_name = [%string "%{alias}.%{export_name}"] in

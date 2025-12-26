@@ -13,6 +13,7 @@ type 'a stream =
   ; stream : 'a Stream.t
   ; repl_mode : bool
   ; file_name : string
+  ; mutable recent_input : string list (** Recent input lines for REPL context *)
   }
 
 type 'a t = 'a stream
@@ -25,6 +26,7 @@ let make_stream (type a) : ?file_name:string -> bool -> a Stream.t -> a stream =
   ; stream
   ; file_name
   ; column = ref 0
+  ; recent_input = []
   }
 ;;
 
