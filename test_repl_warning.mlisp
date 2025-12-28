@@ -1,0 +1,4 @@
+(module test (export x)
+  (define x 42)
+  (+ 1 2))
+

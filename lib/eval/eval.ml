@@ -302,8 +302,12 @@ and eval_module name exports body_exprs env =
            (* Normal let evaluation *)
            let _ = eval_expr expr module_env in
              ())
-      | Object.Let _ | Object.If _ | Object.And _ | Object.Or _ | Object.Apply _ | Object.Call _ ->
-        (* These expressions can contain definitions, evaluate them *)
+      | Object.Let _ | Object.If _ | Object.And _ | Object.Or _ ->
+        (* These expressions can contain definitions in their bodies, evaluate them *)
+        let _ = eval_expr expr module_env in
+          ()
+      | Object.ModuleDef _ | Object.Import _ ->
+        (* Module and import are allowed in module body *)
         let _ = eval_expr expr module_env in
           ()
       | _ ->
@@ -311,16 +315,92 @@ and eval_module name exports body_exprs env =
         let expr_str = Ast.string_expr expr in
         let warning_msg =
           [%string
-            "Expression result will be discarded. Module bodies should contain only definitions (:=, |=, module, import)."]
+            "Expression result will be discarded. Module bodies should contain only definitions (define, defun, module, import)."]
+        in
+        (* Find the position of the expression in source code *)
+        let find_expr_position source_lines expr_str =
+          (* Normalize strings for comparison (remove whitespace and convert to lowercase) *)
+          let normalize s =
+            String.filter s ~f:(fun c -> not (Char.is_whitespace c))
+            |> String.lowercase
+          in
+          let normalized_expr = normalize expr_str in
+          (* Search for the expression across all lines *)
+          let rec search_lines lines line_num =
+            match lines with
+            | [] -> None
+            | line :: rest ->
+              let normalized_line = normalize line in
+              (* Check if the line contains the expression *)
+              if String.is_substring normalized_line ~substring:normalized_expr then (
+                (* Find the column position of the expression in the line *)
+                (* Look for the opening parenthesis of the expression *)
+                let find_start_col line =
+                  let expr_start = String.strip expr_str in
+                  let expr_first_char =
+                    if String.is_empty expr_start then
+                      None
+                    else
+                      Some (String.get expr_start 0)
+                  in
+                  let rec search_col pos =
+                    if pos >= String.length line then
+                      None
+                    else (
+                      match expr_first_char with
+                      | Some '(' when Char.equal (String.get line pos) '(' ->
+                        (* Found opening parenthesis, check if it matches the expression *)
+                        let remaining = String.drop_prefix line pos in
+                        let normalized_remaining = normalize remaining in
+                        if String.is_prefix normalized_remaining ~prefix:normalized_expr then
+                          Some (pos + 1)
+                        else
+                          search_col (pos + 1)
+                      | Some ch when Char.equal (String.get line pos) ch ->
+                        (* Found first character, check if it matches *)
+                        let remaining = String.drop_prefix line pos in
+                        let normalized_remaining = normalize remaining in
+                        if String.is_prefix normalized_remaining ~prefix:normalized_expr then
+                          Some (pos + 1)
+                        else
+                          search_col (pos + 1)
+                      | _ -> search_col (pos + 1)
+                    )
+                  in
+                    search_col 0
+                in
+                  match find_start_col line with
+                  | Some col -> Some (line_num, col)
+                  | None -> search_lines rest (line_num + 1)
+              ) else
+                search_lines rest (line_num + 1)
+          in
+            search_lines source_lines 1
         in
         (* Print warning to stderr before evaluating the expression *)
         (* Pass stream context if available for better source code display *)
         (match !current_stream with
         | Some stream ->
-          Mlisp_print.Error.print_module_warning
-            ~file_name:stream.file_name
-            ~source_lines:stream.recent_input
-            name expr_str warning_msg
+          let source_lines = stream.recent_input in
+          let file_name =
+            if stream.repl_mode then
+              "stdin"
+            else
+              stream.file_name
+          in
+          let line_num, col_num =
+            match find_expr_position source_lines expr_str with
+            | Some (line, col) -> line, col
+            | None ->
+              (* Fallback: use current stream position or default *)
+              (if stream.repl_mode then 1 else !(stream.line_num)), !(stream.column)
+          in
+            Mlisp_print.Error.print_module_warning
+              ~file_name
+              ~line_number:line_num
+              ~column_number:col_num
+              ?source_lines:(if List.is_empty source_lines then None else Some source_lines)
+              name expr_str warning_msg
         | None ->
           Mlisp_print.Error.print_module_warning name expr_str warning_msg);
         let _ = eval_expr expr module_env in

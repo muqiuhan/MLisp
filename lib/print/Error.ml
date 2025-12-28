@@ -24,8 +24,14 @@ let print_error (stream : 'a Stream_wrapper.t) exn =
   let open Mlisp_error.Error in
   let open Mlisp_error.Help in
   let error_code = Mlisp_error.Codes.error_code exn in
+  let file_name =
+    if stream.repl_mode then
+      "stdin"
+    else
+      stream.file_name
+  in
   let data =
-    { file_name = stream.file_name
+    { file_name
     ; line_number = !(stream.line_num)
     ; column_number = !(stream.column)
     ; message = Message.message exn
@@ -72,8 +78,8 @@ let print_module_warning
       "%{short_title}\n\n\
        Guidance:\n\
       \  - Module bodies should contain only definitions\n\
-      \  - Use (:= name value) for variables\n\
-      \  - Use (|= name (args) body) for functions\n\
+      \  - Use (define name value) for variables\n\
+      \  - Use (defun name (args) body) for functions\n\
       \  - Use (import module) or (module ...) for modules"]
   in
   (* Create a warning report with source code context if available *)
@@ -85,7 +91,9 @@ let print_module_warning
       FilenameMap.empty
   in
   let begin_col = max 1 column_number in
-  let end_col = begin_col + 1 in
+  (* Calculate end column based on expression length, but ensure it's at least begin_col + 1 *)
+  let expr_len = String.length expr_str in
+  let end_col = max (begin_col + 1) (begin_col + min expr_len 20) in
   (* Marker message: the actual warning text shown in source context *)
   let marker_msg = message in
   let report : string WarningReport.t =

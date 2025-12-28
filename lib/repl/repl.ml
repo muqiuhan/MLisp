@@ -111,8 +111,24 @@ let rec repl stream env ~has_error =
           ()
       in
       let input_stream = Mlisp_utils.Stream_wrapper.make_stringstream input in
-      (* Save input for error context *)
+      (* Save input for error context - ensure we have at least one non-empty line *)
       let lines = String.split input ~on:'\n' in
+      let lines =
+        if
+          List.is_empty lines
+          || (List.length lines = 1 && String.is_empty (List.hd_exn lines))
+        then
+          [ input ]
+        else
+          (* Filter out empty trailing lines *) List.filter lines ~f:(fun line ->
+            not (String.is_empty line))
+      in
+      let lines =
+        if List.is_empty lines then
+          [ input ]
+        else
+          lines
+      in
         stream.recent_input <- lines;
         input_stream
     ) else
@@ -149,7 +165,17 @@ let rec repl stream env ~has_error =
         Out_channel.newline Out_channel.stdout
       (* In file mode, Stream.Failure means end of file, not an error *)
     | Errors.Syntax_error_exn e ->
-      Mlisp_print.Error.print_error input_stream (Errors.Syntax_error_exn e);
+      (* In REPL mode, use stream to access recent_input, but update position from input_stream *)
+      if stream.repl_mode then (
+        stream.line_num := !(input_stream.line_num);
+        stream.column := !(input_stream.column)
+      );
+      Mlisp_print.Error.print_error
+        (if stream.repl_mode then
+           stream
+         else
+           input_stream)
+        (Errors.Syntax_error_exn e);
       if stream.repl_mode then
         repl stream env ~has_error
       else (
@@ -157,7 +183,17 @@ let rec repl stream env ~has_error =
         repl stream env ~has_error
       )
     | Errors.Parse_error_exn e ->
-      Mlisp_print.Error.print_error input_stream (Errors.Parse_error_exn e);
+      (* In REPL mode, use stream to access recent_input, but update position from input_stream *)
+      if stream.repl_mode then (
+        stream.line_num := !(input_stream.line_num);
+        stream.column := !(input_stream.column)
+      );
+      Mlisp_print.Error.print_error
+        (if stream.repl_mode then
+           stream
+         else
+           input_stream)
+        (Errors.Parse_error_exn e);
       if stream.repl_mode then
         repl stream env ~has_error
       else (
@@ -165,8 +201,17 @@ let rec repl stream env ~has_error =
         repl stream env ~has_error
       )
     | Errors.Runtime_error_exn e ->
-      (* Use input_stream position for error reporting, which has the correct position *)
-      Mlisp_print.Error.print_error input_stream (Errors.Runtime_error_exn e);
+      (* In REPL mode, use stream to access recent_input, but update position from input_stream *)
+      if stream.repl_mode then (
+        stream.line_num := !(input_stream.line_num);
+        stream.column := !(input_stream.column)
+      );
+      Mlisp_print.Error.print_error
+        (if stream.repl_mode then
+           stream
+         else
+           input_stream)
+        (Errors.Runtime_error_exn e);
       if stream.repl_mode then
         repl stream env ~has_error
       else (
