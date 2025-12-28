@@ -33,6 +33,7 @@ let basis =
   let newprim acc (name, func) = Object.bind (name, Object.Primitive (name, func), acc) in
   let initial_env = Object.create_env () in
     Object.bind ("empty-symbol", Object.Symbol "", initial_env) |> ignore;
+    Object.bind ("nil", Object.Nil, initial_env) |> ignore;
     [ Num.basis; String.basis; Std.basis ]
     |> Core.List.concat
     |> Core.List.fold_left ~f:newprim ~init:initial_env

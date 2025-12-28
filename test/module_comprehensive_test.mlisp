@@ -2,15 +2,15 @@
 
 ;; Test 1: Simple module with variable
 (module simple (export x)
-  (:= x 42))
+  (define x 42))
 
 (import simple)
 x
 
 ;; Test 2: Module with function
 (module math (export add sub)
-  (:= add (=> (x y) (+ x y)))
-  (:= sub (=> (x y) (- x y))))
+  (define add (lambda (x y) (+ x y)))
+  (define sub (lambda (x y) (- x y))))
 
 (import math)
 (add 10 5)
@@ -18,8 +18,8 @@ x
 
 ;; Test 3: Module with multiple definitions
 (module utils (export greet double)
-  (:= greet (=> (name) (@ "Hello, " name "!")))
-  (:= double (=> (x) (* x 2))))
+  (define greet (lambda (name) (list "Hello, " name "!")))
+  (define double (lambda (x) (* x 2))))
 
 (import utils greet double)
 (greet "World")
@@ -27,9 +27,9 @@ x
 
 ;; Test 4: Selective import
 (module mixed (export public internal)
-  (:= public 100)
-  (:= internal 200)
-  (:= secret 300))
+  (define public 100)
+  (define internal 200)
+  (define secret 300))
 
 (import mixed public)
 public
@@ -38,17 +38,17 @@ public
 
 ;; Test 5: Module with let bindings
 (module let-test (export result)
-  (%= ((x 10)
+  (let ((x 10)
        (y 20))
-    (:= result (+ x y))))
+    (define result (+ x y))))
 
 (import let-test)
 result
 
 ;; Test 6: Module with function definition
 (module func-test (export factorial)
-  (|= factorial (n)
-    (? (== n 0)
+  (defun factorial (n)
+    (if (== n 0)
        1
        (* n (factorial (- n 1))))))
 
@@ -57,14 +57,14 @@ result
 
 ;; Test 7: Module accessing parent environment (primitives)
 (module uses-prim (export add-one)
-  (:= add-one (=> (x) (+ x 1))))
+  (define add-one (lambda (x) (+ x 1))))
 
 (import uses-prim)
 (add-one 41)
 
 ;; Test 8: Expression evaluation in module body (non-definition)
 (module expr-test (export value)
-  (:= value (+ 1 2 3)))
+  (define value (+ 1 2 3)))
 
 (import expr-test)
 value

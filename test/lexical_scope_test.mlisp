@@ -1,34 +1,34 @@
 ;; Lexical scope test example
 
 ;; Define a global variable
-(:= global-x 100)
+(define global-x 100)
 
 ;; Test nested scopes
-(%= ((x 10)     ;; Outer scope x = 10
+(let ((x 10)     ;; Outer scope x = 10
      (y 20))    ;; Outer scope y = 20
   (+
     ;; Inner scope, x is shadowed
-    (%= ((x 50)   ;; Inner scope x = 50
+    (let ((x 50)   ;; Inner scope x = 50
          (z 30))  ;; Inner scope z = 30
       (+ (+ x y) z))  ;; Here x=50, y=20 (from outer), z=30
     x))          ;; Here x=10 (outer scope)
 
 ;; Closure captures lexical scope variables
-(:= make-adder
-  (=> (increment)
-    (=> (x)
+(define make-adder
+  (lambda (increment)
+    (lambda (x)
       (+ x increment))))  ;; 'increment' is captured from the lexical scope at definition time
 
-(:= add5 (make-adder 5))
-(:= add10 (make-adder 10))
+(define add5 (make-adder 5))
+(define add10 (make-adder 10))
 
 ;; Test lexical scope of closures
 (add5 3)   ;; Should return 8 (3 + 5)
 (add10 3)  ;; Should return 13 (3 + 10)
 
 ;; Recursive function and lexical scope
-(|= factorial (n)
-  (? (== n 0)
+(defun factorial (n)
+  (if (== n 0)
      1
      (* n (factorial (- n 1)))))
 

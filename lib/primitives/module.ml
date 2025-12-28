@@ -20,8 +20,10 @@ let load_module_primitive = function
     raise
       (Errors.Parse_error_exn
          (Errors.Type_error
-            "(load-module \"module-name\") - not yet implemented. Use (module ...) to define modules inline."))
+            "(load-module \"module-name\") - not yet implemented. Use (module ...) to \
+             define modules inline."))
   | _ ->
     raise (Errors.Parse_error_exn (Errors.Type_error "(load-module string)"))
+;;
 
 let basis = [ "load-module", load_module_primitive ]

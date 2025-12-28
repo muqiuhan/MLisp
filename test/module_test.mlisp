@@ -2,9 +2,9 @@
 
 ;; Define a simple math module
 (module math (export add sub mul)
-  (:= add (=> (x y) (+ x y)))
-  (:= sub (=> (x y) (- x y)))
-  (:= mul (=> (x y) (* x y))))
+  (define add (lambda (x y) (+ x y)))
+  (define sub (lambda (x y) (- x y)))
+  (define mul (lambda (x y) (* x y))))
 
 ;; Import all symbols from math module
 (import math)
@@ -16,9 +16,9 @@
 
 ;; Define another module with selective exports
 (module utils (export greet capitalize)
-  (:= greet (=> (name) (@ "Hello, " name "!")))
-  (:= capitalize (=> (str) str))
-  (:= internal-helper (=> (x) x)))
+  (define greet (lambda (name) (list "Hello, " name "!")))
+  (define capitalize (lambda (str) str))
+  (define internal-helper (lambda (x) x)))
 
 ;; Import specific symbols
 (import utils greet)
@@ -31,8 +31,8 @@
 
 ;; Define a module with namespace import
 (module string-ops (export concat length)
-  (:= concat (=> (a b) (@ a b)))
-  (:= length (=> (s) 0)))
+  (define concat (lambda (a b) (list a b)))
+  (define length (lambda (s) 0)))
 
 ;; Import with alias
 (import string-ops :as str)
@@ -43,8 +43,8 @@ str
 
 ;; Nested module test
 (module outer (export get-value)
-  (:= value 42)
-  (:= get-value (=> () value)))
+  (define value 42)
+  (define get-value (lambda () value)))
 
 (import outer)
 

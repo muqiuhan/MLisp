@@ -5,8 +5,8 @@
 
 ;; Test: Simple module with variable export
 (module math-constants (export pi e)
-  (:= pi 3.14159)
-  (:= e 2.71828))
+  (define pi 3.14159)
+  (define e 2.71828))
 
 (import math-constants)
 pi                            ;; Expected: 3.14159
@@ -14,9 +14,9 @@ e                             ;; Expected: 2.71828
 
 ;; Test: Module with function export
 (module arithmetic (export add subtract multiply)
-  (:= add (=> (x y) (+ x y)))
-  (:= subtract (=> (x y) (- x y)))
-  (:= multiply (=> (x y) (* x y))))
+  (define add (lambda (x y) (+ x y)))
+  (define subtract (lambda (x y) (- x y)))
+  (define multiply (lambda (x y) (* x y))))
 
 (import arithmetic)
 (add 10 5)                    ;; Expected: 15
@@ -25,21 +25,21 @@ e                             ;; Expected: 2.71828
 
 ;; Test: Selective import
 (module utils (export public-fn private-fn)
-  (:= public-fn (=> (x) (* x 2)))
-  (:= private-fn (=> (x) (+ x 1))))
+  (define public-fn (lambda (x) (* x 2)))
+  (define private-fn (lambda (x) (+ x 1))))
 
 (import utils public-fn)
 (public-fn 5)                 ;; Expected: 10
 
 ;; Test: Module with internal state
 (module counter-mod (export increment get-count reset)
-  (:= count 0)
-  (:= increment (=> ()
-    (:= count (+ count 1))
+  (define count 0)
+  (define increment (lambda ()
+    (define count (+ count 1))
     count))
-  (:= get-count (=> () count))
-  (:= reset (=> ()
-    (:= count 0)
+  (define get-count (lambda () count))
+  (define reset (lambda ()
+    (define count 0)
     count)))
 
 (import counter-mod)
@@ -51,16 +51,16 @@ e                             ;; Expected: 2.71828
 
 ;; Test: Module with closure
 (module closure-mod (export get-value)
-  (:= value 42)
-  (:= get-value (=> () value)))
+  (define value 42)
+  (define get-value (lambda () value)))
 
 (import closure-mod)
 (get-value)                   ;; Expected: 42
 
 ;; Test: Import with alias
 (module string-utils (export concat length)
-  (:= concat (=> (a b) (@ a b)))
-  (:= length (=> (s) 5)))
+  (define concat (lambda (a b) (list a b)))
+  (define length (lambda (s) 5)))
 
 (import string-utils :as str)
 str                           ;; Should be module object

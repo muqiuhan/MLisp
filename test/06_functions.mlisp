@@ -4,27 +4,27 @@
 ;; ============================================================================
 
 ;; Test: Simple lambda
-(:= add (=> (x y) (+ x y)))
+(define add (lambda (x y) (+ x y)))
 (add 5 3)                     ;; Expected: 8
 (add 10 20)                   ;; Expected: 30
 
 ;; Test: Lambda with single parameter
-(:= double (=> (x) (* x 2)))
+(define double (lambda (x) (* x 2)))
 (double 5)                    ;; Expected: 10
 (double 21)                   ;; Expected: 42
 
 ;; Test: Lambda with no parameters
-(:= get-constant (=> () 42))
+(define get-constant (lambda () 42))
 (get-constant)                ;; Expected: 42
 
-;; Test: Function definition with |=
-(|= square (n) (* n n))
+;; Test: Function definition with defun
+(defun square (n) (* n n))
 (square 5)                    ;; Expected: 25
 (square 7)                    ;; Expected: 49
 
 ;; Test: Recursive function (factorial)
-(|= factorial (n)
-  (? (== n 0)
+(defun factorial (n)
+  (if (== n 0)
      1
      (* n (factorial (- n 1)))))
 (factorial 5)                 ;; Expected: 120
@@ -32,8 +32,8 @@
 (factorial 3)                 ;; Expected: 6
 
 ;; Test: Recursive function (fibonacci)
-(|= fib (n)
-  (? (< n 2)
+(defun fib (n)
+  (if (< n 2)
      n
      (+ (fib (- n 1)) (fib (- n 2)))))
 (fib 0)                       ;; Expected: 0
@@ -42,11 +42,11 @@
 (fib 8)                       ;; Expected: 21
 
 ;; Test: Higher-order function
-(:= apply-twice (=> (f x) (f (f x))))
-(|= inc (n) (+ n 1))
+(define apply-twice (lambda (f x) (f (f x))))
+(defun inc (n) (+ n 1))
 (apply-twice inc 5)           ;; Expected: 7
 
 ;; Test: Function returning function
-(:= make-adder (=> (n) (=> (x) (+ x n))))
-(:= add5 (make-adder 5))
+(define make-adder (lambda (n) (lambda (x) (+ x n))))
+(define add5 (make-adder 5))
 (add5 10)                     ;; Expected: 15

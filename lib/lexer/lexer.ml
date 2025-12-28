@@ -50,7 +50,7 @@ let rec eat_comment : char stream -> unit =
 let read_fixnum : char stream -> char -> Object.lobject =
   fun stream prefix ->
   let acc =
-    (if Char.('~' = prefix) then
+    (if Char.('-' = prefix) then
        '-'
      else
        prefix)
@@ -63,6 +63,20 @@ let read_fixnum : char stream -> char -> Object.lobject =
       else (
         let _ = unread_char stream num_char in
           Object.Fixnum (int_of_string acc)
+      )
+  in
+    loop acc
+;;
+
+let read_float : char stream -> string -> Object.lobject =
+  fun stream acc ->
+  let rec loop acc =
+    let num_char = read_char stream in
+      if Char.is_digit num_char then
+        num_char |> Char.escaped |> ( ^ ) acc |> loop
+      else (
+        let _ = unread_char stream num_char in
+          Object.Float (float_of_string acc)
       )
   in
     loop acc
@@ -134,7 +148,7 @@ let read_string : char stream -> Object.lobject =
     loop ""
 ;;
 
-(** Read in a whole number *)
+(** Read in a whole number or float *)
 let rec read_sexpr : char stream -> Object.lobject =
   fun stream ->
   eat_whitespace stream;
@@ -142,8 +156,68 @@ let rec read_sexpr : char stream -> Object.lobject =
   | ch when Char.(ch = ';') ->
     eat_comment stream;
     read_sexpr stream
-  | ch when Char.(is_digit ch || ch = '~') ->
-    read_fixnum stream ch
+  | ch when Char.is_digit ch ->
+    (* Read number, check if it's a float *)
+    let num_str = ref (Char.escaped ch) in
+    let rec read_digits () =
+      let next_ch = read_char stream in
+        if Char.is_digit next_ch then (
+          num_str := !num_str ^ Char.escaped next_ch;
+          read_digits ()
+        ) else
+          next_ch
+    in
+    let after_digits = read_digits () in
+      if Char.equal after_digits '.' then (
+        (* It's a float *)
+        let float_str = !num_str ^ "." in
+        let after_dot = read_char stream in
+          if Char.is_digit after_dot then
+            read_float stream (float_str ^ Char.escaped after_dot)
+          else (
+            unread_char stream after_dot;
+            unread_char stream '.';
+            Object.Fixnum (int_of_string !num_str)
+          )
+      ) else (
+        unread_char stream after_digits;
+        Object.Fixnum (int_of_string !num_str)
+      )
+  | ch when Char.(ch = '-') ->
+    (* Check if it's a negative number or minus operator *)
+    let next_ch = read_char stream in
+      if Char.is_digit next_ch then (
+        (* It's a negative number *)
+        let num_str = ref ("-" ^ Char.escaped next_ch) in
+        let rec read_digits () =
+          let next_ch = read_char stream in
+            if Char.is_digit next_ch then (
+              num_str := !num_str ^ Char.escaped next_ch;
+              read_digits ()
+            ) else
+              next_ch
+        in
+        let after_digits = read_digits () in
+          if Char.equal after_digits '.' then (
+            (* It's a negative float *)
+            let float_str = !num_str ^ "." in
+            let after_dot = read_char stream in
+              if Char.is_digit after_dot then
+                read_float stream (float_str ^ Char.escaped after_dot)
+              else (
+                unread_char stream after_dot;
+                unread_char stream '.';
+                Object.Fixnum (int_of_string !num_str)
+              )
+          ) else (
+            unread_char stream after_digits;
+            Object.Fixnum (int_of_string !num_str)
+          )
+      ) else (
+        (* It's the minus operator symbol *)
+        unread_char stream next_ch;
+        Object.Symbol "-"
+      )
   | ch when Char.(ch = '(') ->
     read_list stream
   | ch when Char.(ch = '#') ->

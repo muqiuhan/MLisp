@@ -1,7 +1,7 @@
 ;; Test simple closure outside module
 
-(:= value 42)
-(:= get-value (=> () value))
+(define value 42)
+(define get-value (lambda () value))
 
 ;; This should return 42
 (get-value)

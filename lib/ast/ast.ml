@@ -36,7 +36,7 @@ let assert_unique_args : Object.lobject -> string list =
 ;;
 
 let let_kinds : (string * Object.let_kind) list =
-  [ "%=", Object.LET; "%==", Object.LETSTAR; "=%=", Object.LETREC ]
+  [ "let", Object.LET; "let*", Object.LETSTAR; "letrec", Object.LETREC ]
 ;;
 
 let valid_let : string -> bool =
@@ -55,6 +55,7 @@ let rec build_ast : Object.lobject -> Object.expr =
   | Object.Module _ ->
     raise Errors.This_can't_happen_exn
   | Object.Fixnum _
+  | Object.Float _
   | Object.Boolean _
   | Object.Quote _
   | Object.String _
@@ -65,23 +66,26 @@ let rec build_ast : Object.lobject -> Object.expr =
     symbol_expr s
   | Object.Pair _ when Object.is_list sexpr -> (
     match Object.pair_to_list sexpr with
-    | [ Object.Symbol "?"; cond; if_true; if_false ] ->
+    | [ Object.Symbol "if"; cond; if_true; if_false ] ->
       if_expr cond if_true if_false
-    | Object.Symbol "??" :: conditions ->
+    | Object.Symbol "cond" :: conditions ->
       cond_to_if conditions
-    | [ Object.Symbol "&&"; cond_x; cond_y ] ->
+    | [ Object.Symbol "and"; cond_x; cond_y ] ->
       and_expr cond_x cond_y
-    | [ Object.Symbol "||"; cond_x; cond_y ] ->
+    | [ Object.Symbol "or"; cond_x; cond_y ] ->
       or_expr cond_x cond_y
     | [ Object.Symbol "`"; expr ] ->
       quote_expr expr
-    | [ Object.Symbol ":="; Object.Symbol name; expr ] ->
+    | [ Object.Symbol "quote"; expr ] ->
+      quote_expr expr
+    | [ Object.Symbol "define"; Object.Symbol name; expr ] ->
       setq_expr name expr
-    | [ Object.Symbol "=>"; args; body ] when Object.is_list args ->
-      lambda_expr args body
-    | [ Object.Symbol ">>"; fn_expr; args ] ->
+    | Object.Symbol "lambda" :: args :: body_exprs when Object.is_list args ->
+      (* Lambda can have multiple body expressions *)
+      lambda_expr args (Object.list_to_pair body_exprs)
+    | [ Object.Symbol "apply"; fn_expr; args ] ->
       apply_expr fn_expr args
-    | [ Object.Symbol "|="; Object.Symbol fn_name; args; body ] ->
+    | [ Object.Symbol "defun"; Object.Symbol fn_name; args; body ] ->
       defun_expr fn_name args body
     | Object.Symbol "module" :: Object.Symbol name :: exports :: body_exprs
       when Object.is_list exports ->
@@ -110,7 +114,36 @@ and setq_expr name expr = Object.Defexpr (Object.Setq (name, build_ast expr))
 and if_expr cond if_true if_false =
   If (build_ast cond, build_ast if_true, build_ast if_false)
 
-and lambda_expr args body = Lambda ("lambda", assert_unique_args args, build_ast body)
+and lambda_expr args body =
+  (* Lambda body can be a single expression or a sequence of expressions.
+     If body is a list with multiple expressions, we need to sequence them properly.
+  *)
+  let body_expr =
+    if Object.is_list body then (
+      let body_list = Object.pair_to_list body in
+        match body_list with
+        | [] ->
+          Object.Literal Object.Nil
+        | [ single_expr ] ->
+          (* Single expression: parse it normally *)
+          build_ast single_expr
+        | _ :: _ ->
+          (* Multiple expressions: sequence them *)
+          let rec build_sequence = function
+            | [] ->
+              Object.Literal Object.Nil
+            | [ last ] ->
+              build_ast last
+            | first' :: rest' ->
+              let first_expr = build_ast first' in
+              let rest_expr' = build_sequence rest' in
+                Object.Let (Object.LET, [ "_", first_expr ], rest_expr')
+          in
+            build_sequence body_list
+    ) else
+      build_ast body
+  in
+    Lambda ("lambda", assert_unique_args args, body_expr)
 
 and defun_expr fn_name args body =
   let lam = Object.Lambda (fn_name, assert_unique_args args, build_ast body) in
@@ -128,7 +161,51 @@ and let_expr s bindings expr =
   in
   let bindings = List.map ~f:make_binding (Object.pair_to_list bindings) in
   let () = assert_unique (List.map ~f:fst bindings) in
-    Object.Let (to_kind s, bindings, build_ast expr)
+  (* Let body can be a single expression or a sequence of expressions *)
+  let body_expr =
+    if Object.is_list expr then (
+      let body_list = Object.pair_to_list expr in
+        match body_list with
+        | [] ->
+          Object.Literal Object.Nil
+        | [ single_expr ] ->
+          build_ast single_expr
+        | first :: rest -> (
+          (* Multiple expressions: check if first is a define *)
+          match first with
+          | Object.Pair _ when Object.is_list first -> (
+            match Object.pair_to_list first with
+            | [ Object.Symbol "define"; Object.Symbol name; expr_val ] ->
+              (* Define followed by more expressions: sequence them *)
+              let define_expr = Object.Defexpr (Object.Setq (name, build_ast expr_val)) in
+              let rest_expr =
+                match rest with
+                | [ last ] ->
+                  build_ast last
+                | _ ->
+                  let rec build_sequence = function
+                    | [] ->
+                      Object.Literal Object.Nil
+                    | [ last ] ->
+                      build_ast last
+                    | first' :: rest' ->
+                      let first_expr = build_ast first' in
+                      let rest_expr' = build_sequence rest' in
+                        Object.Let (Object.LET, [ "temp", first_expr ], rest_expr')
+                  in
+                    build_sequence rest
+              in
+                Object.Let (Object.LET, [ "temp", define_expr ], rest_expr)
+            | _ ->
+              (* First element is not a define: treat entire body as single expression *)
+              build_ast expr)
+          | _ ->
+            (* First element is not a list: treat entire body as single expression *)
+            build_ast expr)
+    ) else
+      build_ast expr
+  in
+    Object.Let (to_kind s, bindings, body_expr)
 
 and call_expr fn_expr args = Call (build_ast fn_expr, List.map ~f:build_ast args)
 
@@ -142,8 +219,11 @@ and cond_to_if = function
 
 and module_expr name exports body_exprs =
   let extract_symbol = function
-    | Object.Symbol s -> s
-    | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(module name (export ...) body ...)"))
+    | Object.Symbol s ->
+      s
+    | _ ->
+      raise
+        (Errors.Parse_error_exn (Errors.Type_error "(module name (export ...) body ...)"))
   in
   let export_list =
     match Object.pair_to_list exports with
@@ -164,18 +244,24 @@ and import_expr import_args =
   | [ Object.Symbol module_name ] ->
     (* (import module-name) - import all *)
     Object.Import (Object.ImportAll module_name)
-  | Object.Symbol module_name :: Object.Symbol ":as" :: Object.Symbol alias :: [] ->
+  | [ Object.Symbol module_name; Object.Symbol ":as"; Object.Symbol alias ] ->
     (* (import module-name :as alias) - import with alias *)
     Object.Import (Object.ImportAs (module_name, alias))
   | Object.Symbol module_name :: symbols ->
     (* (import module-name symbol1 symbol2 ...) - selective import *)
-    let export_names = List.map symbols ~f:(function
-      | Object.Symbol s -> s
-      | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name symbol ...)"))
-    ) in
+    let export_names =
+      List.map symbols ~f:(function
+        | Object.Symbol s ->
+          s
+        | _ ->
+          raise
+            (Errors.Parse_error_exn (Errors.Type_error "(import module-name symbol ...)")))
+    in
       Object.Import (Object.ImportSelective (module_name, export_names))
   | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
+    raise
+      (Errors.Parse_error_exn
+         (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
 ;;
 
 let rec string_expr =

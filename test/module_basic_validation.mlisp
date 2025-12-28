@@ -2,7 +2,7 @@
 
 ;; Test 1: Simple module with variable
 (module simple (export x)
-  (:= x 42))
+  (define x 42))
 
 ;; Verify module is bound
 simple
@@ -13,7 +13,7 @@ x
 
 ;; Test 3: Module with function
 (module math (export add)
-  (:= add (=> (x y) (+ x y))))
+  (define add (lambda (x y) (+ x y))))
 
 (import math)
 (add 5 3)

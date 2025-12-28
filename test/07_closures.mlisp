@@ -4,45 +4,45 @@
 ;; ============================================================================
 
 ;; Test: Simple closure
-(:= make-counter (=> ()
-  (%= ((count 0))
-    (=> ()
-      (:= count (+ count 1))
+(define make-counter (lambda ()
+  (let ((count 0))
+    (lambda ()
+      (define count (+ count 1))
       count))))
 
-(:= counter1 (make-counter))
+(define counter1 (make-counter))
 (counter1)                    ;; Expected: 1
 (counter1)                    ;; Expected: 2
 (counter1)                    ;; Expected: 3
 
 ;; Test: Multiple independent closures
-(:= counter2 (make-counter))
+(define counter2 (make-counter))
 (counter2)                    ;; Expected: 1
 (counter2)                    ;; Expected: 2
 
 ;; Test: Closure capturing parameter
-(:= make-multiplier (=> (factor)
-  (=> (x) (* x factor))))
+(define make-multiplier (lambda (factor)
+  (lambda (x) (* x factor))))
 
-(:= times3 (make-multiplier 3))
-(:= times5 (make-multiplier 5))
+(define times3 (make-multiplier 3))
+(define times5 (make-multiplier 5))
 
 (times3 10)                   ;; Expected: 30
 (times5 10)                   ;; Expected: 50
 (times3 7)                    ;; Expected: 21
 
 ;; Test: Closure with multiple captured variables
-(:= make-calculator (=> (initial)
-  (%= ((value initial))
-    (=> (operation amount)
-      (? (== operation "add")
-         (:= value (+ value amount))
-         (? (== operation "sub")
-            (:= value (- value amount))
+(define make-calculator (lambda (initial)
+  (let ((value initial))
+    (lambda (operation amount)
+      (if (== operation "add")
+         (define value (+ value amount))
+         (if (== operation "sub")
+            (define value (- value amount))
             value))
       value))))
 
-(:= calc (make-calculator 100))
+(define calc (make-calculator 100))
 (calc "add" 50)               ;; Expected: 150
 (calc "sub" 30)               ;; Expected: 120
 (calc "get" 0)                ;; Expected: 120

@@ -16,6 +16,7 @@ open Core
 (** The core Lisp object type representing all possible values in MLisp. *)
 type lobject =
   | Fixnum of int (** Integer values *)
+  | Float of float (** Floating point values *)
   | Boolean of bool (** Boolean values (#t or #f) *)
   | Symbol of string (** Symbol atoms used as identifiers *)
   | String of string (** String literals *)
@@ -68,7 +69,8 @@ and expr =
   | Defexpr of def
   | Lambda of name * name list * expr
   | Let of let_kind * (name * expr) list * expr
-  | ModuleDef of name * string list * expr list (** Module definition: name, exports, body *)
+  | ModuleDef of name * string list * expr list
+  (** Module definition: name, exports, body *)
   | Import of import_spec (** Module import *)
 
 and def =
@@ -108,6 +110,8 @@ let rec is_list = function
 let object_type = function
   | Fixnum _ ->
     "int"
+  | Float _ ->
+    "float"
   | Boolean _ ->
     "boolean"
   | String _ ->
@@ -134,6 +138,8 @@ let rec print_sexpr sexpr =
   match sexpr with
   | Fixnum v ->
     print_string (Int.to_string v)
+  | Float f ->
+    print_string (Float.to_string f)
   | Boolean b ->
     print_string
       (if b then
@@ -185,6 +191,15 @@ let rec pair_to_list pair =
     failwith "This can't happen!!!!"
 ;;
 
+let rec list_to_pair = function
+  | [] ->
+    Nil
+  | [ x ] ->
+    Pair (x, Nil)
+  | x :: xs ->
+    Pair (x, list_to_pair xs)
+;;
+
 let string_of_char a_char = String.make 1 a_char
 
 let rec string_object e =
@@ -207,6 +222,8 @@ let rec string_object e =
     match e with
     | Fixnum v ->
       string_of_int v
+    | Float f ->
+      Float.to_string f
     | Boolean b ->
       if b then
         "#t"

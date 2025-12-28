@@ -6,7 +6,7 @@
 ;; Test: Addition
 (+ 1 2)           ;; Expected: 3
 (+ 10 20 30)      ;; Expected: 60
-(+ ~5 5)          ;; Expected: 0
+(+ -5 5)          ;; Expected: 0
 
 ;; Test: Subtraction
 (- 10 5)          ;; Expected: 5
@@ -16,12 +16,12 @@
 ;; Test: Multiplication
 (* 3 4)           ;; Expected: 12
 (* 2 3 4)         ;; Expected: 24
-(* ~2 5)          ;; Expected: -10
+(* -2 5)          ;; Expected: -10
 
 ;; Test: Division
 (/ 10 2)          ;; Expected: 5
 (/ 100 10 2)      ;; Expected: 5
-(/ ~20 4)         ;; Expected: -5
+(/ -20 4)         ;; Expected: -5
 
 ;; Test: Modulo
 (% 10 3)          ;; Expected: 1

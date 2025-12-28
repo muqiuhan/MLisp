@@ -6,12 +6,12 @@
 (- 3 5)
 (* 3 5)
 (/ 3 5)
-(%%% 3 5)
+(mod 3 5)
 
 ;; Logical operations
-(&& #t #f)
-(|| #f #f)
-(? (&& #t #f) 3 4)
+(and #t #f)
+(or #f #f)
+(if (and #t #f) 3 4)
 (> 3 5)
 (< 3 5)
 (>= 3 5)
@@ -19,43 +19,43 @@
 (== 3 5)
 
 ;; variable definition
-(:= x 3)
+(define x 3)
 
 ;; cons
-($ 5 6)
+(cons 5 6)
 
 ;; list
-(@ 1 2 3 4 5)
+(list 1 2 3 4 5)
 
 ;; apply
-(>> $ (@ 3 4))
+(apply cons (list 3 4))
 
 ;; lambda
-(:= x (=> (y) (+ y 1)))
+(define x (lambda (y) (+ y 1)))
 
 ;; function definition
-(|= x (y) (+ y 1))
+(defun x (y) (+ y 1))
 
 ;; application
 (x 10)
 
 ;; let
-(%= ((x 10)
+(let ((x 10)
      (y 20))
   (+ x y))
 
 ;; let*
-(%== ((x 10)
+(let* ((x 10)
       (y x))
   (+ x y))
 
 ;; letrec
-(=%= ((f (=> (x) (g (+ x 1))))
-      (g (=> (x) (+ x 3))))
+(letrec ((f (lambda (x) (g (+ x 1))))
+      (g (lambda (x) (+ x 3))))
   (f 0))
 
 ;; record
-(:= record-x (:: 'x (@ (@ 'y 1) (@ 'z 2))))
+(define record-x (record 'x (list (list 'y 1) (list 'z 2))))
 
 ;; record-getter
-(:> record-x 'y)
+(record-get record-x 'y)

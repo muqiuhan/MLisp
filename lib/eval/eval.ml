@@ -106,7 +106,32 @@ let rec eval_expr expr env =
         )
     | Object.Let (Object.LET, bindings, body) ->
       let eval_binding (n, e) = n, ref (Some (eval e)) in
-        eval_expr body (extend (List.map ~f:eval_binding bindings) env)
+      let let_env = extend (List.map ~f:eval_binding bindings) env in
+        (* Special handling for nested Let with Defexpr: when body is a nested Let
+           with Defexpr binding, evaluate the define expression in let_env to
+           access outer let bindings. This handles cases like:
+           (let ((y 10)) (define z (+ y 1)) z)
+        *)
+        (match body with
+         | Object.Let (Object.LET, inner_bindings, inner_body) ->
+           (* Handle nested Let: evaluate bindings in let_env context so they can access outer let bindings.
+              Special case: if binding is Defexpr, evaluate its expression in let_env to access outer bindings *)
+           let eval_inner_binding (n, e) = 
+             match e with
+             | Object.Defexpr (Object.Setq (name, expr)) ->
+               (* Evaluate define expression in let_env to access outer let bindings *)
+               let v = eval_expr expr let_env in
+               (* Bind the defined variable in let_env for the rest of the body *)
+               let _ = Object.bind (name, v, let_env) in
+                 n, ref (Some v)
+             | _ ->
+               n, ref (Some (eval_expr e let_env))
+           in
+           let inner_env = extend (List.map ~f:eval_inner_binding inner_bindings) let_env in
+             eval_expr inner_body inner_env
+         | _ ->
+           (* Normal let body evaluation *)
+           eval_expr body let_env)
     | Object.Let (Object.LETSTAR, bindings, body) ->
       let eval_binding acc (n, e) = Object.bind (n, eval_expr e acc, acc) in
         eval_expr body (List.fold_left ~f:eval_binding ~init:env bindings)
@@ -115,16 +140,17 @@ let rec eval_expr expr env =
       let env' =
         Object.bind_local_list names (List.map ~f:Object.make_local values) env
       in
-      let updates =
-        List.map ~f:(fun (n, e) -> n, Some (eval_expr e env')) bindings
-      in
       let () =
         List.iter
-          ~f:(fun (n, v) ->
-            match Object.lookup (n, env') with
-            | exception Errors.Runtime_error_exn _ -> ()
-            | _ -> Object.bind_local (n, ref v, env') |> ignore)
-          updates
+          ~f:(fun (n, e) ->
+            let v = eval_expr e env' in
+            match Hashtbl.find env'.bindings n with
+            | Some value_ref ->
+              value_ref := Some v
+            | None ->
+              (* Should not happen, but handle gracefully *)
+              Object.bind_local (n, ref (Some v), env') |> ignore)
+          bindings
       in
         eval_expr body env'
     | Object.ModuleDef (name, exports, body_exprs) ->
@@ -133,8 +159,10 @@ let rec eval_expr expr env =
     | Object.Import import_spec ->
       let () = eval_import import_spec env in
         Object.Symbol "ok"
-    | Object.Defexpr _ ->
-      raise (Errors.Syntax_error_exn (Invalid_define_expression ""))
+    | Object.Defexpr def_expr ->
+      (* Defexpr can appear in expression context (e.g., lambda body) *)
+      let value, _ = eval_def def_expr env in
+        value
   in
     eval expr
 
@@ -200,7 +228,13 @@ and eval_def def env =
   match def with
   | Object.Setq (name, expr) ->
     let v = eval_expr expr env in
-      v, Object.bind (name, v, env)
+      (* Try to update existing binding first, otherwise create new one *)
+      (match Hashtbl.find env.bindings name with
+       | Some value_ref ->
+         value_ref := Some v;
+         v, env
+       | None ->
+         v, Object.bind (name, v, env))
   | Object.Defun (name, args, body) ->
     let formals, body', closure_data =
       match eval_expr (Object.Lambda (name, args, body)) env with
@@ -249,6 +283,29 @@ and eval_module name exports body_exprs env =
       | Object.Defexpr def_expr ->
         let _, updated_env = eval_def def_expr module_env in
           ignore updated_env
+      | Object.Let (Object.LET, bindings, body) ->
+        (* Special handling for Let in module body: if body is a Defexpr,
+           bind the variable in module_env instead of let_env *)
+        (match body with
+         | Object.Defexpr (Object.Setq (name, expr_expr)) ->
+           (* Evaluate bindings in module_env *)
+           let eval_binding (n, e) = n, ref (Some (eval_expr e module_env)) in
+           let let_env = Object.extend_env module_env in
+           let () = List.iter (List.map ~f:eval_binding bindings) ~f:(fun (n, v_ref) ->
+             Object.bind_local (n, v_ref, let_env) |> ignore) in
+           (* Evaluate expr in let_env to access let bindings *)
+           let v = eval_expr expr_expr let_env in
+           (* But bind in module_env for export *)
+           let _ = Object.bind (name, v, module_env) in
+             ()
+         | _ ->
+           (* Normal let evaluation *)
+           let _ = eval_expr expr module_env in
+             ())
+      | Object.Let _ | Object.If _ | Object.And _ | Object.Or _ | Object.Apply _ | Object.Call _ ->
+        (* These expressions can contain definitions, evaluate them *)
+        let _ = eval_expr expr module_env in
+          ()
       | _ ->
         (* Non-definition expression in module body - issue warning *)
         let expr_str = Ast.string_expr expr in

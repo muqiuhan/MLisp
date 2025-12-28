@@ -4,15 +4,15 @@
 ;; ============================================================================
 
 ;; Test: String concatenation
-(@ "Hello" " " "World")       ;; Expected: "Hello World"
-(@ "MLisp" "!")               ;; Expected: "MLisp!"
-(@ "" "test")                 ;; Expected: "test"
+(list "Hello" " " "World")       ;; Expected: ("Hello" " " "World")
+(list "MLisp" "!")               ;; Expected: ("MLisp" "!")
+(list "" "test")                 ;; Expected: ("" "test")
 
 ;; Test: String concatenation with variables
-(:= first "Hello")
-(:= second "World")
-(@ first " " second)          ;; Expected: "Hello World"
+(define first "Hello")
+(define second "World")
+(list first " " second)          ;; Expected: ("Hello" " " "World")
 
 ;; Test: Nested string operations
-(@ (@ "A" "B") "C")           ;; Expected: "ABC"
-(@ "Start " (@ "Middle" " End"))  ;; Expected: "Start Middle End"
+(list (list "A" "B") "C")           ;; Expected: (("A" "B") "C")
+(list "Start " (list "Middle" " End"))  ;; Expected: ("Start " ("Middle" " End"))

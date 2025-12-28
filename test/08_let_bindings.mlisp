@@ -4,54 +4,54 @@
 ;; ============================================================================
 
 ;; Test: Simple let binding
-(%= ((x 5)
+(let ((x 5)
      (y 10))
   (+ x y))                    ;; Expected: 15
 
 ;; Test: Let with nested expressions
-(%= ((a (+ 2 3))
+(let ((a (+ 2 3))
      (b (* 4 5)))
   (+ a b))                    ;; Expected: 25
 
 ;; Test: Let shadowing
-(:= x 100)
-(%= ((x 10))
+(define x 100)
+(let ((x 10))
   x)                          ;; Expected: 10
 x                             ;; Expected: 100
 
 ;; Test: Let* (sequential binding)
-(%== ((x 5)
+(let* ((x 5)
       (y (* x 2)))
   y)                          ;; Expected: 10
 
 ;; Test: Let* with dependencies
-(%== ((a 10)
+(let* ((a 10)
       (b (+ a 5))
       (c (* b 2)))
   c)                          ;; Expected: 30
 
 ;; Test: Letrec (recursive binding)
-(=%=((factorial
-       (=> (n)
-         (? (== n 0)
+(letrec ((factorial
+       (lambda (n)
+         (if (== n 0)
             1
             (* n (factorial (- n 1)))))))
   (factorial 5))              ;; Expected: 120
 
 ;; Test: Letrec with multiple mutually recursive functions
-(=%=((is-even
-       (=> (n)
-         (? (== n 0)
+(letrec ((is-even
+       (lambda (n)
+         (if (== n 0)
             #t
             (is-odd (- n 1)))))
      (is-odd
-       (=> (n)
-         (? (== n 0)
+       (lambda (n)
+         (if (== n 0)
             #f
             (is-even (- n 1))))))
   (is-even 10))               ;; Expected: #t
 
 ;; Test: Nested let expressions
-(%= ((x 5))
-  (%= ((y 10))
+(let ((x 5))
+  (let ((y 10))
     (+ x y)))                 ;; Expected: 15

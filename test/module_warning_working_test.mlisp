@@ -1,5 +1,5 @@
 (module test (export x) 
-  (:= x 42)
+  (define x 42)
   (+ 1 2))
 
 (import test)

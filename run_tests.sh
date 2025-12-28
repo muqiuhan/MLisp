@@ -59,15 +59,28 @@ run_test() {
     local output
     local exit_code
 
+    # Use a temporary file to avoid command substitution blocking issues
+    local temp_output=$(mktemp)
+    
+    # Temporarily disable set -e to allow non-zero exit codes
+    set +e
     if [ $VERBOSE -eq 1 ]; then
-        output=$(dune exec -- mlisp "$test_file" 2>&1)
+        stdbuf -oL -eL dune exec -- mlisp "$test_file" > "$temp_output" 2>&1
         exit_code=$?
+        output=$(cat "$temp_output")
         echo ""
         echo "$output"
     else
-        output=$(dune exec -- mlisp "$test_file" 2>&1)
+        stdbuf -oL -eL dune exec -- mlisp "$test_file" > "$temp_output" 2>&1
         exit_code=$?
+        output=$(cat "$temp_output")
     fi
+    set -e
+    
+    rm -f "$temp_output"
+
+    # Remove ANSI escape codes for error detection
+    local clean_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
     # Check for errors or warnings
     if [ $exit_code -ne 0 ]; then
@@ -77,28 +90,32 @@ run_test() {
 
         if [ $VERBOSE -eq 0 ]; then
             echo "  Error output:"
-            echo "$output" | grep -E "(error|Error|ERROR)" | head -5 | sed 's/^/    /'
+            # Extract error messages with context (error line + next 12 lines for full error details)
+            # Remove separator lines (--) and limit to first 40 lines
+            echo "$clean_output" | grep -A 12 "\[error" | grep -v "^--$" | head -40 | sed 's/^/    /'
         fi
 
         if [ $STOP_ON_FAILURE -eq 1 ]; then
             print_color "$RED" "Stopping due to failure (STOP_ON_FAILURE=1)"
             exit 1
         fi
-    elif echo "$output" | grep -qiE "\[error"; then
+    elif echo "$clean_output" | grep -qiE "\[error"; then
         print_color "$RED" "[FAILED]"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         FAILED_TEST_NAMES+=("$test_name")
 
         if [ $VERBOSE -eq 0 ]; then
             echo "  Error details:"
-            echo "$output" | grep -iE "\[error" | head -3 | sed 's/^/    /'
+            # Extract error messages with context (error line + next 12 lines for full error details)
+            # Remove separator lines (--) and limit to first 40 lines
+            echo "$clean_output" | grep -A 12 "\[error" | grep -v "^--$" | head -40 | sed 's/^/    /'
         fi
 
         if [ $STOP_ON_FAILURE -eq 1 ]; then
             print_color "$RED" "Stopping due to failure (STOP_ON_FAILURE=1)"
             exit 1
         fi
-    elif echo "$output" | grep -qiE "\[warning"; then
+    elif echo "$clean_output" | grep -qiE "\[warning"; then
         # Check if it's an expected warning (like in module tests)
         if echo "$test_name" | grep -q "module"; then
             print_color "$GREEN" "[PASSED]"
@@ -108,7 +125,7 @@ run_test() {
             PASSED_TESTS=$((PASSED_TESTS + 1))
             if [ $VERBOSE -eq 0 ]; then
                 echo "  Warnings:"
-                echo "$output" | grep -iE "\[warning" | head -2 | sed 's/^/    /'
+                echo "$clean_output" | grep -iE "\[warning" | head -2 | sed 's/^/    /'
             fi
         fi
     else

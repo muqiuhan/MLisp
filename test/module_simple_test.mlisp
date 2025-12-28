@@ -2,7 +2,7 @@
 
 ;; Define a simple math module
 (module math (export add)
-  (:= add (=> (x y) (+ x y))))
+  (define add (lambda (x y) (+ x y))))
 
 ;; Import all symbols from math module
 (import math)

@@ -25,9 +25,11 @@ let () =
       Stream_wrapper.make_filestream input_channel ~file_name:Sys.argv.(1)
     )
   in
-    (try Repl.repl stream Stdlib.stdlib_core with
+  let has_error = ref false in
+    (try Repl.repl stream Stdlib.stdlib_core ~has_error with
      | e ->
        if input_channel <> stdin then close_in input_channel;
        raise e);
-    if input_channel <> stdin then close_in input_channel
+    if input_channel <> stdin then close_in input_channel;
+    if !has_error then exit 1
 ;;

@@ -36,7 +36,9 @@ let message = function
     | Poorly_formed_expression ->
       "Poorly formed expression"
     | Apply_error v ->
-      [%string "Apply error: '%{v}' may not be a function. Use (>> %{v} '(args)) or (%{v} args)"])
+      [%string
+        "Apply error: '%{v}' may not be a function. Use (>> %{v} '(args)) or (%{v} args)"]
+    )
   | Runtime_error_exn e -> (
     match e with
     | Not_found e ->

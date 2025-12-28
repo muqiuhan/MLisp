@@ -4,38 +4,38 @@
 ;; ============================================================================
 
 ;; Test: Simple variable definition
-(:= x 42)
+(define x 42)
 x                             ;; Expected: 42
 
 ;; Test: Variable redefinition
-(:= y 10)
+(define y 10)
 y                             ;; Expected: 10
-(:= y 20)
+(define y 20)
 y                             ;; Expected: 20
 
 ;; Test: Variable with expression
-(:= z (+ 5 3))
+(define z (+ 5 3))
 z                             ;; Expected: 8
 
 ;; Test: Variable referencing another variable
-(:= a 5)
-(:= b (* a 2))
+(define a 5)
+(define b (* a 2))
 b                             ;; Expected: 10
 
 ;; Test: Multiple variables
-(:= num1 10)
-(:= num2 20)
-(:= sum (+ num1 num2))
+(define num1 10)
+(define num2 20)
+(define sum (+ num1 num2))
 sum                           ;; Expected: 30
 
 ;; Test: String variables
-(:= greeting "Hello")
-(:= name "World")
+(define greeting "Hello")
+(define name "World")
 greeting                      ;; Expected: "Hello"
 name                          ;; Expected: "World"
 
 ;; Test: Boolean variables
-(:= is-true #t)
-(:= is-false #f)
+(define is-true #t)
+(define is-false #f)
 is-true                       ;; Expected: #t
 is-false                      ;; Expected: #f

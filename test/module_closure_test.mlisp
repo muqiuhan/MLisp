@@ -1,8 +1,8 @@
 ;; Test closure capture in modules
 
 (module outer (export get-value)
-  (:= value 42)
-  (:= get-value (=> () value)))
+  (define value 42)
+  (define get-value (lambda () value)))
 
 (import outer)
 

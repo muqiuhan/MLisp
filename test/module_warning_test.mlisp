@@ -2,25 +2,25 @@
 
 ;; Test 1: Module with non-definition expression (should warn)
 (module test1 (export x)
-  (:= x 42)
+  (define x 42)
   (+ 1 2)  ; This should trigger a warning
   (print "hello"))  ; This should also trigger a warning
 
 ;; Test 2: Module with only definitions (should not warn)
 (module test2 (export y)
-  (:= y 10)
-  (:= z 20))
+  (define y 10)
+  (define z 20))
 
 ;; Test 3: Module with if expression (should warn)
 (module test3 (export result)
-  (:= result
-    (? (> 5 3)
+  (define result
+    (if (> 5 3)
        10
        20))
   (* 2 3))  ; This should warn
 
 ;; Test 4: Module with let expression (should warn if not used for definition)
 (module test4 (export value)
-  (:= value 100)
-  (%= ((temp 50))
+  (define value 100)
+  (let ((temp 50))
     (+ temp 10)))  ; This should warn

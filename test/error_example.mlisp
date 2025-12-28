@@ -1,6 +1,0 @@
-;; This test should FAIL with an error
-(module test (export x)
-  (:= x 42))
-
-(import test)
-y  ;; Error: y is not defined

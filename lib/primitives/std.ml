@@ -122,8 +122,8 @@ let record_create = function
 ;;
 
 let basis =
-  [ "@", list
-  ; "$", pair
+  [ "list", list
+  ; "cons", pair
   ; "car", car
   ; "cdr", cdr
   ; "==", eq
@@ -133,7 +133,7 @@ let basis =
   ; "print", print
   ; "int->char", int_to_char
   ; "symbol-concat", cat
-  ; ":>", record_get
-  ; "::", record_create
+  ; "record-get", record_get
+  ; "record", record_create
   ]
 ;;

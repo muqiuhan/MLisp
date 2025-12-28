@@ -33,15 +33,16 @@ let resolve_module_path module_name search_paths =
            (Errors.Module_load_error
               ( module_name
               , [%string "Module file '%{module_file}' not found in search paths"] )))
-    | path :: rest ->
+    | path :: rest -> (
       let full_path = Filename.concat path module_file in
         match Core_unix.access full_path [ `Exists ] with
         | Ok () ->
           full_path
         | Error _ ->
-          search rest
+          search rest)
   in
     search search_paths
+;;
 
 (** Load and evaluate a module from a file.
 
@@ -55,7 +56,9 @@ let resolve_module_path module_name search_paths =
 let load_module_from_file file_path env =
   try
     let input_channel = In_channel.create file_path in
-    let stream = Mlisp_utils.Stream_wrapper.make_filestream input_channel ~file_name:file_path in
+    let stream =
+      Mlisp_utils.Stream_wrapper.make_filestream input_channel ~file_name:file_path
+    in
     let rec load_all env =
       try
         let ast = stream |> Lexer.read_sexpr |> Ast.build_ast in
@@ -80,8 +83,8 @@ let load_module_from_file file_path env =
     raise
       (Errors.Runtime_error_exn
          (Errors.Module_load_error
-            ( file_path
-            , [%string "Evaluation error: %{Mlisp_error.Message.message exn}"] )))
+            (file_path, [%string "Evaluation error: %{Mlisp_error.Message.message exn}"])))
+;;
 
 (** Load a module by name.
 
@@ -97,6 +100,7 @@ let load_module_from_file file_path env =
 let load_module module_name search_paths env =
   let file_path = resolve_module_path module_name search_paths in
     load_module_from_file file_path env
+;;
 
 (** Get default module search paths.
 
@@ -108,3 +112,4 @@ let default_search_paths () =
   let current_dir = Core_unix.getcwd () in
   let modules_dir = Filename.concat current_dir "modules" in
     [ current_dir; modules_dir ]
+;;
