@@ -1,0 +1,20 @@
+;; Input/Output functions
+;; This module provides functions for console I/O
+
+(define newline (int->char 10))
+(define space (int->char 32))
+
+; This is pretty awkward looking because we have no other way to sequence
+; operations. We have no begin, nothing.
+(defun println (s)
+  (let ((ok (print s)))
+    (print newline)))
+
+; This is less awkward because we actually use ic and c.
+(defun getline ()
+  (let* ((ic (getchar))
+         (c (int->char ic)))
+    (if (or (== c newline) (== ic -1))
+      empty-symbol
+      (symbol-concat c (getline)))))
+

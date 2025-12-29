@@ -1,0 +1,58 @@
+;; List manipulation functions
+;; This module provides functions for working with lists
+
+(defun append. (x y)
+  (cond ((null. x) y)
+    (#t (cons (car x)
+      (append. (cdr x) y)))))
+
+(defun list. (x y) (cons x (cons y '())))
+
+(defun zip. (x y)
+  (cond ((and. (null. x) (null. y)) '())
+      ((and. (not. (atom? x)) (not. (atom? y)))
+       (cons (list. (car x) (car y))
+             (zip. (cdr x) (cdr y))))))
+
+(defun lookup. (key alist)
+  (cond ((null. alist) 'error)
+    ((== (caar alist) key) (cadar alist))
+    (#t (lookup. key (cdr alist)))))
+
+(defun null? (xs) (== xs '()))
+
+(defun length (ls)
+  (if (null? ls)
+    0
+    (+ 1 (length (cdr ls)))))
+
+(defun take (n ls)
+  (if (or (< n 1) (null? ls))
+    '()
+    (cons (car ls) (take (- n 1) (cdr ls)))))
+
+(defun drop (n ls)
+  (if (or (< n 1) (null? ls))
+    ls
+    (drop (- n 1) (cdr ls))))
+
+(defun merge (xs ys)
+  (if (null? xs)
+    ys
+    (if (null? ys)
+      xs
+      (if (< (car xs) (car ys))
+        (cons (car xs) (merge (cdr xs) ys))
+        (cons (car ys) (merge xs (cdr ys)))))))
+
+(defun mergesort (ls)
+  (if (null? ls)
+    ls
+    (if (null? (cdr ls))
+      ls
+      (let* ((size (length ls))
+            (half (/ size 2))
+            (first (take half ls))
+            (second (drop half ls)))
+        (merge (mergesort first) (mergesort second))))))
+

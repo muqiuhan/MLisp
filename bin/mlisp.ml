@@ -7,6 +7,7 @@
 open Mlisp_utils
 open Mlisp_repl
 open Mlisp_stdlib
+open Mlisp_version
 
 let get_input_channel () =
   try open_in Sys.argv.(1) with
@@ -18,7 +19,7 @@ let () =
   let input_channel = get_input_channel () in
   let stream =
     if input_channel = stdin then (
-      print_endline "o- MLisp v0.3.4 (main, 2025-04-14 21:49 PM) [OCaml 5.2.1]\n";
+      print_endline (Format.sprintf "o- %s\n" (Version.version_string ()));
       Stream_wrapper.make_filestream input_channel
     ) else (
       print_endline (Format.sprintf "o- Running %s ..." Sys.argv.(1));

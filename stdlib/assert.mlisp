@@ -1,0 +1,10 @@
+;; Assertion functions
+;; This module provides assertion utilities for testing
+
+(defun assert (condition)
+  (if condition
+    #t
+    (begin
+      (print "Assertion failed")
+      #f)))
+

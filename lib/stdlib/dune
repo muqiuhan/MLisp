@@ -1,5 +1,7 @@
 (library
  (name mlisp_stdlib)
+ (preprocess
+  (pps ppx_string))
  (libraries
   core
   core_unix
@@ -10,4 +12,5 @@
   mlisp_lexer
   mlisp_ast
   mlisp_utils
-  mlisp_primitives))
+  mlisp_primitives
+  mlisp_module_loader))

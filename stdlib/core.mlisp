@@ -1,8 +1,8 @@
-let _STDLIB_CORE_VERSION_ = "0.2.1"
+;; Core standard library functions
+;; This module provides fundamental functions and combinators
 
-let _STDLIB_CORE_ =
-  {|
 (defun null. (x) (== x '()))
+
 (defun and. (x y)
   (cond (x (cond (y #t)
     (#t #f)))
@@ -12,28 +12,15 @@ let _STDLIB_CORE_ =
   (cond (x #f)
     (#t #t)))
 
-(defun append. (x y)
-  (cond ((null. x) y)
-    (#t (cons (car x)
-      (append. (cdr x) y)))))
-
-(defun list. (x y) (cons x (cons y '())))
-(defun zip. (x y)
-  (cond ((and. (null. x) (null. y)) '())
-      ((and. (not. (atom? x)) (not. (atom? y)))
-       (cons (list. (car x) (car y))
-             (zip. (cdr x) (cdr y))))))
-
+;; Function composition combinator
 (defun o (f g) (lambda (x) (f (g x))))
+
+;; List accessor combinators
 (define caar (o car car))
 (define cadr (o car cdr))
 (define caddr (o cadr cdr))
 (define cadar (o car (o cdr car)))
 (define caddar (o car (o cdr (o cdr car))))
-(defun lookup. (key alist)
-  (cond ((null. alist) 'error)
-    ((== (caar alist) key) (cadar alist))
-    (#t (lookup. key (cdr alist)))))
 
 ;; esetq takes two parameters: an expression and an environment. It's like our evalexp.
 (defun eval. (e env)
@@ -104,68 +91,4 @@ let _STDLIB_CORE_ =
         ; ...evaluate the application of the lambda to the given arguments,
         ; evaluating them.
        (eval. (caddar e) (append. (zip. (cadar e) (map-eval. (cdr e) env)) env))))))
-(defun o (f g) (lambda (x) (f (g x))))
-   (define caar (o car car))
-   (define cadr (o car cdr))
-   (define caddr (o cadr cdr))
-   (define cadar (o car (o cdr car)))
-   (define caddar (o car (o cdr (o cdr car))))
-   (define newline (int->char 10))
-   (define space (int->char 32))
-; This is pretty awkward looking because we have no other way to sequence
-; operations. We have no begin, nothing.
-(defun println (s)
-  (let ((ok (print s)))
-    (print newline)))
 
-; This is less awkward because we actually use ic and c.
-(defun getline ()
-  (let* ((ic (getchar))
-         (c (int->char ic)))
-    (if (or (== c newline) (== ic -1))
-      empty-symbol
-      (symbol-concat c (getline)))))
-
-(defun null? (xs) (== xs '()))
-(defun length (ls)
-  (if (null? ls)
-    0
-    (+ 1 (length (cdr ls)))))
-
-(defun take (n ls)
-  (if (or (< n 1) (null? ls))
-    '()
-    (cons (car ls) (take (- n 1) (cdr ls)))))
-(defun drop (n ls)
-  (if (or (< n 1) (null? ls))
-    ls
-    (drop (- n 1) (cdr ls))))
-
-(defun merge (xs ys)
-  (if (null? xs)
-    ys
-    (if (null? ys)
-      xs
-      (if (< (car xs) (car ys))
-        (cons (car xs) (merge (cdr xs) ys))
-        (cons (car ys) (merge xs (cdr ys)))))))
-
-(defun mergesort (ls)
-  (if (null? ls)
-    ls
-    (if (null? (cdr ls))
-      ls
-      (let* ((size (length ls))
-            (half (/ size 2))
-            (first (take half ls))
-            (second (drop half ls)))
-        (merge (mergesort first) (mergesort second))))))
-
-(defun assert (condition)
-  (if condition
-    #t
-    (begin
-      (print "Assertion failed")
-      #f)))
-|}
-;;

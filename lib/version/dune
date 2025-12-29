@@ -1,0 +1,16 @@
+(library
+ (name mlisp_version)
+ (modules version)
+ (libraries))
+
+(rule
+ (targets version.ml)
+ (deps
+  gen_version.ml
+  (source_tree ../..))
+ (action
+  (chdir
+   ../..
+   (with-stdout-to
+    %{targets}
+    (run ocaml -I +unix unix.cma str.cma lib/version/gen_version.ml)))))
