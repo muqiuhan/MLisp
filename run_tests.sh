@@ -82,7 +82,7 @@ run_test() {
     # Remove ANSI escape codes for error detection
     local clean_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
-    # Check for errors or warnings
+    # Check for errors, assertion failures, or warnings
     if [ $exit_code -ne 0 ]; then
         print_color "$RED" "[FAILED]"
         FAILED_TESTS=$((FAILED_TESTS + 1))
@@ -109,6 +109,21 @@ run_test() {
             # Extract error messages with context (error line + next 12 lines for full error details)
             # Remove separator lines (--) and limit to first 40 lines
             echo "$clean_output" | grep -A 12 "\[error" | grep -v "^--$" | head -40 | sed 's/^/    /'
+        fi
+
+        if [ $STOP_ON_FAILURE -eq 1 ]; then
+            print_color "$RED" "Stopping due to failure (STOP_ON_FAILURE=1)"
+            exit 1
+        fi
+    elif echo "$clean_output" | grep -qi "Assertion failed"; then
+        print_color "$RED" "[FAILED]"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        FAILED_TEST_NAMES+=("$test_name")
+
+        if [ $VERBOSE -eq 0 ]; then
+            echo "  Assertion failed:"
+            # Extract assertion failure messages with context
+            echo "$clean_output" | grep -iB 2 -A 5 "Assertion failed" | head -20 | sed 's/^/    /'
         fi
 
         if [ $STOP_ON_FAILURE -eq 1 ]; then
