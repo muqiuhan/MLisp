@@ -4,4 +4,4 @@
   (pps ppx_string))
  (flags
   (:standard -w -21))
- (libraries core mlisp_object mlisp_ast mlisp_print))
+ (libraries core mlisp_object mlisp_ast mlisp_macro mlisp_print))

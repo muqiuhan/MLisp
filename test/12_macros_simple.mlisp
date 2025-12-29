@@ -1,0 +1,14 @@
+;; Simple macro tests
+
+;; Test 1: Very simple macro that just returns a quoted value
+(defmacro test-simple ()
+  (quote 42))
+
+(define result (test-simple))
+(print result)
+
+;; Test 2: Macro that uses list to construct code
+;; Note: This requires proper quote/unquote handling which we'll implement later
+;; For now, let's test if macros are being recognized and expanded
+
+(print "Basic macro test completed")

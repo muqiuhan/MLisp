@@ -82,6 +82,14 @@ module Compare = struct
         Object.Boolean (operator (float_of_int a) b)
       | [ Object.Float a; Object.Fixnum b ] ->
         Object.Boolean (operator a (float_of_int b))
+      | [ Object.Nil; Object.Nil ] ->
+        (* Special case for = with nil - only equality makes sense *)
+        if name = "=" then
+          Object.Boolean true
+        else
+          raise
+            (Errors.Parse_error_exn
+               (Errors.Type_error [%string "(%{name} number number)"]))
       | _ ->
         raise
           (Errors.Parse_error_exn (Errors.Type_error [%string "(%{name} number number)"]))

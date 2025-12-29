@@ -26,6 +26,7 @@ type lobject =
   | Primitive of string * (lobject list -> lobject) (** Built-in functions *)
   | Quote of value (** Quoted expressions *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
+  | Macro of name * name list * expr * lobject env (** Macro definitions *)
   | Module of
       { name : string (** Module name *)
       ; env : lobject env (** Module's internal environment *)
@@ -72,10 +73,13 @@ and expr =
   | ModuleDef of name * string list * expr list
   (** Module definition: name, exports, body *)
   | Import of import_spec (** Module import *)
+  | MacroDef of name * name list * expr
+  (** Macro definition: (defmacro name (args) body) *)
 
 and def =
   | Setq of name * expr
   | Defun of name * name list * expr
+  | Defmacro of name * name list * expr (** Macro definition *)
   | Expr of expr
 
 (** Import specification for module imports. *)
@@ -128,6 +132,8 @@ let object_type = function
     "quote"
   | Closure _ ->
     "closure"
+  | Macro _ ->
+    "macro"
   | Record _ ->
     "record"
   | Module _ ->
@@ -243,6 +249,8 @@ let rec string_object e =
       [%string "%{string_object expr}"]
     | Closure (name, name_list, _, _) ->
       [%string {|#<%{name}:(%{String.concat ~sep:" " name_list})>|}]
+    | Macro (name, name_list, _, _) ->
+      [%string {|#<macro:%{name}:(%{String.concat ~sep:" " name_list})>|}]
     | Record (name, fields) ->
       let fields_string =
         let to_string (field_name, field_value) =
@@ -395,6 +403,8 @@ let analyze_free_vars expr bound_vars =
         collect_vars expr
       | Defun (_name, _params, body) ->
         collect_vars body (* note: here we don't add function name to bound_vars *)
+      | Defmacro (_name, _params, body) ->
+        collect_vars body
       | Expr expr ->
         collect_vars expr)
     | Lambda (_name, _params, body) ->
@@ -406,6 +416,8 @@ let analyze_free_vars expr bound_vars =
       List.iter body_exprs ~f:collect_vars
     | Import _ ->
       () (* Imports don't capture variables *)
+    | MacroDef (_name, _params, body) ->
+      collect_vars body
     | Literal _ ->
       ()
   in

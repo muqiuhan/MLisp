@@ -7,6 +7,7 @@
 open Mlisp_object
 open Mlisp_error
 open Mlisp_ast
+open Mlisp_macro
 open Mlisp_utils
 open Core
 
@@ -52,7 +53,9 @@ let rec unzip l =
 ;;
 
 let rec eval_expr expr env =
-  let rec eval = function
+  (* Expand macros before evaluation *)
+  let expanded_expr = Macro.expand expr env ~eval_fn:eval_expr in
+  let rec eval expr = match expr with
     | Object.Literal (Object.Quote expr) -> expr
     | Object.Literal l -> l
     | Object.Var n -> Object.lookup (n, env)
@@ -115,20 +118,28 @@ let rec eval_expr expr env =
         (match body with
          | Object.Let (Object.LET, inner_bindings, inner_body) ->
            (* Handle nested Let: evaluate bindings in let_env context so they can access outer let bindings.
-              Special case: if binding is Defexpr, evaluate its expression in let_env to access outer bindings *)
-           let eval_inner_binding (n, e) = 
-             match e with
-             | Object.Defexpr (Object.Setq (name, expr)) ->
-               (* Evaluate define expression in let_env to access outer let bindings *)
-               let v = eval_expr expr let_env in
-               (* Bind the defined variable in let_env for the rest of the body *)
-               let _ = Object.bind (name, v, let_env) in
-                 n, ref (Some v)
-             | _ ->
-               n, ref (Some (eval_expr e let_env))
-           in
-           let inner_env = extend (List.map ~f:eval_inner_binding inner_bindings) let_env in
-             eval_expr inner_body inner_env
+              Special case: if binding is Defexpr, evaluate its expression in let_env to access outer bindings.
+              Also handle the special case from build_ast where define is wrapped in a temp let. *)
+           (match inner_bindings with
+            | [ "temp", Object.Defexpr (Object.Setq (name, expr)) ] ->
+              (* Handle let body with define (from build_ast sequence): evaluate define expression in let_env *)
+              let v = eval_expr expr let_env in
+              let _ = Object.bind (name, v, let_env) in
+                eval_expr inner_body let_env
+            | _ ->
+              let eval_inner_binding (n, e) = 
+                match e with
+                | Object.Defexpr (Object.Setq (name, expr)) ->
+                  (* Evaluate define expression in let_env to access outer let bindings *)
+                  let v = eval_expr expr let_env in
+                  (* Bind the defined variable in let_env for the rest of the body *)
+                  let _ = Object.bind (name, v, let_env) in
+                    n, ref (Some v)
+                | _ ->
+                  n, ref (Some (eval_expr e let_env))
+              in
+              let inner_env = extend (List.map ~f:eval_inner_binding inner_bindings) let_env in
+                eval_expr inner_body inner_env)
          | _ ->
            (* Normal let body evaluation *)
            eval_expr body let_env)
@@ -163,8 +174,12 @@ let rec eval_expr expr env =
       (* Defexpr can appear in expression context (e.g., lambda body) *)
       let value, _ = eval_def def_expr env in
         value
+    | Object.MacroDef (_name, _params, _body) ->
+      (* MacroDef should not appear in evaluation context - it should be Defexpr *)
+      (* This is a programming error, but handle gracefully *)
+      raise (Errors.Parse_error_exn (Errors.Type_error "MacroDef in evaluation context"))
   in
-    eval expr
+    eval expanded_expr
 
 (** Apply a function to arguments with optimized closure handling.
 
@@ -256,6 +271,10 @@ and eval_def def env =
     in
     let () = loc := Some clo in
       clo, Object.bind_local (name, loc, env)
+  | Object.Defmacro (name, params, body) ->
+    (* Create a macro object with the current environment captured *)
+    let macro_obj = Object.Macro (name, params, body, env) in
+      macro_obj, Object.bind (name, macro_obj, env)
   | Expr e -> eval_expr e env, env
 
 (** Evaluate a module definition.

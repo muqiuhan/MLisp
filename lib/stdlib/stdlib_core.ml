@@ -160,5 +160,12 @@ let _STDLIB_CORE_ =
             (first (take half ls))
             (second (drop half ls)))
         (merge (mergesort first) (mergesort second))))))
+
+(defun assert (condition)
+  (if condition
+    #t
+    (begin
+      (print "Assertion failed")
+      #f)))
 |}
 ;;

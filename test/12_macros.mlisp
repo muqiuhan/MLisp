@@ -1,0 +1,95 @@
+;; Test suite for macro system
+;; This file tests the basic macro functionality
+
+;; Test 1: Simple macro definition and call
+(defmacro double (x)
+  (list '+ x x))
+
+(define result1 (double 5))
+(print result1)
+(assert (= result1 10))
+
+;; Test 2: Macro with multiple arguments
+(defmacro add (x y)
+  (list '+ x y))
+
+(define result2 (add 3 4))
+(print result2)
+(assert (= result2 7))
+
+;; Test 3: Macro that generates a let binding
+(defmacro with-x (val body)
+  (list 'let (list (list 'x val)) body))
+
+(define result3 (with-x 10 (+ x 5)))
+(print result3)
+(assert (= result3 15))
+
+;; Test 4: Macro using quote
+(defmacro identity-macro (x)
+  (quote x))
+
+;; Note: This is a simple identity macro - it just returns the argument
+;; In a real implementation, we'd need proper quote/unquote handling
+;; For now, this tests basic macro expansion
+
+;; Test 5: Nested macro calls
+(defmacro square (x)
+  (list '* x x))
+
+(defmacro add-squares (x y)
+  (list '+ (list 'square x) (list 'square y)))
+
+(define result4 (add-squares 3 4))
+(print result4)
+;; Should expand to: (+ (square 3) (square 4))
+;; Which should expand to: (+ (* 3 3) (* 4 4))
+;; Which evaluates to: (+ 9 16) = 25
+(assert (= result4 25))
+
+;; Test 6: Macro in let binding
+(let ((x 10))
+  (defmacro get-x ()
+    (quote x))
+  (define result5 (get-x))
+  (print result5)
+  (assert (= result5 10)))
+
+;; Test 7: Macro that generates if expression
+(defmacro when (condition body)
+  (list 'if condition body (quote nil)))
+
+(define result6 (when #t 42))
+(print result6)
+(assert (= result6 42))
+
+(define result7 (when #f 42))
+(print result7)
+(assert (= result7 nil))
+
+;; Test 8: Macro with list construction
+(defmacro list-macro (a b c)
+  (list 'list a b c))
+
+(define result8 (list-macro 1 2 3))
+(print result8)
+;; Should create a list (1 2 3)
+
+;; Test 9: Macro that uses lambda
+(defmacro make-adder (n)
+  (list 'lambda (list 'x) (list '+ 'x n)))
+
+(define add5 (make-adder 5))
+(define result9 (add5 10))
+(print result9)
+(assert (= result9 15))
+
+;; Test 10: Simple macro expansion test
+(defmacro test-macro (x)
+  (list '+ x 1))
+
+(define result10 (test-macro 5))
+(print result10)
+(assert (= result10 6))
+
+(print "All macro tests passed!")

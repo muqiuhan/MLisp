@@ -52,6 +52,7 @@ let rec build_ast : Object.lobject -> Object.expr =
   match sexpr with
   | Object.Primitive _
   | Object.Closure _
+  | Object.Macro _
   | Object.Module _ ->
     raise Errors.This_can't_happen_exn
   | Object.Fixnum _
@@ -78,6 +79,9 @@ let rec build_ast : Object.lobject -> Object.expr =
       quote_expr expr
     | [ Object.Symbol "quote"; expr ] ->
       quote_expr expr
+    | Object.Symbol "begin" :: exprs ->
+      (* Begin sequences expressions, returning the last value *)
+      begin_expr exprs
     | [ Object.Symbol "define"; Object.Symbol name; expr ] ->
       setq_expr name expr
     | Object.Symbol "lambda" :: args :: body_exprs when Object.is_list args ->
@@ -87,13 +91,37 @@ let rec build_ast : Object.lobject -> Object.expr =
       apply_expr fn_expr args
     | [ Object.Symbol "defun"; Object.Symbol fn_name; args; body ] ->
       defun_expr fn_name args body
+    | [ Object.Symbol "defmacro"; Object.Symbol macro_name; args; body ] ->
+      macro_def_expr macro_name args body
     | Object.Symbol "module" :: Object.Symbol name :: exports :: body_exprs
       when Object.is_list exports ->
       module_expr name exports body_exprs
     | Object.Symbol "import" :: import_args ->
       import_expr import_args
-    | [ Object.Symbol s; bindings; expr ] when Object.is_list bindings && valid_let s ->
-      let_expr s bindings expr
+    | Object.Symbol s :: bindings :: body_exprs
+      when Object.is_list bindings && valid_let s ->
+      (* Let can have multiple body expressions - handle them here *)
+      let body_ast =
+        match body_exprs with
+        | [] ->
+          Object.Literal Object.Nil
+        | [ single ] ->
+          build_ast single
+        | multiple ->
+          (* Multiple expressions: sequence them *)
+          let rec build_sequence = function
+            | [] ->
+              Object.Literal Object.Nil
+            | [ last ] ->
+              build_ast last
+            | first :: rest ->
+              let first_expr = build_ast first in
+              let rest_expr = build_sequence rest in
+                Object.Let (Object.LET, [ "_", first_expr ], rest_expr)
+          in
+            build_sequence multiple
+      in
+        let_expr_simple s bindings body_ast
     | fn_expr :: args ->
       call_expr fn_expr args
     | [] ->
@@ -109,6 +137,28 @@ and and_expr : Object.lobject -> Object.lobject -> Object.expr =
 
 and or_expr cond_x cond_y = Object.Or (build_ast cond_x, build_ast cond_y)
 and quote_expr expr = Object.Literal (Quote expr)
+
+and begin_expr exprs =
+  (* Begin sequences multiple expressions, similar to lambda body *)
+  match exprs with
+  | [] ->
+    Object.Literal Object.Nil
+  | [ single ] ->
+    build_ast single
+  | _ :: _ ->
+    (* Multiple expressions: sequence them *)
+    let rec build_sequence = function
+      | [] ->
+        Object.Literal Object.Nil
+      | [ last ] ->
+        build_ast last
+      | first :: rest ->
+        let first_expr = build_ast first in
+        let rest_expr = build_sequence rest in
+          Object.Let (Object.LET, [ "_", first_expr ], rest_expr)
+    in
+      build_sequence exprs
+
 and setq_expr name expr = Object.Defexpr (Object.Setq (name, build_ast expr))
 
 and if_expr cond if_true if_false =
@@ -150,62 +200,23 @@ and defun_expr fn_name args body =
     Object.Defexpr
       (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
 
+and macro_def_expr macro_name args body =
+  let param_names = assert_unique_args args in
+    Object.Defexpr (Object.Defmacro (macro_name, param_names, build_ast body))
+
 and apply_expr fn_expr args = Apply (build_ast fn_expr, build_ast args)
 
-and let_expr s bindings expr =
+and let_expr_simple s bindings body_ast =
+  (* Simplified let_expr - body is already built as AST *)
   let make_binding = function
     | Object.Pair (Object.Symbol n, Pair (expr, Object.Nil)) ->
       n, build_ast expr
     | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(let bindings expr)"))
+      raise (Errors.Parse_error_exn (Errors.Type_error "(let bindings body)"))
   in
   let bindings = List.map ~f:make_binding (Object.pair_to_list bindings) in
   let () = assert_unique (List.map ~f:fst bindings) in
-  (* Let body can be a single expression or a sequence of expressions *)
-  let body_expr =
-    if Object.is_list expr then (
-      let body_list = Object.pair_to_list expr in
-        match body_list with
-        | [] ->
-          Object.Literal Object.Nil
-        | [ single_expr ] ->
-          build_ast single_expr
-        | first :: rest -> (
-          (* Multiple expressions: check if first is a define *)
-          match first with
-          | Object.Pair _ when Object.is_list first -> (
-            match Object.pair_to_list first with
-            | [ Object.Symbol "define"; Object.Symbol name; expr_val ] ->
-              (* Define followed by more expressions: sequence them *)
-              let define_expr = Object.Defexpr (Object.Setq (name, build_ast expr_val)) in
-              let rest_expr =
-                match rest with
-                | [ last ] ->
-                  build_ast last
-                | _ ->
-                  let rec build_sequence = function
-                    | [] ->
-                      Object.Literal Object.Nil
-                    | [ last ] ->
-                      build_ast last
-                    | first' :: rest' ->
-                      let first_expr = build_ast first' in
-                      let rest_expr' = build_sequence rest' in
-                        Object.Let (Object.LET, [ "temp", first_expr ], rest_expr')
-                  in
-                    build_sequence rest
-              in
-                Object.Let (Object.LET, [ "temp", define_expr ], rest_expr)
-            | _ ->
-              (* First element is not a define: treat entire body as single expression *)
-              build_ast expr)
-          | _ ->
-            (* First element is not a list: treat entire body as single expression *)
-            build_ast expr)
-    ) else
-      build_ast expr
-  in
-    Object.Let (to_kind s, bindings, body_expr)
+    Object.Let (to_kind s, bindings, body_ast)
 
 and call_expr fn_expr args = Call (build_ast fn_expr, List.map ~f:build_ast args)
 
@@ -291,8 +302,12 @@ let rec string_expr =
       [%string "(:= %{n} %{string_expr e})"]
     | Object.Defexpr (Object.Defun (n, ns, e)) ->
       [%string "(defun %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
+    | Object.Defexpr (Object.Defmacro (n, ns, e)) ->
+      [%string "(defmacro %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
     | Object.Defexpr (Object.Expr e) ->
       string_expr e
+    | Object.MacroDef (n, ns, e) ->
+      [%string "(defmacro %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
     | Object.Let (kind, bs, e) ->
       let str =
         match kind with

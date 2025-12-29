@@ -35,5 +35,5 @@ end
 
 let basis =
   let open Core in
-  [ Operator.generate "=" String.( ^ ) ]
+  [ Operator.generate "@" String.( ^ ) ]
 ;;
