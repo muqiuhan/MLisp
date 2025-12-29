@@ -61,7 +61,31 @@ let get_ocaml_version () =
 ;;
 
 let get_version_from_dune_project () =
-  "0.3.4" (* Default version, can be extracted from dune-project if needed *)
+  try
+    let ic = open_in "dune-project" in
+    let content = ref "" in
+      (* Read entire file *)
+      (try
+         while true do
+           content := !content ^ input_line ic ^ "\n"
+         done
+       with
+       | End_of_file ->
+         ());
+      close_in ic;
+      (* Search for (version ...) pattern, handling multi-line and whitespace *)
+      (* Pattern: (version followed by whitespace/newline, then version number) *)
+      let re = Str.regexp "(version[ \t\n]+\\([0-9]+\\.[0-9]+\\.[0-9]+\\))" in
+        (* Search from any position in the file, not just the beginning *)
+        try
+          ignore (Str.search_forward re !content 0);
+          Str.matched_group 1 !content
+        with
+        | Not_found ->
+          "unknown" (* Default fallback *)
+  with
+  | _ ->
+    "unknown" (* Default version if dune-project cannot be read *)
 ;;
 
 let () =
