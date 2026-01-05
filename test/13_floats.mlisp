@@ -1,0 +1,143 @@
+;; ============================================================================
+;; Test Suite: Float Numbers
+;; Description: Comprehensive tests for float type support
+;; ============================================================================
+
+;; ============================================================================
+;; Section: Float Type Support
+;; ============================================================================
+
+;; Test: Float literals
+(print 3.14)
+(print -2.5)
+(print 0.0)
+(print 100.001)
+
+;; Test: Float addition with identity
+(print (+))
+(print (+ 0.0))
+(print (+ 1.5))
+
+;; Test: Float arithmetic operations
+(print (+ 1.5 2.5))
+(print (- 5.5 2.3))
+(print (* 2.0 3.5))
+(print (/ 10.0 4.0))
+
+;; Test: Variadic float operations
+(print (+ 1.0 2.0 3.0))
+(print (* 1.5 2.0 3.0))
+
+;; Test: Mixed int and float operations
+(print (+ 1 2 3.5 4))
+(print (* 2 3.0 4))
+
+;; ============================================================================
+;; Section: Type Predicates
+;; ============================================================================
+
+;; Test: float? predicate
+(print (float? 3.14))
+(print (float? 5))
+(print (float? 0.0))
+(print (float? #t))
+
+;; Test: int? predicate
+(print (int? 42))
+(print (int? 3.14))
+(print (int? #t))
+
+;; ============================================================================
+;; Section: Type Conversions
+;; ============================================================================
+
+;; Test: int->float conversion
+(print (int->float 5))
+(print (int->float 0))
+(print (int->float -10))
+
+;; Test: float->int conversion (truncation)
+(print (float->int 3.9))
+(print (float->int 3.14))
+(print (float->int -2.7))
+(print (float->int 5.0))
+
+;; ============================================================================
+;; Section: Math Functions
+;; ============================================================================
+
+;; Test: floor function
+(print (floor 3.7))
+(print (floor 3.0))
+(print (floor -2.3))
+(print (floor -2.0))
+
+;; Test: ceil function
+(print (ceil 3.2))
+(print (ceil 3.0))
+(print (ceil -2.7))
+(print (ceil -2.0))
+
+;; Test: round function
+(print (round 3.5))
+(print (round 3.4))
+(print (round -3.5))
+(print (round 2.5))
+
+;; Test: sqrt function
+(print (sqrt 16.0))
+(print (sqrt 2.0))
+(print (sqrt 0.0))
+
+;; Test: pow function
+(print (pow 2.0 3.0))
+(print (pow 2.0 0.0))
+(print (pow 9.0 0.5))
+(print (pow 2 3.0))
+
+;; Test: abs function
+(print (abs -5.5))
+(print (abs 5.5))
+(print (abs -10))
+(print (abs 10))
+
+;; Test: exp function
+(print (exp 1.0))
+(print (exp 0.0))
+
+;; Test: log function
+(print (exp 0.0))
+(print (exp 1.0))
+
+;; Test: trigonometric functions
+(print (sin 0.0))
+(print (cos 0.0))
+(print (tan 0.0))
+(print (sin 3.14159))
+
+;; ============================================================================
+;; Section: Comparison Operations with Floats
+;; ============================================================================
+
+(print (= 3.14 3.14))
+(print (= 3.14 3.0))
+(print (== 3.14 3.14))
+(print (!= 3.14 3.0))
+(print (< 1.0 2.0))
+(print (> 2.0 1.0))
+(print (<= 1.5 1.5))
+(print (>= 2.5 2.5))
+
+;; ============================================================================
+;; Section: Negation with Floats
+;; ============================================================================
+
+(print (- 3.14))
+(print (- -5.5))
+(print (- 0.0))
+
+;; ============================================================================
+;; Section: End of Tests
+;; ============================================================================
+
+(print "All float tests completed!")

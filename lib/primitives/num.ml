@@ -13,22 +13,19 @@ module Operator = struct
     ( name
     , function
       | [] -> (
-        (* No arguments: return identity if available, error otherwise *)
         match identity with
         | Some id ->
-          Object.Fixnum id
+          Object.Float id
         | None ->
           raise
             (Errors.Parse_error_exn
                (Errors.Type_error [%string "(%{name} requires at least 1 argument)"])))
       | [ Object.Fixnum a ] ->
-        (* Single argument: apply negation if specified, otherwise return as-is *)
         if is_negation then
           Object.Fixnum (-a)
         else
           Object.Fixnum a
       | [ Object.Float a ] ->
-        (* Single float argument: apply negation if specified, otherwise return as-is *)
         if is_negation then
           Object.Float (-.a)
         else
@@ -100,9 +97,9 @@ end
 let basis =
   let open Core in
   [ (* Arithmetic operators with variadic support *)
-    Operator.generate "+" ( +. ) ~identity:(Some 0) ~is_negation:false
+    Operator.generate "+" ( +. ) ~identity:(Some 0.0) ~is_negation:false
   ; Operator.generate "-" ( -. ) ~identity:None ~is_negation:true
-  ; Operator.generate "*" ( *. ) ~identity:(Some 1) ~is_negation:false
+  ; Operator.generate "*" ( *. ) ~identity:(Some 1.0) ~is_negation:false
   ; Operator.generate "/" ( /. ) ~identity:None ~is_negation:false
   ; ( "mod"
     , function

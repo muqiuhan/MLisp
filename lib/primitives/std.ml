@@ -121,6 +121,129 @@ let record_create = function
     raise (Errors.Parse_error_exn (Errors.Type_error "(record field-name)"))
 ;;
 
+let floatp = function
+  | [ Object.Float _ ] ->
+    Object.Boolean true
+  | [ _ ] ->
+    Object.Boolean false
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(float? single-arg)"))
+;;
+
+let intp = function
+  | [ Object.Fixnum _ ] ->
+    Object.Boolean true
+  | [ _ ] ->
+    Object.Boolean false
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(int? single-arg)"))
+;;
+
+let int_to_float = function
+  | [ Object.Fixnum i ] ->
+    Object.Float (float_of_int i)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(int->float int)"))
+;;
+
+let float_to_int = function
+  | [ Object.Float f ] ->
+    Object.Fixnum (int_of_float f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(float->int float)"))
+;;
+
+let floor_fn = function
+  | [ Object.Float f ] ->
+    let i = int_of_float f in
+      if f >= 0.0 || f = float_of_int i then
+        Object.Float (float_of_int i)
+      else
+        Object.Float (float_of_int (i - 1))
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(floor float)"))
+;;
+
+let ceil_fn = function
+  | [ Object.Float f ] ->
+    let i = int_of_float f in
+      if f <= 0.0 || f = float_of_int i then
+        Object.Float (float_of_int i)
+      else
+        Object.Float (float_of_int (i + 1))
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(ceil float)"))
+;;
+
+let round_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Stdlib.Float.round f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(round float)"))
+;;
+
+let sqrt_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.sqrt f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(sqrt float)"))
+;;
+
+let pow_fn = function
+  | [ Object.Float a; Object.Float b ] ->
+    Object.Float (Float.pow a b)
+  | [ Object.Fixnum a; Object.Float b ] ->
+    Object.Float (Float.pow (float_of_int a) b)
+  | [ Object.Float a; Object.Fixnum b ] ->
+    Object.Float (Float.pow a (float_of_int b))
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(pow float float)"))
+;;
+
+let abs_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.abs f)
+  | [ Object.Fixnum i ] ->
+    Object.Fixnum (abs i)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(abs number)"))
+;;
+
+let exp_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.exp f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(exp float)"))
+;;
+
+let log_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.log f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(log float)"))
+;;
+
+let sin_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.sin f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(sin float)"))
+;;
+
+let cos_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.cos f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(cos float)"))
+;;
+
+let tan_fn = function
+  | [ Object.Float f ] ->
+    Object.Float (Float.tan f)
+  | _ ->
+    raise (Errors.Parse_error_exn (Errors.Type_error "(tan float)"))
+;;
+
 let basis =
   [ "list", list
   ; "cons", pair
@@ -134,6 +257,21 @@ let basis =
   ; "int->char", int_to_char
   ; "symbol-concat", cat
   ; "record-get", record_get
-  ; "record", record_create
+  ; "record", record_create (* Type predicates *)
+  ; "float?", floatp
+  ; "int?", intp (* Type conversions *)
+  ; "int->float", int_to_float
+  ; "float->int", float_to_int (* Math functions *)
+  ; "floor", floor_fn
+  ; "ceil", ceil_fn
+  ; "round", round_fn
+  ; "sqrt", sqrt_fn
+  ; "pow", pow_fn
+  ; "abs", abs_fn
+  ; "exp", exp_fn
+  ; "log", log_fn
+  ; "sin", sin_fn
+  ; "cos", cos_fn
+  ; "tan", tan_fn
   ]
 ;;

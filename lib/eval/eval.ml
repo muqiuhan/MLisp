@@ -39,14 +39,14 @@ let clear_stream () = current_stream := None
 *)
 let extend newenv oldenv =
   let new_env = Object.extend_env oldenv in
-    List.iter newenv ~f:(fun (b, v) ->
-      Object.bind_local (b, v, new_env) |> ignore);
+    List.iter newenv ~f:(fun (b, v) -> Object.bind_local (b, v, new_env) |> ignore);
     new_env
 ;;
 
 let rec unzip l =
   match l with
-  | [] -> [], []
+  | [] ->
+    [], []
   | (a, b) :: rst ->
     let flist, slist = unzip rst in
       a :: flist, b :: slist
@@ -55,14 +55,20 @@ let rec unzip l =
 let rec eval_expr expr env =
   (* Expand macros before evaluation *)
   let expanded_expr = Macro.expand expr env ~eval_fn:eval_expr in
-  let rec eval expr = match expr with
-    | Object.Literal (Object.Quote expr) -> expr
-    | Object.Literal l -> l
-    | Object.Var n -> Object.lookup (n, env)
+  let rec eval expr =
+    match expr with
+    | Object.Literal (Object.Quote expr) ->
+      expr
+    | Object.Literal l ->
+      l
+    | Object.Var n ->
+      Object.lookup (n, env)
     | Object.If (cond, if_true, if_false) as expr -> begin
       match eval cond with
-      | Object.Boolean true -> eval if_true
-      | Object.Boolean false -> eval if_false
+      | Object.Boolean true ->
+        eval if_true
+      | Object.Boolean false ->
+        eval if_false
       | _ ->
         raise
           (Errors.Syntax_error_exn
@@ -70,19 +76,25 @@ let rec eval_expr expr env =
     end
     | Object.And (cond_x, cond_y) -> begin
       match eval cond_x, eval cond_y with
-      | Object.Boolean x, Object.Boolean y -> Object.Boolean (x && y)
-      | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(&& bool bool)"))
+      | Object.Boolean x, Object.Boolean y ->
+        Object.Boolean (x && y)
+      | _ ->
+        raise (Errors.Parse_error_exn (Errors.Type_error "(&& bool bool)"))
     end
     | Object.Or (cond_x, cond_y) -> begin
       match eval cond_x, eval cond_y with
-      | Object.Boolean x, Object.Boolean y -> Object.Boolean (x || y)
-      | _ -> raise (Errors.Parse_error_exn (Errors.Type_error "(|| bool bool)"))
+      | Object.Boolean x, Object.Boolean y ->
+        Object.Boolean (x || y)
+      | _ ->
+        raise (Errors.Parse_error_exn (Errors.Type_error "(|| bool bool)"))
     end
     | Object.Apply (fn, args) ->
       eval_apply (eval fn) (Object.pair_to_list (eval args)) env
-    | Object.Call (Var "env", []) -> Object.env_to_val env
-    | Object.Call (fn, args) -> eval_apply (eval fn) (List.map ~f:eval args) env
-    (** Evaluate lambda expressions with optimized closure creation.
+    | Object.Call (Var "env", []) ->
+      Object.env_to_val env
+    | Object.Call (fn, args) ->
+      eval_apply (eval fn) (List.map ~f:eval args) env
+    (*  Evaluate lambda expressions with optimized closure creation.
 
         Creates function closures with intelligent variable capture strategy:
         - If no free variables: use legacy full environment capture
@@ -107,7 +119,7 @@ let rec eval_expr expr env =
           let closure_env = Object.create_closure_env free_vars env in
             Object.Closure (name, args, body, Object.Optimized closure_env)
         )
-    | Object.Let (Object.LET, bindings, body) ->
+    | Object.Let (Object.LET, bindings, body) -> (
       let eval_binding (n, e) = n, ref (Some (eval e)) in
       let let_env = extend (List.map ~f:eval_binding bindings) env in
         (* Special handling for nested Let with Defexpr: when body is a nested Let
@@ -115,34 +127,36 @@ let rec eval_expr expr env =
            access outer let bindings. This handles cases like:
            (let ((y 10)) (define z (+ y 1)) z)
         *)
-        (match body with
-         | Object.Let (Object.LET, inner_bindings, inner_body) ->
-           (* Handle nested Let: evaluate bindings in let_env context so they can access outer let bindings.
+        match body with
+        | Object.Let (Object.LET, inner_bindings, inner_body) -> (
+          (* Handle nested Let: evaluate bindings in let_env context so they can access outer let bindings.
               Special case: if binding is Defexpr, evaluate its expression in let_env to access outer bindings.
               Also handle the special case from build_ast where define is wrapped in a temp let. *)
-           (match inner_bindings with
-            | [ "temp", Object.Defexpr (Object.Setq (name, expr)) ] ->
-              (* Handle let body with define (from build_ast sequence): evaluate define expression in let_env *)
-              let v = eval_expr expr let_env in
-              let _ = Object.bind (name, v, let_env) in
-                eval_expr inner_body let_env
-            | _ ->
-              let eval_inner_binding (n, e) = 
-                match e with
-                | Object.Defexpr (Object.Setq (name, expr)) ->
-                  (* Evaluate define expression in let_env to access outer let bindings *)
-                  let v = eval_expr expr let_env in
-                  (* Bind the defined variable in let_env for the rest of the body *)
-                  let _ = Object.bind (name, v, let_env) in
-                    n, ref (Some v)
-                | _ ->
-                  n, ref (Some (eval_expr e let_env))
-              in
-              let inner_env = extend (List.map ~f:eval_inner_binding inner_bindings) let_env in
-                eval_expr inner_body inner_env)
-         | _ ->
-           (* Normal let body evaluation *)
-           eval_expr body let_env)
+          match inner_bindings with
+          | [ ("temp", Object.Defexpr (Object.Setq (name, expr))) ] ->
+            (* Handle let body with define (from build_ast sequence): evaluate define expression in let_env *)
+            let v = eval_expr expr let_env in
+            let _ = Object.bind (name, v, let_env) in
+              eval_expr inner_body let_env
+          | _ ->
+            let eval_inner_binding (n, e) =
+              match e with
+              | Object.Defexpr (Object.Setq (name, expr)) ->
+                (* Evaluate define expression in let_env to access outer let bindings *)
+                let v = eval_expr expr let_env in
+                (* Bind the defined variable in let_env for the rest of the body *)
+                let _ = Object.bind (name, v, let_env) in
+                  n, ref (Some v)
+              | _ ->
+                n, ref (Some (eval_expr e let_env))
+            in
+            let inner_env =
+              extend (List.map ~f:eval_inner_binding inner_bindings) let_env
+            in
+              eval_expr inner_body inner_env)
+        | _ ->
+          (* Normal let body evaluation *)
+          eval_expr body let_env)
     | Object.Let (Object.LETSTAR, bindings, body) ->
       let eval_binding acc (n, e) = Object.bind (n, eval_expr e acc, acc) in
         eval_expr body (List.fold_left ~f:eval_binding ~init:env bindings)
@@ -155,12 +169,12 @@ let rec eval_expr expr env =
         List.iter
           ~f:(fun (n, e) ->
             let v = eval_expr e env' in
-            match Hashtbl.find env'.bindings n with
-            | Some value_ref ->
-              value_ref := Some v
-            | None ->
-              (* Should not happen, but handle gracefully *)
-              Object.bind_local (n, ref (Some v), env') |> ignore)
+              match Hashtbl.find env'.bindings n with
+              | Some value_ref ->
+                value_ref := Some v
+              | None ->
+                (* Should not happen, but handle gracefully *)
+                Object.bind_local (n, ref (Some v), env') |> ignore)
           bindings
       in
         eval_expr body env'
@@ -195,11 +209,11 @@ let rec eval_expr expr env =
 *)
 and eval_apply fn_expr args env =
   match fn_expr with
-  | Object.Primitive (_, fn) -> fn args
+  | Object.Primitive (_, fn) ->
+    fn args
   | Object.Closure (fn_name, names, expr, closure_data) ->
     (* Check if the closure exists *)
-    if String.equal fn_name "lambda" |> not then
-      Object.lookup (fn_name, env) |> ignore;
+    if String.equal fn_name "lambda" |> not then Object.lookup (fn_name, env) |> ignore;
     eval_closure names expr args closure_data env
   | fn_expr ->
     raise (Errors.Parse_error_exn (Apply_error (Object.string_object fn_expr)))
@@ -226,34 +240,38 @@ and eval_closure names expr args closure_data env =
   | Object.Optimized cl_env ->
     (* use the optimized closure environment *)
     (* Get the parent environment from the closure *)
-    let parent_env = match cl_env.parent_env with
-      | Some p -> p
-      | None -> env  (* fallback to call environment if no parent *)
+    let parent_env =
+      match cl_env.parent_env with
+      | Some p ->
+        p
+      | None ->
+        env (* fallback to call environment if no parent *)
     in
     (* Create a new environment for the call, extending the parent *)
     let call_env = Object.extend_env parent_env in
-    (* Bind captured variables to the call environment *)
-    List.iter cl_env.captured_vars ~f:(fun (var_name, value_ref) ->
-      Object.bind_local (var_name, value_ref, call_env) |> ignore);
-    (* Bind parameters to their arguments *)
-    let call_env_with_args = Object.bind_list names args call_env in
-      eval_expr expr call_env_with_args
+      (* Bind captured variables to the call environment *)
+      List.iter cl_env.captured_vars ~f:(fun (var_name, value_ref) ->
+        Object.bind_local (var_name, value_ref, call_env) |> ignore);
+      (* Bind parameters to their arguments *)
+      let call_env_with_args = Object.bind_list names args call_env in
+        eval_expr expr call_env_with_args
 
 and eval_def def env =
   match def with
-  | Object.Setq (name, expr) ->
+  | Object.Setq (name, expr) -> (
     let v = eval_expr expr env in
       (* Try to update existing binding first, otherwise create new one *)
-      (match Hashtbl.find env.bindings name with
-       | Some value_ref ->
-         value_ref := Some v;
-         v, env
-       | None ->
-         v, Object.bind (name, v, env))
+      match Hashtbl.find env.bindings name with
+      | Some value_ref ->
+        value_ref := Some v;
+        v, env
+      | None ->
+        v, Object.bind (name, v, env))
   | Object.Defun (name, args, body) ->
     let formals, body', closure_data =
       match eval_expr (Object.Lambda (name, args, body)) env with
-      | Closure (_, fs, bod, data) -> fs, bod, data
+      | Closure (_, fs, bod, data) ->
+        fs, bod, data
       | _ ->
         raise (Errors.Parse_error_exn (Errors.Type_error "Expecting closure."))
     in
@@ -262,10 +280,7 @@ and eval_def def env =
       match closure_data with
       | Object.Legacy cl_env ->
         Object.Closure
-          ( name
-          , formals
-          , body'
-          , Object.Legacy (Object.bind_local (name, loc, cl_env)) )
+          (name, formals, body', Object.Legacy (Object.bind_local (name, loc, cl_env)))
       | Object.Optimized cl_env ->
         Object.Closure (name, formals, body', Object.Optimized cl_env)
     in
@@ -275,7 +290,8 @@ and eval_def def env =
     (* Create a macro object with the current environment captured *)
     let macro_obj = Object.Macro (name, params, body, env) in
       macro_obj, Object.bind (name, macro_obj, env)
-  | Expr e -> eval_expr e env, env
+  | Expr e ->
+    eval_expr e env, env
 
 (** Evaluate a module definition.
 
@@ -302,30 +318,36 @@ and eval_module name exports body_exprs env =
       | Object.Defexpr def_expr ->
         let _, updated_env = eval_def def_expr module_env in
           ignore updated_env
-      | Object.Let (Object.LET, bindings, body) ->
+      | Object.Let (Object.LET, bindings, body) -> (
         (* Special handling for Let in module body: if body is a Defexpr,
            bind the variable in module_env instead of let_env *)
-        (match body with
-         | Object.Defexpr (Object.Setq (name, expr_expr)) ->
-           (* Evaluate bindings in module_env *)
-           let eval_binding (n, e) = n, ref (Some (eval_expr e module_env)) in
-           let let_env = Object.extend_env module_env in
-           let () = List.iter (List.map ~f:eval_binding bindings) ~f:(fun (n, v_ref) ->
-             Object.bind_local (n, v_ref, let_env) |> ignore) in
-           (* Evaluate expr in let_env to access let bindings *)
-           let v = eval_expr expr_expr let_env in
-           (* But bind in module_env for export *)
-           let _ = Object.bind (name, v, module_env) in
-             ()
-         | _ ->
-           (* Normal let evaluation *)
-           let _ = eval_expr expr module_env in
-             ())
-      | Object.Let _ | Object.If _ | Object.And _ | Object.Or _ ->
+        match body with
+        | Object.Defexpr (Object.Setq (name, expr_expr)) ->
+          (* Evaluate bindings in module_env *)
+          let eval_binding (n, e) = n, ref (Some (eval_expr e module_env)) in
+          let let_env = Object.extend_env module_env in
+          let () =
+            List.iter (List.map ~f:eval_binding bindings) ~f:(fun (n, v_ref) ->
+              Object.bind_local (n, v_ref, let_env) |> ignore)
+          in
+          (* Evaluate expr in let_env to access let bindings *)
+          let v = eval_expr expr_expr let_env in
+          (* But bind in module_env for export *)
+          let _ = Object.bind (name, v, module_env) in
+            ()
+        | _ ->
+          (* Normal let evaluation *)
+          let _ = eval_expr expr module_env in
+            ())
+      | Object.Let _
+      | Object.If _
+      | Object.And _
+      | Object.Or _ ->
         (* These expressions can contain definitions in their bodies, evaluate them *)
         let _ = eval_expr expr module_env in
           ()
-      | Object.ModuleDef _ | Object.Import _ ->
+      | Object.ModuleDef _
+      | Object.Import _ ->
         (* Module and import are allowed in module body *)
         let _ = eval_expr expr module_env in
           ()
@@ -334,107 +356,126 @@ and eval_module name exports body_exprs env =
         let expr_str = Ast.string_expr expr in
         let warning_msg =
           [%string
-            "Expression result will be discarded. Module bodies should contain only definitions (define, defun, module, import)."]
+            "Expression result will be discarded. Module bodies should contain only \
+             definitions (define, defun, module, import)."]
         in
         (* Find the position of the expression in source code *)
         let find_expr_position source_lines expr_str =
           (* Normalize strings for comparison (remove whitespace and convert to lowercase) *)
           let normalize s =
-            String.filter s ~f:(fun c -> not (Char.is_whitespace c))
-            |> String.lowercase
+            String.filter s ~f:(fun c -> not (Char.is_whitespace c)) |> String.lowercase
           in
           let normalized_expr = normalize expr_str in
           (* Search for the expression across all lines *)
           let rec search_lines lines line_num =
             match lines with
-            | [] -> None
+            | [] ->
+              None
             | line :: rest ->
               let normalized_line = normalize line in
-              (* Check if the line contains the expression *)
-              if String.is_substring normalized_line ~substring:normalized_expr then (
-                (* Find the column position of the expression in the line *)
-                (* Look for the opening parenthesis of the expression *)
-                let find_start_col line =
-                  let expr_start = String.strip expr_str in
-                  let expr_first_char =
-                    if String.is_empty expr_start then
-                      None
-                    else
-                      Some (String.get expr_start 0)
-                  in
-                  let rec search_col pos =
-                    if pos >= String.length line then
-                      None
-                    else (
-                      match expr_first_char with
-                      | Some '(' when Char.equal (String.get line pos) '(' ->
-                        (* Found opening parenthesis, check if it matches the expression *)
-                        let remaining = String.drop_prefix line pos in
-                        let normalized_remaining = normalize remaining in
-                        if String.is_prefix normalized_remaining ~prefix:normalized_expr then
-                          Some (pos + 1)
-                        else
+                (* Check if the line contains the expression *)
+                if String.is_substring normalized_line ~substring:normalized_expr then (
+                  (* Find the column position of the expression in the line *)
+                  (* Look for the opening parenthesis of the expression *)
+                  let find_start_col line =
+                    let expr_start = String.strip expr_str in
+                    let expr_first_char =
+                      if String.is_empty expr_start then
+                        None
+                      else
+                        Some (String.get expr_start 0)
+                    in
+                    let rec search_col pos =
+                      if pos >= String.length line then
+                        None
+                      else (
+                        match expr_first_char with
+                        | Some '(' when Char.equal (String.get line pos) '(' ->
+                          (* Found opening parenthesis, check if it matches the expression *)
+                          let remaining = String.drop_prefix line pos in
+                          let normalized_remaining = normalize remaining in
+                            if
+                              String.is_prefix
+                                normalized_remaining
+                                ~prefix:normalized_expr
+                            then
+                              Some (pos + 1)
+                            else
+                              search_col (pos + 1)
+                        | Some ch when Char.equal (String.get line pos) ch ->
+                          (* Found first character, check if it matches *)
+                          let remaining = String.drop_prefix line pos in
+                          let normalized_remaining = normalize remaining in
+                            if
+                              String.is_prefix
+                                normalized_remaining
+                                ~prefix:normalized_expr
+                            then
+                              Some (pos + 1)
+                            else
+                              search_col (pos + 1)
+                        | _ ->
                           search_col (pos + 1)
-                      | Some ch when Char.equal (String.get line pos) ch ->
-                        (* Found first character, check if it matches *)
-                        let remaining = String.drop_prefix line pos in
-                        let normalized_remaining = normalize remaining in
-                        if String.is_prefix normalized_remaining ~prefix:normalized_expr then
-                          Some (pos + 1)
-                        else
-                          search_col (pos + 1)
-                      | _ -> search_col (pos + 1)
-                    )
+                      )
+                    in
+                      search_col 0
                   in
-                    search_col 0
-                in
-                  match find_start_col line with
-                  | Some col -> Some (line_num, col)
-                  | None -> search_lines rest (line_num + 1)
-              ) else
-                search_lines rest (line_num + 1)
+                    match find_start_col line with
+                    | Some col ->
+                      Some (line_num, col)
+                    | None ->
+                      search_lines rest (line_num + 1)
+                ) else
+                  search_lines rest (line_num + 1)
           in
             search_lines source_lines 1
         in
-        (* Print warning to stderr before evaluating the expression *)
-        (* Pass stream context if available for better source code display *)
-        (match !current_stream with
-        | Some stream ->
-          let source_lines = stream.recent_input in
-          let file_name =
-            if stream.repl_mode then
-              "stdin"
-            else
-              stream.file_name
-          in
-          let line_num, col_num =
-            match find_expr_position source_lines expr_str with
-            | Some (line, col) -> line, col
-            | None ->
-              (* Fallback: use current stream position or default *)
-              (if stream.repl_mode then 1 else !(stream.line_num)), !(stream.column)
-          in
-            Mlisp_print.Error.print_module_warning
-              ~file_name
-              ~line_number:line_num
-              ~column_number:col_num
-              ?source_lines:(if List.is_empty source_lines then None else Some source_lines)
-              name expr_str warning_msg
-        | None ->
-          Mlisp_print.Error.print_module_warning name expr_str warning_msg);
-        let _ = eval_expr expr module_env in
-          ())
+          (* Print warning to stderr before evaluating the expression *)
+          (* Pass stream context if available for better source code display *)
+          (match !current_stream with
+           | Some stream ->
+             let source_lines = stream.recent_input in
+             let file_name =
+               if stream.repl_mode then
+                 "stdin"
+               else
+                 stream.file_name
+             in
+             let line_num, col_num =
+               match find_expr_position source_lines expr_str with
+               | Some (line, col) ->
+                 line, col
+               | None ->
+                 (* Fallback: use current stream position or default *)
+                 ( (if stream.repl_mode then
+                      1
+                    else
+                      !(stream.line_num))
+                 , !(stream.column) )
+             in
+               Mlisp_print.Error.print_module_warning
+                 ~file_name
+                 ~line_number:line_num
+                 ~column_number:col_num
+                 ?source_lines:
+                   (if List.is_empty source_lines then
+                      None
+                    else
+                      Some source_lines)
+                 name
+                 expr_str
+                 warning_msg
+           | None ->
+             Mlisp_print.Error.print_module_warning name expr_str warning_msg);
+          let _ = eval_expr expr module_env in
+            ())
   in
   (* Verify all exports exist in module environment *)
   let () =
     List.iter exports ~f:(fun export_name ->
-      try
-        Object.lookup (export_name, module_env) |> ignore
-      with
+      try Object.lookup (export_name, module_env) |> ignore with
       | Errors.Runtime_error_exn _ ->
-        raise
-          (Errors.Runtime_error_exn
-             (Errors.Export_not_found (name, export_name))))
+        raise (Errors.Runtime_error_exn (Errors.Export_not_found (name, export_name))))
   in
   (* Create final module object with correct exports *)
   let final_module_obj = Object.Module { name; env = module_env; exports } in
@@ -457,30 +498,27 @@ and eval_module name exports body_exprs env =
 and eval_import import_spec env =
   let module_obj, import_name =
     match import_spec with
-    | Object.ImportAll module_name ->
+    | Object.ImportAll module_name -> (
       let mod_obj = Object.lookup (module_name, env) in
-        (match mod_obj with
-         | Object.Module _ -> mod_obj, module_name
-         | _ ->
-           raise
-             (Errors.Runtime_error_exn
-                (Errors.Not_a_module module_name)))
-    | Object.ImportSelective (module_name, _) ->
+        match mod_obj with
+        | Object.Module _ ->
+          mod_obj, module_name
+        | _ ->
+          raise (Errors.Runtime_error_exn (Errors.Not_a_module module_name)))
+    | Object.ImportSelective (module_name, _) -> (
       let mod_obj = Object.lookup (module_name, env) in
-        (match mod_obj with
-         | Object.Module _ -> mod_obj, module_name
-         | _ ->
-           raise
-             (Errors.Runtime_error_exn
-                (Errors.Not_a_module module_name)))
-    | Object.ImportAs (module_name, _) ->
+        match mod_obj with
+        | Object.Module _ ->
+          mod_obj, module_name
+        | _ ->
+          raise (Errors.Runtime_error_exn (Errors.Not_a_module module_name)))
+    | Object.ImportAs (module_name, _) -> (
       let mod_obj = Object.lookup (module_name, env) in
-        (match mod_obj with
-         | Object.Module _ -> mod_obj, module_name
-         | _ ->
-           raise
-             (Errors.Runtime_error_exn
-                (Errors.Not_a_module module_name)))
+        match mod_obj with
+        | Object.Module _ ->
+          mod_obj, module_name
+        | _ ->
+          raise (Errors.Runtime_error_exn (Errors.Not_a_module module_name)))
   in
     match module_obj, import_spec with
     | Object.Module { name = _; env = module_env; exports }, Object.ImportAll _ ->
@@ -488,7 +526,8 @@ and eval_import import_spec env =
       List.iter exports ~f:(fun export_name ->
         let value = Object.lookup (export_name, module_env) in
           Object.bind (export_name, value, env) |> ignore)
-    | Object.Module { name = mod_name; env = module_env; exports }, Object.ImportSelective (_, import_names) ->
+    | ( Object.Module { name = mod_name; env = module_env; exports }
+      , Object.ImportSelective (_, import_names) ) ->
       (* Import only specified symbols *)
       List.iter import_names ~f:(fun import_name ->
         if List.mem exports import_name ~equal:String.equal then (
@@ -496,8 +535,7 @@ and eval_import import_spec env =
             Object.bind (import_name, value, env) |> ignore
         ) else
           raise
-            (Errors.Runtime_error_exn
-               (Errors.Export_not_found (mod_name, import_name))))
+            (Errors.Runtime_error_exn (Errors.Export_not_found (mod_name, import_name))))
     | Object.Module { name = _; env = module_env; exports }, Object.ImportAs (_, alias) ->
       (* Bind the alias to the module object *)
       Object.bind (alias, module_obj, env) |> ignore;
@@ -519,14 +557,15 @@ and eval_import import_spec env =
     @param body_exprs List of body expressions
     @param env Current environment
     @return Module object and updated environment *)
-and eval_module_def name exports body_exprs env =
-  eval_module name exports body_exprs env
+and eval_module_def name exports body_exprs env = eval_module name exports body_exprs env
 
 and eval ast env =
   match ast with
-  | Object.Defexpr def_expr -> eval_def def_expr env
+  | Object.Defexpr def_expr ->
+    eval_def def_expr env
   | Object.ModuleDef (name, exports, body_exprs) ->
     let _, updated_env = eval_module_def name exports body_exprs env in
       Object.Symbol "ok", updated_env
-  | expr -> eval_expr expr env, env
+  | expr ->
+    eval_expr expr env, env
 ;;
