@@ -6,6 +6,7 @@
   core
   core_unix
   core_unix.filename_unix
+  str
   mlisp_object
   mlisp_error
   mlisp_eval

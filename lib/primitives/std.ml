@@ -177,7 +177,7 @@ let ceil_fn = function
 
 let round_fn = function
   | [ Object.Float f ] ->
-    Object.Float (Stdlib.Float.round f)
+    Object.Float (Float.round f)
   | _ ->
     raise (Errors.Parse_error_exn (Errors.Type_error "(round float)"))
 ;;

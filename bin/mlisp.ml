@@ -27,7 +27,7 @@ let () =
     )
   in
   let has_error = ref false in
-    (try Repl.repl stream Stdlib.stdlib_core ~has_error with
+    (try Repl.repl stream Stdlib_loader.stdlib_core ~has_error with
      | e ->
        if input_channel <> stdin then close_in input_channel;
        raise e);
