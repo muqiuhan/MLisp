@@ -59,6 +59,9 @@ let rec build_ast : Object.lobject -> Object.expr =
   | Object.Float _
   | Object.Boolean _
   | Object.Quote _
+  | Object.Quasiquote _
+  | Object.Unquote _
+  | Object.UnquoteSplicing _
   | Object.String _
   | Object.Record _
   | Object.Nil ->
@@ -75,8 +78,6 @@ let rec build_ast : Object.lobject -> Object.expr =
       and_expr cond_x cond_y
     | [ Object.Symbol "or"; cond_x; cond_y ] ->
       or_expr cond_x cond_y
-    | [ Object.Symbol "`"; expr ] ->
-      quote_expr expr
     | [ Object.Symbol "quote"; expr ] ->
       quote_expr expr
     | Object.Symbol "begin" :: exprs ->

@@ -22,5 +22,5 @@
 nil
 
 ;; Test: Symbols (through quote)
-(` foo)
-(` bar)
+'foo
+'bar

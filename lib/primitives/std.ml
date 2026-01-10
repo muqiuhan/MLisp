@@ -244,6 +244,36 @@ let tan_fn = function
     raise (Errors.Parse_error_exn (Errors.Type_error "(tan float)"))
 ;;
 
+(** Gensym counter for generating unique symbols *)
+let gensym_counter = ref 0
+
+(** Generate a unique symbol for hygienic macro expansion.
+    Optionally accepts a prefix symbol or string.
+
+    (gensym) -> g1, g2, g3, ...
+    (gensym 'temp) -> temp_1, temp_2, ...
+    (gensym "temp") -> temp_1, temp_2, ...
+*)
+let gensym = function
+  | [] ->
+    incr gensym_counter;
+    Object.Symbol [%string "g%{Int.to_string !gensym_counter}"]
+  | [ Object.Symbol prefix ] ->
+    incr gensym_counter;
+    Object.Symbol [%string "%{prefix}_%{Int.to_string !gensym_counter}"]
+  | [ Object.String prefix ] ->
+    incr gensym_counter;
+    Object.Symbol [%string "%{prefix}_%{Int.to_string !gensym_counter}"]
+  | [ _arg ] ->
+    raise
+      (Errors.Parse_error_exn
+         (Errors.Type_error "(gensym [optional-prefix-symbol-or-string])"))
+  | _ ->
+    raise
+      (Errors.Parse_error_exn
+         (Errors.Type_error "(gensym [optional-prefix-symbol-or-string])"))
+;;
+
 let basis =
   [ "list", list
   ; "cons", pair
@@ -252,6 +282,7 @@ let basis =
   ; "==", eq
   ; "atom?", atomp
   ; "symbol?", symp
+  ; "gensym", gensym (* Hygienic macro support *)
   ; "getchar", getchar
   ; "print", print
   ; "int->char", int_to_char

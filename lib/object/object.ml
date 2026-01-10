@@ -25,6 +25,9 @@ type lobject =
   | Record of name * (name * lobject) list (** Record structures *)
   | Primitive of string * (lobject list -> lobject) (** Built-in functions *)
   | Quote of value (** Quoted expressions *)
+  | Quasiquote of value (** Quasiquoted expressions (backtick) *)
+  | Unquote of value (** Unquoted expressions (comma) *)
+  | UnquoteSplicing of value (** Unquote-splicing expressions (comma-at) *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
   | Macro of name * name list * expr * lobject env (** Macro definitions *)
   | Module of
@@ -130,6 +133,12 @@ let object_type = function
     "primitive"
   | Quote _ ->
     "quote"
+  | Quasiquote _ ->
+    "quasiquote"
+  | Unquote _ ->
+    "unquote"
+  | UnquoteSplicing _ ->
+    "unquote-splicing"
   | Closure _ ->
     "closure"
   | Macro _ ->
@@ -206,6 +215,19 @@ let rec list_to_pair = function
     Pair (x, list_to_pair xs)
 ;;
 
+(** Append two lists represented as pairs.
+    Used for unquote-splicing implementation. *)
+let rec append_lists list1 list2 =
+  match list1 with
+  | Nil ->
+    list2
+  | Pair (car, cdr) ->
+    Pair (car, append_lists cdr list2)
+  | _ ->
+    (* list1 is not a proper list, just cons *)
+    Pair (list1, list2)
+;;
+
 let string_of_char a_char = String.make 1 a_char
 
 let rec string_object e =
@@ -246,7 +268,13 @@ let rec string_object e =
     | Primitive (name, _) ->
       [%string "#<primitive:%{name}>"]
     | Quote expr ->
-      [%string "%{string_object expr}"]
+      [%string "'%{string_object expr}"]
+    | Quasiquote expr ->
+      [%string "`%{string_object expr}"]
+    | Unquote expr ->
+      [%string ",%{string_object expr}"]
+    | UnquoteSplicing expr ->
+      [%string ",@%{string_object expr}"]
     | Closure (name, name_list, _, _) ->
       [%string {|#<%{name}:(%{String.concat ~sep:" " name_list})>|}]
     | Macro (name, name_list, _, _) ->

@@ -30,6 +30,21 @@ let unread_char : 'a stream -> char -> unit =
   fun stream current_char -> stream.chars <- current_char :: stream.chars
 ;;
 
+(** Peek at the next character without consuming it *)
+let peek_char : char stream -> char =
+  fun stream ->
+  match stream.chars with
+  | current_char :: _ ->
+    current_char
+  | [] -> (
+    match Stream.peek stream.stream with
+    | Some next_char ->
+      next_char
+    | None ->
+      (* Return a sentinel value that won't match any valid character *)
+      '\000')
+;;
+
 let rec eat_whitespace : char stream -> unit =
   fun stream ->
   let ch = read_char stream in
@@ -224,6 +239,18 @@ let rec read_sexpr : char stream -> Object.lobject =
     read_boolean stream
   | ch when Char.(ch = '\'') ->
     Quote (read_sexpr stream)
+  | ch when Char.(ch = '`') ->
+    (* Quasiquote (backtick) *)
+    Object.Quasiquote (read_sexpr stream)
+  | ch when Char.(ch = ',') ->
+    (* Unquote or unquote-splicing *)
+    let next_char = peek_char stream in
+    if Char.equal next_char '@' then (
+      (* Consume the '@' *)
+      let _ = read_char stream in
+      Object.UnquoteSplicing (read_sexpr stream)
+    ) else
+      Object.Unquote (read_sexpr stream)
   | ch when Char.(ch = '\"') ->
     read_string stream
   | ch when is_symbol_start_char ch ->

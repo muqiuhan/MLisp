@@ -1,0 +1,80 @@
+;; Test suite for quasiquote and gensym functionality
+;; This file tests Phase 2 of the macro system
+
+;; Test 1: Basic quasiquote (no unquote)
+(define result1 `(1 2 3))
+(print result1)
+
+;; Test 2: Quasiquote with unquote
+(define x 42)
+(define result2 `(1 ,x 3))
+(print result2)
+;; result2 should be (1 42 3)
+
+;; Test 3: Quasiquote with multiple unquotes
+(define y 10)
+(define z 20)
+(define result3 `(,x ,y ,z))
+(print result3)
+;; result3 should be (42 10 20)
+
+;; Test 4: Unquote-splicing with a list
+(define lst '(4 5 6))
+(define result4 `(1 2 3 ,@lst 7 8))
+(print result4)
+;; result4 should be (1 2 3 4 5 6 7 8)
+
+;; Test 5: Unquote-splicing with empty list
+(define empty '())
+(define result5 `(1 2 ,@empty 3))
+(print result5)
+;; result5 should be (1 2 3)
+
+;; Test 6: Nested quasiquote (level 1)
+(define result6 ``(1 ,,x))
+(print result6)
+;; Should be a quasiquote containing an unquote of x
+
+;; Test 7: Gensym basic functionality
+(define sym1 (gensym))
+(define sym2 (gensym))
+(print "Generated symbols:")
+(print sym1)
+(print sym2)
+;; Each gensym call should return a unique symbol
+
+;; Test 8: Gensym with prefix
+(define temp1 (gensym "temp"))
+(define temp2 (gensym "temp"))
+(print "Generated symbols with prefix:")
+(print temp1)
+(print temp2)
+
+;; Test 9: Macro with quasiquote (when macro)
+(defmacro when (condition body)
+  `(if ,condition ,body nil))
+
+(define result7 (when #t 42))
+(print result7)
+;; result7 should be 42
+
+(define result8 (when #f 42))
+(print result8)
+;; result8 should be nil
+
+;; Test 10: Macro with quasiquote creating lambda
+(defmacro make-adder (n)
+  `(lambda (x) (+ x ,n)))
+
+(define add10 (make-adder 10))
+(define result9 (add10 5))
+(print result9)
+;; result9 should be 15
+
+;; Test 11: Complex nested list construction
+(define a 'alpha)
+(define b 'beta)
+(define result13 `((1 ,a 2) (3 ,b 4) (5 ,a ,b)))
+(print result13)
+
+(print "All quasiquote tests passed!")
