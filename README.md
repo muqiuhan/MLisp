@@ -502,6 +502,50 @@ Fully expand all macros recursively until no macro calls remain:
 
 These tools are invaluable for debugging complex macros that expand to other macros.
 
+### Helper Macros for Hygienic Macro Programming
+
+MLisp provides helper macros that simplify writing hygienic macros that avoid variable capture.
+
+#### `with-gensym`
+
+Generate a unique symbol for a single name:
+
+```lisp
+(defmacro make-multiplier (value)
+  (with-gensym temp
+    `(lambda (x)
+       (* x ,value))))
+```
+
+#### `with-gensyms2` and `with-gensyms3`
+
+Generate unique symbols for multiple names:
+
+```lisp
+(defmacro make-composed (f g)
+  (with-gensyms2 x y
+    `(lambda (,x)
+       (,f (,g ,x)))))
+```
+
+Since MLisp does not support `&rest` parameters, variants are provided for different arities:
+- `with-gensym` - 1 symbol
+- `with-gensyms2` - 2 symbols
+- `with-gensyms3` - 3 symbols
+
+#### Example: Avoiding Variable Capture
+
+Helper macros ensure unique temporary variables in macro expansion:
+
+```lisp
+(defmacro safe-square (x)
+  (with-gensym result
+    `(let ((,result (* ,x ,x)))
+       ,result)))
+
+;; Expands to code with a unique variable, avoiding capture
+```
+
 ## Standard Library
 
 MLisp includes a comprehensive standard library loaded automatically.
@@ -516,17 +560,8 @@ MLisp includes a comprehensive standard library loaded automatically.
 (drop 2 '(1 2 3 4))           ;; (3 4)
 (mergesort '(3 1 4 2))        ;; (1 2 3 4)
 (zip. '(1 2) '(a b))          ;; ((1 a) (2 b))
-```
-
-### Primitive List Functions
-
-```lisp
-(cons 1 '(2 3))                ;; (1 2 3)
-(car '(1 2 3))                 ;; 1
-(cdr '(1 2 3))                 ;; (2 3)
-(list 1 2 3)                   ;; (1 2 3)
-(atom? x)                      ;; #t if x is an atom
-(symbol? x)                     ;; #t if x is a symbol
+(map (lambda (x) (* x 2)) '(1 2 3))  ;; (2 4 6)
+(pair? '(1 2))                ;; #t (checks if x is a pair/cons cell)
 ```
 
 ### Core Functions

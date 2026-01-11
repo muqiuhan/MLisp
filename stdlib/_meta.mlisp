@@ -1,7 +1,7 @@
 ;; Standard Library Metadata
 ;; This file contains version and module information for the MLisp standard library
 
-(define stdlib-version "0.2.1")
+(define stdlib-version "0.2.2")
 
-(define stdlib-modules (list "core" "list" "io" "assert"))
+(define stdlib-modules (list "core" "list" "io" "assert" "helper_macros"))
 

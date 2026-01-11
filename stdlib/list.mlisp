@@ -56,3 +56,15 @@
             (second (drop half ls)))
         (merge (mergesort first) (mergesort second))))))
 
+;; pair? - Check if x is a pair (cons cell)
+;; Returns #t if x is a pair, #f otherwise
+(defun pair? (x)
+  (not. (atom? x)))
+
+;; map - Higher-order function that applies f to each element of lst
+;; Returns a new list with the results
+(defun map (f lst)
+  (cond ((null. lst) '())
+        (#t (cons (f (car lst))
+                 (map f (cdr lst))))))
+
