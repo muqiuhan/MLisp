@@ -202,13 +202,43 @@ The `begin` form sequences multiple expressions and returns the value of the las
 
 #### Quote
 
-Use `quote` or `` ` `` to prevent evaluation:
+Use `quote` or `'` to prevent evaluation:
 
 ```lisp
 (quote foo)                    ;; Symbol foo (unevaluated)
-`foo                          ;; Same as (quote foo)
+'foo                          ;; Same as (quote foo)
 (quote (1 2 3))              ;; List (1 2 3) (unevaluated)
 ```
+
+#### Quasiquote
+
+Quasiquote (backtick) allows constructing S-expressions with selective evaluation:
+
+- `` `expr `` - Quasiquote: most content is literal (like quote)
+- `,expr` - Unquote: evaluate and insert the value
+- `,@expr` - Unquote-splicing: evaluate and splice a list into the surrounding list
+
+```lisp
+;; Basic quasiquote behaves like quote
+`(1 2 3)                      ;; (1 2 3)
+
+;; Unquote - insert evaluated value
+(define x 42)
+`(1 ,x 3)                     ;; (1 42 3)
+
+;; Multiple unquotes
+(define y 10)
+`(,x ,y)                      ;; (42 10)
+
+;; Unquote-splicing - splice a list into the result
+(define nums '(2 3 4))
+`(1 ,@nums 5)                 ;; (1 2 3 4 5)
+
+;; Nested quasiquotes (comma-comma evaluates at level 2)
+`` `(1 ,,x)                   ;; `(1 ,42)
+```
+
+Quasiquote is especially useful for writing macros that generate code.
 
 ## Functions and Closures
 
@@ -360,35 +390,117 @@ pi                             ;; 3.14159
 
 ## Macros
 
-MLisp supports hygienic macros for code generation:
+MLisp supports macros for metaprogramming and code generation. Macros receive their arguments as unevaluated S-expressions and return S-expressions that are then evaluated.
 
 ### Macro Definition
 
 ```lisp
 (defmacro double (x)
-  (list '+ x x))
+  `(+ ,x ,x))
 
 (define result (double 5))    ;; Expands to (+ 5 5) = 10
 ```
 
-### Macro Examples
+### Quasiquoted Macros
+
+Using quasiquote makes macros more readable:
 
 ```lisp
-;; When macro
+;; When macro - execute body only if condition is true
 (defmacro when (condition body)
-  (list 'if condition body (quote nil)))
+  `(if ,condition ,body nil))
 
 (when #t (print "Hello"))      ;; Prints "Hello"
 (when #f (print "Hello"))      ;; Does nothing
 
-;; Macro generating let binding
-(defmacro with-x (val body)
-  (list 'let (list (list 'x val)) body))
+;; Unless macro - opposite of when
+(defmacro unless (condition body)
+  `(if (not ,condition) ,body nil))
 
-(with-x 10 (+ x 5))            ;; 15
+(unless #f (print "Hi"))       ;; Prints "Hi"
 ```
 
-Macros receive their arguments as unevaluated S-expressions and return S-expressions that are then evaluated.
+### Unquote-splicing in Macros
+
+Use `,@` to splice a list into the generated code:
+
+```lisp
+;; Macro that creates a function comparing to multiple values
+(defmacro member-of (x)
+  `(lambda (y) (or ,@(map (lambda (v) `(== ,y ,v)) x))))
+
+(define is-digit (member-of '(0 1 2 3 4 5 6 7 8 9)))
+(is-digit 5)                   ;; #t
+(is-digit 42)                  ;; #f
+```
+
+### Hygienic Macros with Gensym
+
+Use `gensym` to generate unique symbols and avoid variable capture:
+
+```lisp
+;; Generate unique symbols
+(gensym)                      ;; => g1
+(gensym "temp")               ;; => temp_1
+(gensym "temp")               ;; => temp_2
+
+;; Hygienic swap macro using gensym
+(defmacro swap (a b)
+  (let ((temp (gensym "temp")))
+    `(let ((,temp ,a))
+       (setq ,a ,b)
+       (setq ,b ,temp))))
+
+(define x 10)
+(define y 20)
+(swap x y)
+x                             ;; 20
+y                             ;; 10
+```
+
+### Alternative Style (Without Quasiquote)
+
+For completeness, macros can also be written using `list` and `quote`:
+
+```lisp
+;; Same when macro without quasiquote
+(defmacro when-alt (condition body)
+  (list 'if condition body (quote nil)))
+```
+
+However, the quasiquote style is generally preferred for readability.
+
+### Macro Debugging Tools
+
+MLisp provides tools to inspect macro expansion, which are helpful for understanding how macros transform code.
+
+#### `macroexpand-1`
+
+Expand a macro call by a single level, without recursively expanding nested macros:
+
+```lisp
+(defmacro square (x)
+  `(* ,x ,x))
+
+(defmacro double-square (x)
+  `(double (square ,x)))
+
+;; Single-step expansion - only the outer macro is expanded
+(macroexpand-1 '(double-square 5))
+;; => (double (square 5))
+```
+
+#### `macroexpand`
+
+Fully expand all macros recursively until no macro calls remain:
+
+```lisp
+;; Full expansion - all macros are expanded
+(macroexpand '(double-square 5))
+;; => (* (* 5 5) (* 5 5))
+```
+
+These tools are invaluable for debugging complex macros that expand to other macros.
 
 ## Standard Library
 

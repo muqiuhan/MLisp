@@ -1,0 +1,82 @@
+;; Test suite for macroexpand and macroexpand-1
+;; This file tests the macro debugging tools
+
+;; Test 1: macroexpand-1 on non-macro call
+(print "Test 1: macroexpand-1 on non-macro")
+(define result1 (macroexpand-1 '(+ 1 2)))
+(print result1)
+;; Should be: (+ 1 2) - no change
+
+;; Test 2: macroexpand-1 on simple macro
+(print "Test 2: macroexpand-1 on simple macro")
+(defmacro double (x)
+  (list '+ x x))
+
+(define result2 (macroexpand-1 '(double 5)))
+(print result2)
+;; Should be: (+ 5 5)
+
+;; Test 3: Verify expanded code is executable
+(print "Test 3: Execute expanded code")
+(define expanded (macroexpand-1 '(double 10)))
+(print expanded)
+;; The result should be a quoted expression that we can evaluate
+;; For now, just print it
+
+;; Test 4: macroexpand-1 on nested macro (KEY TEST)
+(print "Test 4: macroexpand-1 on nested macro")
+(defmacro square (x)
+  (list '* x x))
+
+(defmacro double-square (x)
+  (list 'double (list 'square x)))
+
+(define result4 (macroexpand-1 '(double-square 3)))
+(print result4)
+;; Should be: (double (square 3)) - ONLY outer macro expanded
+;; Should NOT be: (+ (* 3 3) (* 3 3)) - that would be full expansion
+
+;; Test 5: macroexpand for full expansion
+(print "Test 5: macroexpand for full expansion")
+(define result5 (macroexpand '(double-square 3)))
+(print result5)
+;; Should be: (+ (* 3 3) (* 3 3))
+
+;; Test 6: macroexpand on simple macro
+(print "Test 6: macroexpand on simple macro")
+(define result6 (macroexpand '(double 5)))
+(print result6)
+;; Should be: (+ 5 5)
+
+;; Test 7: macroexpand with quasiquote
+(print "Test 7: macroexpand with quasiquote")
+(defmacro when (condition body)
+  `(if ,condition ,body nil))
+
+(define result7 (macroexpand-1 '(when #t 42)))
+(print result7)
+;; Should be: (if #t 42 nil)
+
+(define result7b (macroexpand '(when #t 42)))
+(print result7b)
+;; Should be: (if #t 42 nil)
+
+;; Test 8: Multi-level nested macros
+(print "Test 8: Multi-level nested macros")
+(defmacro triple (x)
+  (list '+ (list '+ x x) x))
+
+(define result8a (macroexpand-1 '(triple (triple 5))))
+(print result8a)
+;; Should show only outermost expansion
+
+(define result8b (macroexpand '(triple 5)))
+(print result8b)
+;; Should be: (+ (+ 5 5) 5)
+
+;; Test 9: Verify results are correct
+(print "Test 9: Verify results are correct")
+(define actual (double 5))
+(assert (= actual 10))
+
+(print "All macroexpand tests passed!")

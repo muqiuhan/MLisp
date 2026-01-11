@@ -52,69 +52,69 @@ module Quasiquote = struct
   let rec expand sexpr env ~eval_fn =
     match sexpr with
     | Object.Unquote expr ->
-        (* Unquote: evaluate at depth 1, preserve at deeper depths *)
-        if !depth = 1 then
-          eval_fn expr env
-        else
-          (* Keep the unquote wrapper for nested quasiquote *)
-          Object.Unquote (expand expr env ~eval_fn)
+      (* Unquote: evaluate at depth 1, preserve at deeper depths *)
+      if !depth = 1 then
+        eval_fn expr env
+      else
+        (* Keep the unquote wrapper for nested quasiquote *)
+        Object.Unquote (expand expr env ~eval_fn)
     | Object.UnquoteSplicing expr ->
-        (* Unquote-splicing: evaluate at depth 1 and splice *)
-        if !depth = 1 then
-          match eval_fn expr env with
-          | Object.Pair _ | Object.Nil as result ->
-              result
-          | _other ->
-              raise
-                (Errors.Runtime_error_exn
-                   (Errors.Not_found
-                      "unquote-splicing requires a list, got non-list value"))
-        else
-          (* Keep the unquote-splicing wrapper for nested quasiquote *)
-          Object.UnquoteSplicing (expand expr env ~eval_fn)
+      (* Unquote-splicing: evaluate at depth 1 and splice *)
+      if !depth = 1 then (
+        match eval_fn expr env with
+        | (Object.Pair _ | Object.Nil) as result ->
+          result
+        | _other ->
+          raise
+            (Errors.Runtime_error_exn
+               (Errors.Not_found "unquote-splicing requires a list, got non-list value"))
+      ) else
+        (* Keep the unquote-splicing wrapper for nested quasiquote *)
+        Object.UnquoteSplicing (expand expr env ~eval_fn)
     | Object.Quasiquote expr ->
-        (* Nested quasiquote: increase depth and expand *)
+      (* Nested quasiquote: increase depth and expand *)
       incr depth;
       let result = expand expr env ~eval_fn in
-      decr depth;
-      Object.Quasiquote result
+        decr depth;
+        Object.Quasiquote result
     | Object.Pair (car, cdr) ->
-        (* Recursively expand pairs, handling unquote-splicing *)
-        (* First check if car is unquote-splicing at current depth *)
-        begin match car with
-        | Object.UnquoteSplicing splice_expr ->
-            (* At depth 1, evaluate and splice; at depth >1, keep nested *)
-            if !depth = 1 then (
-              let splice_list = eval_fn splice_expr env in
-              let expanded_cdr = expand cdr env ~eval_fn in
-                (* Splice the list into the cdr *)
-                Object.append_lists splice_list expanded_cdr
-            ) else (
-              (* Nested: keep the unquote-splicing wrapper *)
-              let expanded_car = expand car env ~eval_fn in
-              let expanded_cdr = expand cdr env ~eval_fn in
-                Object.Pair (expanded_car, expanded_cdr)
-            )
-        | _ ->
-            (* Normal pair: expand both car and cdr *)
-            let expanded_car = expand car env ~eval_fn in
-            let expanded_cdr = expand cdr env ~eval_fn in
-              Object.Pair (expanded_car, expanded_cdr)
-        end
+      (* Recursively expand pairs, handling unquote-splicing *)
+      (* First check if car is unquote-splicing at current depth *)
+      begin match car with
+      | Object.UnquoteSplicing splice_expr ->
+        (* At depth 1, evaluate and splice; at depth >1, keep nested *)
+        if !depth = 1 then (
+          let splice_list = eval_fn splice_expr env in
+          let expanded_cdr = expand cdr env ~eval_fn in
+            (* Splice the list into the cdr *)
+            Object.append_lists splice_list expanded_cdr
+        ) else (
+          (* Nested: keep the unquote-splicing wrapper *)
+          let expanded_car = expand car env ~eval_fn in
+          let expanded_cdr = expand cdr env ~eval_fn in
+            Object.Pair (expanded_car, expanded_cdr)
+        )
+      | _ ->
+        (* Normal pair: expand both car and cdr *)
+        let expanded_car = expand car env ~eval_fn in
+        let expanded_cdr = expand cdr env ~eval_fn in
+          Object.Pair (expanded_car, expanded_cdr)
+      end
     | _ ->
-        (* Literals pass through unchanged *)
-        sexpr
+      (* Literals pass through unchanged *)
+      sexpr
 
   (** Helper function to append two lists represented as pairs *)
   and append_lists list1 list2 =
     match list1 with
     | Object.Nil ->
-        list2
+      list2
     | Object.Pair (car, cdr) ->
-        Object.Pair (car, append_lists cdr list2)
+      Object.Pair (car, append_lists cdr list2)
     | _ ->
-        (* list1 is not a proper list, just cons *)
-        Object.Pair (list1, list2)
+      (* list1 is not a proper list, just cons *)
+      Object.Pair (list1, list2)
+  ;;
 end
 
 (** Expand a quasiquote S-expression to its final form.
@@ -122,13 +122,11 @@ end
 let expand_quasiquote sexpr env ~eval_fn =
   (* Reset depth to 0 and increment to 1 for the outermost quasiquote *)
   Quasiquote.depth := 1;
-  try
-    Quasiquote.expand sexpr env ~eval_fn
-  with
+  try Quasiquote.expand sexpr env ~eval_fn with
   | e ->
-      Quasiquote.depth := 0;
-      raise e
-
+    Quasiquote.depth := 0;
+    raise e
+;;
 
 (** Extend an environment with a list of variable bindings.
 
@@ -163,11 +161,12 @@ let rec unzip l =
 let eval_value env value =
   match value with
   | Object.Symbol name ->
-      (* Variable reference - look up in environment *)
-      Object.lookup (name, env)
+    (* Variable reference - look up in environment *)
+    Object.lookup (name, env)
   | _ ->
-      (* Literals pass through *)
-      value
+    (* Literals pass through *)
+    value
+;;
 
 let rec eval_expr expr env =
   (* Expand macros before evaluation *)
@@ -223,6 +222,18 @@ let rec eval_expr expr env =
       eval_apply (eval fn) (Object.pair_to_list (eval args)) env
     | Object.Call (Var "env", []) ->
       Object.env_to_val env
+    | Object.Call (Var "macroexpand-1", [ Object.Literal (Object.Quote sexpr) ]) ->
+      (* Single-step macro expansion *)
+      let ast = Ast.build_ast sexpr in
+      let expanded = Macro.expand_1 ast env ~eval_fn:eval_expr in
+        (* Return quoted expanded form *)
+        Object.Quote (Macro.expr_to_sexpr expanded)
+    | Object.Call (Var "macroexpand", [ Object.Literal (Object.Quote sexpr) ]) ->
+      (* Full macro expansion *)
+      let ast = Ast.build_ast sexpr in
+      let expanded = Macro.expand ast env ~eval_fn:eval_expr in
+        (* Return quoted expanded form *)
+        Object.Quote (Macro.expr_to_sexpr expanded)
     | Object.Call (fn, args) ->
       eval_apply (eval fn) (List.map ~f:eval args) env
     (*  Evaluate lambda expressions with optimized closure creation.

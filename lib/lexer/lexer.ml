@@ -245,12 +245,12 @@ let rec read_sexpr : char stream -> Object.lobject =
   | ch when Char.(ch = ',') ->
     (* Unquote or unquote-splicing *)
     let next_char = peek_char stream in
-    if Char.equal next_char '@' then (
-      (* Consume the '@' *)
-      let _ = read_char stream in
-      Object.UnquoteSplicing (read_sexpr stream)
-    ) else
-      Object.Unquote (read_sexpr stream)
+      if Char.equal next_char '@' then (
+        (* Consume the '@' *)
+        let _ = read_char stream in
+          Object.UnquoteSplicing (read_sexpr stream)
+      ) else
+        Object.Unquote (read_sexpr stream)
   | ch when Char.(ch = '\"') ->
     read_string stream
   | ch when is_symbol_start_char ch ->
