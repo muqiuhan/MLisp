@@ -201,6 +201,11 @@ let rec expr_to_sexpr = function
     in
       Object.list_to_pair
         [ Object.Symbol "defmacro"; Object.Symbol name; params_sexpr; expr_to_sexpr body ]
+
+  (** Load module from file: (load-module "module-name") *)
+  | Object.LoadModule module_name_expr ->
+      let module_name_sexp = expr_to_sexpr module_name_expr in
+        Object.list_to_pair [ Object.Symbol "load-module"; module_name_sexp ]
 ;;
 
 (** {2 Single Macro Call Expansion} *)
@@ -625,6 +630,14 @@ let rec expand_expr expr env ~eval_fn ~depth =
     | Object.Import _ ->
       expr
 
+    (** Load module: (load-module "module-name")
+
+        Like import, load-module is not expanded. It's processed during
+        the evaluation phase.
+    *)
+    | Object.LoadModule _ ->
+      expr
+
     (** ======================================================================
         {3 Macro Definitions (Alternate Form)}
 
@@ -900,6 +913,13 @@ let rec expand_1_expr expr env ~eval_fn =
       ====================================================================== *)
 
   | Object.Import _ ->
+    (expr, false)
+
+  (** Load module: (load-module "module-name")
+
+      Load module forms don't contain macro calls to expand.
+  *)
+  | Object.LoadModule _ ->
     (expr, false)
 
   (** ======================================================================

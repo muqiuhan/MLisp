@@ -6,6 +6,7 @@
 
 open Mlisp_object
 open Mlisp_error
+open Module_cache
 
 let rec list = function
   | [] ->
@@ -273,6 +274,32 @@ let gensym = function
       (Errors.Parse_error_exn
          (Errors.Type_error "(gensym [optional-prefix-symbol-or-string])"))
 ;;
+;;
+
+(** Module cache management primitives *)
+
+let module_clear_cache = function
+  | [] ->
+      clear_cache ();
+      Object.Symbol "ok"
+  | _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "(module-clear-cache)"))
+;;
+
+let module_cache_stats = function
+  | [] ->
+      Object.Fixnum (get_cache_stats ())
+  | _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "(module-cache-stats)"))
+;;
+
+let module_is_cached = function
+  | [ Object.Symbol module_name ] ->
+      let cached = is_cached module_name in
+      Object.Boolean cached
+  | _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "(module-cached? module-name)"))
+;;
 
 let basis =
   [ "list", list
@@ -283,6 +310,9 @@ let basis =
   ; "atom?", atomp
   ; "symbol?", symp
   ; "gensym", gensym (* Hygienic macro support *)
+  ; "module-clear-cache", module_clear_cache (* Module cache management *)
+  ; "module-cache-stats", module_cache_stats
+  ; "module-cached?", module_is_cached
   ; "getchar", getchar
   ; "print", print
   ; "int->char", int_to_char

@@ -76,6 +76,7 @@ and expr =
   | ModuleDef of name * string list * expr list
   (** Module definition: name, exports, body *)
   | Import of import_spec (** Module import *)
+  | LoadModule of expr (** Load module from file by name *)
   | MacroDef of name * name list * expr
   (** Macro definition: (defmacro name (args) body) *)
 
@@ -293,6 +294,29 @@ let rec string_object e =
         [%string "#<module:%{name}(exports: %{exports_str})>"]
 ;;
 
+(** Parse a dotted symbol into (module_name, symbol_name) pair.
+
+    For example, "math.add" parses to ("math", "add").
+    Returns None if the symbol doesn't contain a dot or if the dot is
+    at the beginning or end.
+
+    @param name Symbol name to parse
+    @return Some (module_name, symbol_name) or None if not a dotted symbol
+*)
+let parse_dotted_symbol (name : string) : (string * string) option =
+  match String.rindex name '.' with
+  | None ->
+      None  (* No dot in the name *)
+  | Some dot_idx ->
+      if dot_idx <= 0 || dot_idx >= String.length name - 1 then
+        None  (* Dot at beginning, end - not valid namespace syntax *)
+      else
+        let module_name = String.sub name ~pos:0 ~len:dot_idx in
+        let symbol_len = String.length name - dot_idx - 1 in
+        let symbol_name = String.sub name ~pos:(dot_idx + 1) ~len:symbol_len in
+          Some (module_name, symbol_name)
+;;
+
 let rec lookup (name, env) =
   match Hashtbl.find env.bindings name with
   | Some v -> (
@@ -303,11 +327,36 @@ let rec lookup (name, env) =
       (* for uninitialized variables, return a special unspecified value *)
       Symbol "unspecified")
   | None -> (
-    match env.parent with
-    | Some parent ->
-      lookup (name, parent)
-    | None ->
-      raise (Errors.Runtime_error_exn (Errors.Not_found name)))
+    (* Not found in current environment, try parent or dotted symbol lookup *)
+    match parse_dotted_symbol name with
+    | Some (module_name, symbol_name) -> (
+        (* This is a dotted symbol like "module.symbol" *)
+        (* First, try to look up the module part in the current environment chain *)
+        let rec lookup_module env =
+          match Hashtbl.find env.bindings module_name with
+          | Some v -> (
+            match !v with
+            | Some module_obj -> module_obj
+            | None -> Symbol "unspecified")
+          | None -> (
+            match env.parent with
+            | Some parent -> lookup_module parent
+            | None -> raise (Errors.Runtime_error_exn (Errors.Not_found module_name)))
+        in
+        match lookup_module env with
+        | Module { env = module_env; _ } ->
+            (* Found the module, now look up the symbol in the module's environment *)
+            lookup (symbol_name, module_env)
+        | _ ->
+            (* module_name doesn't refer to a module, fall back to normal error *)
+            raise (Errors.Runtime_error_exn (Errors.Not_found name)))
+    | None -> (
+      (* Not a dotted symbol, try parent environment *)
+      match env.parent with
+      | Some parent ->
+        lookup (name, parent)
+      | None ->
+        raise (Errors.Runtime_error_exn (Errors.Not_found name))))
 ;;
 
 (** Create a new empty environment with optional parent linkage.
@@ -444,6 +493,8 @@ let analyze_free_vars expr bound_vars =
       List.iter body_exprs ~f:collect_vars
     | Import _ ->
       () (* Imports don't capture variables *)
+    | LoadModule _ ->
+      () (* LoadModule doesn't capture variables *)
     | MacroDef (_name, _params, body) ->
       collect_vars body
     | Literal _ ->

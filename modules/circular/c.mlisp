@@ -1,0 +1,4 @@
+;; Module C - imports Module D (circular)
+(module c (export func-c)
+  (define func-c (lambda (x) (+ x 1))))
+(import d)

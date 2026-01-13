@@ -8,12 +8,17 @@ open Mlisp_error
 open Mlisp_lexer
 open Mlisp_ast
 open Mlisp_eval
+open Mlisp_object
+open Module_cache
 open Core
+
+(* Open Core_unix for timestamp functions *)
+module Time = Core_unix
 
 (** Module loader for loading MLisp modules from files.
 
     This module provides functionality to load MLisp modules from files,
-    resolve module paths, and evaluate module definitions. *)
+    resolve module paths, evaluate module definitions, and cache loaded modules. *)
 
 (** Resolve module file path from module name.
 
@@ -47,13 +52,13 @@ let resolve_module_path module_name search_paths =
 (** Load and evaluate a module from a file.
 
     Reads a module file, parses it, and evaluates it in the given environment.
-    The file should contain a single module definition.
+    Returns the resulting environment and the module object if found.
 
     @param file_path Path to the module file
     @param env Environment to evaluate the module in
-    @return Updated environment with module loaded
+    @return (module_object option, updated_environment)
     @raise Errors.Runtime_error_exn if file cannot be read or module cannot be evaluated *)
-let load_module_from_file file_path env =
+let load_module_from_file_with_module file_path env =
   try
     let input_channel = In_channel.create file_path in
     let stream =
@@ -73,7 +78,16 @@ let load_module_from_file file_path env =
     in
     let result_env = load_all env in
       In_channel.close input_channel;
-      result_env
+
+      (* Extract the module object from the environment if it exists *)
+      (* The module file name (without extension) should match the module name *)
+      let module_name = Filename.chop_extension (Filename.basename file_path) in
+      let module_obj =
+        try Some (Object.lookup (module_name, result_env))
+        with
+        | Errors.Runtime_error_exn _ -> None
+      in
+        module_obj, result_env
   with
   | Sys_error msg ->
     raise
@@ -86,20 +100,109 @@ let load_module_from_file file_path env =
             (file_path, [%string "Evaluation error: %{Mlisp_error.Message.message exn}"])))
 ;;
 
-(** Load a module by name.
+(** Load and evaluate a module from a file (backward compatible version).
+
+    This function only returns the environment, for compatibility with
+    existing code that doesn't need the module object.
+
+    @param file_path Path to the module file
+    @param env Environment to evaluate the module in
+    @return Updated environment
+    @raise Errors.Runtime_error_exn if file cannot be read or module cannot be evaluated *)
+let load_module_from_file file_path env =
+  let _, result_env = load_module_from_file_with_module file_path env in
+    result_env
+;;
+
+(** Load a module by name with caching and circular dependency detection.
 
     Resolves the module path and loads the module from file. The module
     must be defined in the loaded file and will be available in the returned
-    environment.
+    environment. Loaded modules are cached for subsequent imports.
 
     @param module_name Name of the module to load
     @param search_paths List of directories to search for module files
     @param env Environment to load the module into
     @return Updated environment with module loaded
-    @raise Errors.Runtime_error_exn if module cannot be found or loaded *)
+    @raise Errors.Runtime_error_exn if module cannot be found or loaded,
+            or if circular dependency is detected *)
 let load_module module_name search_paths env =
-  let file_path = resolve_module_path module_name search_paths in
-    load_module_from_file file_path env
+  let cache_ref = get_global_cache () in
+  let state = !cache_ref in
+  let string_equal = String.equal in
+
+  (* Check for circular dependency *)
+  let is_loading = List.exists state.currently_loading ~f:(fun m -> string_equal m module_name) in
+  if is_loading then (
+    let cycle_path = String.concat ~sep:" -> " (List.rev (module_name :: state.currently_loading)) in
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Module_load_error
+              ( module_name
+              , [%string "Circular dependency detected: %{cycle_path}"] )))
+  );
+
+  (* Check cache *)
+  match Hashtbl.find state.cache module_name with
+  | Some cached ->
+      (* Cache hit - bind the module object to the current environment *)
+      Object.bind (module_name, cached.module_object, env) |> ignore;
+      env
+  | None ->
+      (* Cache miss - load the module *)
+      let file_path = resolve_module_path module_name search_paths in
+      (* Add to currently_loading list *)
+      cache_ref :=
+        { state with currently_loading = module_name :: state.currently_loading };
+
+      let load_and_cache () =
+        let module_obj_opt, result_env = load_module_from_file_with_module file_path env in
+
+        (* Cache the module if found *)
+        (match module_obj_opt with
+        | Some (Object.Module { name = _; env = module_env; exports = _ }) ->
+            let cache_entry =
+              { module_object = (Object.lookup (module_name, result_env))
+              ; module_env = module_env
+              ; source_path = file_path
+              ; timestamp = Time.gettimeofday ()
+              }
+            in
+              Hashtbl.set state.cache ~key:module_name ~data:cache_entry
+        | Some obj ->
+            (* Not a module object, but we can still cache it *)
+            let cache_entry =
+              { module_object = obj
+              ; module_env = env  (* Use current env as fallback *)
+              ; source_path = file_path
+              ; timestamp = Time.gettimeofday ()
+              }
+            in
+              Hashtbl.set state.cache ~key:module_name ~data:cache_entry
+        | None ->
+            (* Module not found in file - this is OK if the file defines
+               other things but no module with matching name *)
+            ());
+
+        (* Remove from currently_loading list *)
+        cache_ref :=
+          { !cache_ref with
+            currently_loading =
+              List.filter state.currently_loading ~f:(fun m -> not (string_equal m module_name))
+          };
+
+        result_env
+      in
+        try load_and_cache ()
+        with
+        | exn ->
+          (* On error, remove from currently_loading list *)
+          cache_ref :=
+            { !cache_ref with
+              currently_loading =
+                List.filter (!cache_ref).currently_loading ~f:(fun m -> not (string_equal m module_name))
+            };
+          raise exn
 ;;
 
 (** Get default module search paths.

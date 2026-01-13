@@ -1,0 +1,3 @@
+;; Safe module - no circular dependencies
+(module safe (export value)
+  (define value 42))

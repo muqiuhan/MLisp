@@ -99,6 +99,8 @@ let rec build_ast : Object.lobject -> Object.expr =
       module_expr name exports body_exprs
     | Object.Symbol "import" :: import_args ->
       import_expr import_args
+    | Object.Symbol "load-module" :: [ module_name_expr ] ->
+      load_module_expr module_name_expr
     | Object.Symbol s :: bindings :: body_exprs
       when Object.is_list bindings && valid_let s ->
       (* Let can have multiple body expressions - handle them here *)
@@ -274,6 +276,17 @@ and import_expr import_args =
     raise
       (Errors.Parse_error_exn
          (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
+and load_module_expr module_name_expr =
+  (* (load-module "module-name") - load module from file *)
+  match module_name_expr with
+  | Object.String module_name ->
+      Object.LoadModule (Object.Literal (Object.String module_name))
+  | Object.Symbol module_name ->
+      Object.LoadModule (Object.Literal (Object.String module_name))
+  | _ ->
+      raise
+        (Errors.Parse_error_exn
+           (Errors.Type_error "(load-module \"module-name\")"))
 ;;
 
 let rec string_expr =
@@ -337,4 +350,6 @@ let rec string_expr =
           [%string "(import %{name} :as %{alias})"]
       in
         import_str
+    | Object.LoadModule module_name_expr ->
+      [%string "(load-module %{string_expr module_name_expr})"]
 ;;

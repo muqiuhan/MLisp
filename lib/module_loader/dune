@@ -11,4 +11,5 @@
   mlisp_eval
   mlisp_lexer
   mlisp_ast
-  mlisp_utils))
+  mlisp_utils
+  mlisp_module_cache))

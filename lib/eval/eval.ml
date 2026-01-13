@@ -7,8 +7,10 @@
 open Mlisp_object
 open Mlisp_error
 open Mlisp_ast
+open Mlisp_lexer
 open Mlisp_macro
 open Mlisp_utils
+open Module_cache
 open Core
 
 (** Global reference to current execution stream for error/warning context *)
@@ -324,8 +326,11 @@ let rec eval_expr expr env =
       let module_obj, _ = eval_module name exports body_exprs env in
         module_obj
     | Object.Import import_spec ->
-      let () = eval_import import_spec env in
-        Object.Symbol "ok"
+      (* Import now returns the module object *)
+      eval_import import_spec env
+    | Object.LoadModule module_name_expr ->
+      (* Load module from file *)
+      eval_load_module module_name_expr env
     | Object.Defexpr def_expr ->
       (* Defexpr can appear in expression context (e.g., lambda body) *)
       let value, _ = eval_def def_expr env in
@@ -623,6 +628,8 @@ and eval_module name exports body_exprs env =
   let final_module_obj = Object.Module { name; env = module_env; exports } in
   (* Update the module reference in module_env *)
   let () = Object.bind (name, final_module_obj, module_env) |> ignore in
+  (* Register the module in the cache for module-cache-stats and module-cached? *)
+  let () = Module_cache.register_cached_module name final_module_obj module_env "" in
     final_module_obj, Object.bind (name, final_module_obj, env)
 
 (** Evaluate an import expression.
@@ -665,29 +672,170 @@ and eval_import import_spec env =
     match module_obj, import_spec with
     | Object.Module { name = _; env = module_env; exports }, Object.ImportAll _ ->
       (* Import all exported symbols *)
-      List.iter exports ~f:(fun export_name ->
-        let value = Object.lookup (export_name, module_env) in
-          Object.bind (export_name, value, env) |> ignore)
+      begin
+        List.iter exports ~f:(fun export_name ->
+          let value = Object.lookup (export_name, module_env) in
+            Object.bind (export_name, value, env) |> ignore);
+        (* Re-register module in cache if it was cleared *)
+        Module_cache.register_cached_module import_name module_obj module_env "";
+        module_obj
+      end
     | ( Object.Module { name = mod_name; env = module_env; exports }
       , Object.ImportSelective (_, import_names) ) ->
       (* Import only specified symbols *)
-      List.iter import_names ~f:(fun import_name ->
-        if List.mem exports import_name ~equal:String.equal then (
-          let value = Object.lookup (import_name, module_env) in
-            Object.bind (import_name, value, env) |> ignore
-        ) else
-          raise
-            (Errors.Runtime_error_exn (Errors.Export_not_found (mod_name, import_name))))
+      begin
+        List.iter import_names ~f:(fun import_name ->
+          if List.mem exports import_name ~equal:String.equal then (
+            let value = Object.lookup (import_name, module_env) in
+              Object.bind (import_name, value, env) |> ignore
+          ) else
+            raise
+              (Errors.Runtime_error_exn (Errors.Export_not_found (mod_name, import_name))));
+        (* Re-register module in cache if it was cleared *)
+        Module_cache.register_cached_module import_name module_obj module_env "";
+        module_obj
+      end
     | Object.Module { name = _; env = module_env; exports }, Object.ImportAs (_, alias) ->
       (* Bind the alias to the module object *)
-      Object.bind (alias, module_obj, env) |> ignore;
-      (* Import all with namespace prefix *)
-      List.iter exports ~f:(fun export_name ->
-        let prefixed_name = [%string "%{alias}.%{export_name}"] in
-        let value = Object.lookup (export_name, module_env) in
-          Object.bind (prefixed_name, value, env) |> ignore)
+      begin
+        Object.bind (alias, module_obj, env) |> ignore;
+        (* Import all with namespace prefix *)
+        List.iter exports ~f:(fun export_name ->
+          let prefixed_name = [%string "%{alias}.%{export_name}"] in
+          let value = Object.lookup (export_name, module_env) in
+            Object.bind (prefixed_name, value, env) |> ignore);
+        (* Re-register module in cache if it was cleared *)
+        Module_cache.register_cached_module import_name module_obj module_env "";
+        module_obj
+      end
     | _ ->
       raise (Errors.Runtime_error_exn (Errors.Not_a_module import_name))
+
+(** Evaluate a load-module expression.
+
+    Loads a module from a file by name. This uses the module loader's
+    load_module function which supports circular dependency detection
+    and caching.
+
+    @param module_name_expr Expression evaluating to module name (string or symbol)
+    @param env Current environment
+    @return Unit (module is loaded and bound in environment)
+    @raise Errors.Runtime_error_exn if module cannot be found or loaded *)
+and eval_load_module module_name_expr env =
+  (* Evaluate the module name expression *)
+  let module_name_obj = eval_expr module_name_expr env in
+  let module_name =
+    match module_name_obj with
+    | Object.String s -> s
+    | Object.Symbol s -> s
+    | _ ->
+      raise (Errors.Runtime_error_exn (Errors.Module_load_error ("load-module", "requires a string or symbol module name")))
+  in
+  (* Get default search paths: current directory and modules/ subdirectory *)
+  let current_dir = Core_unix.getcwd () in
+  let modules_dir = Filename.concat current_dir "modules" in
+  let search_paths = [ current_dir; modules_dir ] in
+
+  (* Get cache state for circular dependency detection *)
+  let cache_ref = Module_cache.get_global_cache () in
+  let state = !cache_ref in
+
+  (* Check for circular dependency *)
+  let is_loading = List.exists state.currently_loading ~f:(fun m -> String.equal m module_name) in
+  if is_loading then (
+    let cycle_path = String.concat ~sep:" -> " (List.rev (module_name :: state.currently_loading)) in
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Module_load_error
+              ( module_name
+              , [%string "Circular dependency detected: %{cycle_path}"] )))
+  );
+
+  (* Check cache first *)
+  (match Hashtbl.find state.cache module_name with
+   | Some cached ->
+       (* Cache hit - bind the module object to the current environment *)
+       Object.bind (module_name, cached.module_object, env) |> ignore;
+       cached.module_object
+   | None ->
+       (* Cache miss - resolve and load the module *)
+       let module_file = [%string "%{module_name}.mlisp"] in
+       let rec search_path = function
+         | [] ->
+             raise
+               (Errors.Runtime_error_exn
+                  (Errors.Module_load_error
+                     ( module_name
+                     , [%string "Module file '%{module_file}' not found in search paths"] )))
+         | path :: rest ->
+             let full_path = Filename.concat path module_file in
+               match Core_unix.access full_path [ `Exists ] with
+               | Ok () ->
+                   full_path
+               | Error _ ->
+                   search_path rest
+       in
+       let file_path = search_path search_paths in
+
+       (* Add to currently_loading list *)
+       cache_ref :=
+         { state with currently_loading = module_name :: state.currently_loading };
+
+       (* Load and evaluate the module file *)
+       let load_and_cache () =
+         try
+           let input_channel = In_channel.create file_path in
+           let stream =
+             Mlisp_utils.Stream_wrapper.make_filestream input_channel ~file_name:file_path
+           in
+           let rec load_all load_env =
+             try
+               let ast = stream |> Lexer.read_sexpr |> Ast.build_ast in
+               let _, updated_env = eval ast load_env in
+                 load_all updated_env
+             with
+             | Stream.Failure ->
+               load_env
+             | exn ->
+               In_channel.close input_channel;
+               raise exn
+           in
+           let result_env = load_all env in
+             In_channel.close input_channel;
+
+           (* Register the module in cache if it was defined *)
+           (try
+              let module_obj = Object.lookup (module_name, result_env) in
+                (match module_obj with
+                 | Object.Module { name = _; env = module_env; exports = _ } ->
+                     Module_cache.register_cached_module module_name module_obj module_env file_path
+                 | _ ->
+                     (* Not a module object, but cache anyway *)
+                     Module_cache.register_cached_module module_name module_obj result_env file_path)
+            with
+            | Errors.Runtime_error_exn _ ->
+                (* Module not found in result env - that's OK, file might have other content *)
+                ());
+
+           (* Remove from currently_loading list *)
+           cache_ref :=
+             { !cache_ref with
+               currently_loading =
+                 List.filter state.currently_loading ~f:(fun m -> not (String.equal m module_name))
+             };
+
+           Object.Symbol "ok"
+         with
+         | exn ->
+           (* On error, remove from currently_loading list *)
+           cache_ref :=
+             { !cache_ref with
+               currently_loading =
+                 List.filter (!cache_ref).currently_loading ~f:(fun m -> not (String.equal m module_name))
+             };
+           raise exn
+       in
+         load_and_cache ())
 
 (** Evaluate a module definition at the top level.
 
