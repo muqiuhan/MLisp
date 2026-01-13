@@ -119,13 +119,16 @@ let help = function
         \  (module %{mod_name} (export %{export_name} ...) ...)"]
     | Module_load_error (mod_name, reason) ->
       [%string
-        "Module load error: '%{mod_name}' - %{reason}\n\n\
+        "Module load error: '%{mod_name}'\n\n\
+         %{reason}\n\n\
          Failed to load module from file.\n\n\
          Possible causes:\n\
         \  - File not found: %{mod_name}.mlisp\n\
         \  - Syntax error in module file\n\
-        \  - Module not defined in file\n\n\
-         Check file path and module syntax."])
+        \  - Module not defined in file\n\
+        \  - Circular dependency in module imports\n\n\
+         Check file path and module syntax.\n\
+         For circular dependencies, check if imported modules also load this module."])
   | _ ->
     "Unknown error occurred. Please report this issue."
 ;;

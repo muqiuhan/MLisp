@@ -62,6 +62,33 @@ let rec eat_comment : char stream -> unit =
     eat_comment stream
 ;;
 
+(** Skip all leading whitespace and comments before an expression.
+
+    This function is used by the REPL to find the actual start position
+    of an expression before saving it for error reporting. Unlike
+    eat_whitespace, this also handles comment lines.
+
+    @param stream The input stream
+    @return unit *)
+let rec skip_leading_whitespace_and_comments : char stream -> unit =
+  fun stream ->
+  (* First, skip whitespace *)
+  eat_whitespace stream;
+  (* Check if the next character starts a comment *)
+  let ch = peek_char stream in
+  if Char.equal ch '\000' then
+    (* End of input *)
+    ()
+  else if Char.equal ch ';' then
+    (* It's a comment, eat it and continue skipping *)
+    let _ = read_char stream in
+    eat_comment stream;
+    skip_leading_whitespace_and_comments stream
+  else
+    (* Not a comment, we're at the start of the expression *)
+    ()
+;;
+
 let read_fixnum : char stream -> char -> Object.lobject =
   fun stream prefix ->
   let acc =
@@ -163,14 +190,35 @@ let read_string : char stream -> Object.lobject =
     loop ""
 ;;
 
-(** Read in a whole number or float *)
+(** Read in a whole S-expression.
+
+    This is the main entry point for reading expressions. It handles
+    leading whitespace and comments before reading the expression.
+
+    For special cases where you've already skipped leading whitespace,
+    use read_sexpr_body directly. *)
 let rec read_sexpr : char stream -> Object.lobject =
   fun stream ->
-  eat_whitespace stream;
+  (* Skip leading whitespace and comments to find the actual expression start *)
+  skip_leading_whitespace_and_comments stream;
+  (* Now read the expression body *)
+  read_sexpr_body stream
+
+(** Read in a whole number or float (internal version without leading whitespace skip).
+
+    This function expects the stream to already be positioned at the first
+    character of the expression. It reads the expression and any necessary
+    sub-expressions (with whitespace skipping for sub-expressions).
+
+    Use read_sexpr for normal reading which handles leading whitespace.
+    Use read_sexpr_body when you've already skipped leading whitespace. *)
+and read_sexpr_body : char stream -> Object.lobject =
+  fun stream ->
   match read_char stream with
   | ch when Char.(ch = ';') ->
     eat_comment stream;
-    read_sexpr stream
+    eat_whitespace stream;
+    read_sexpr_body stream
   | ch when Char.is_digit ch ->
     (* Read number, check if it's a float *)
     let num_str = ref (Char.escaped ch) in

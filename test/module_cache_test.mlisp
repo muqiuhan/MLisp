@@ -1,0 +1,63 @@
+;; Test module cache management
+;; Tests module cache functionality: clear, stats, and cached?
+
+;; Test 1: Define modules and check cache stats
+(print "Test 1: module cache stats")
+(module math (export add sub)
+  (define add (lambda (x y) (+ x y)))
+  (define sub (lambda (x y) (- x y))))
+
+(module utils (export double triple)
+  (define double (lambda (x) (* x 2)))
+  (define triple (lambda (x) (* x 3))))
+
+;; Check that modules are cached
+(print "Cache stats:")
+(print (module-cache-stats))
+
+;; Test 2: Check if specific modules are cached
+(print "Test 2: check if modules are cached")
+(assert (module-cached? (quote math)))
+(assert (module-cached? (quote utils)))
+(assert (if (module-cached? (quote nonexistent)) #f #t))
+(print "Module cache checking works!")
+
+;; Test 3: Clear cache and verify
+(print "Test 3: clear module cache")
+(module-clear-cache)
+(print "Cache cleared")
+(print "Cache stats after clear:")
+(print (module-cache-stats))
+
+;; Verify modules are no longer cached
+(assert (if (module-cached? (quote math)) #f #t))
+(assert (if (module-cached? (quote utils)) #f #t))
+(print "Cache clear verification works!")
+
+;; Test 4: Recreate modules after cache clear
+(print "Test 4: recreate modules after cache clear")
+(module math2 (export multiply)
+  (define multiply (lambda (x y) (* x y))))
+
+(assert (module-cached? (quote math2)))
+(print "Modules are cached again after creation!")
+
+;; Test 5: Cache stats reflect multiple modules
+(print "Test 5: cache stats with multiple modules")
+(module strings (export concat reverse)
+  (define concat (lambda (x y) (symbol-concat x y)))
+  (define reverse (lambda (s) s)))  ;; placeholder
+
+(module lists (export head tail)
+  (define head (lambda (lst) (car lst)))
+  (define tail (lambda (lst) (cdr lst))))
+
+;; Check cache has grown
+(define stats (module-cache-stats))
+(print "Cache stats after adding more modules:")
+(print stats)
+(assert (> stats 0))
+(print "Cache stats tracking works!")
+
+(print "")
+(print "All module cache tests passed!")

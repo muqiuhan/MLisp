@@ -135,12 +135,14 @@ let rec repl stream env ~has_error =
       stream
   in
     try
-      (* Save position before reading expression for error reporting *)
-      (* Note: read_sexpr calls eat_whitespace which may change position,
-       so we save position before calling read_sexpr *)
+      (* Skip whitespace and comments BEFORE saving position for error reporting.
+         This ensures the saved position points to the actual expression start. *)
+      Lexer.skip_leading_whitespace_and_comments input_stream;
+      (* Save position after skipping whitespace - this is where expression starts *)
       let saved_line = !(input_stream.line_num) in
       let saved_column = !(input_stream.column) in
-      let ast = input_stream |> Lexer.read_sexpr |> Ast.build_ast in
+      (* Read the expression body (without skipping whitespace again) *)
+      let ast = input_stream |> Lexer.read_sexpr_body |> Ast.build_ast in
       (* Save the position after reading (for next iteration) *)
       let final_line = !(input_stream.line_num) in
       let final_column = !(input_stream.column) in
