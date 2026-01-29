@@ -1,58 +1,61 @@
-;; Test OCaml syntax sugar macros (ocall* operator)
+;; Test OCaml syntax sugar macros (ocall operator)
 
-;; Test 1: ocall1 for single argument
-(print "Test ocall1 (single arg):")
-(define len1 (ocall1 String length "hello world"))
+;; Test 1: ocall with single argument
+(print "Test ocall (single arg):")
+(define len1 (ocall String length "hello world"))
 (print len1)
 (assert (= len1 11))
 
-;; Test 2: ocall1 with List.length
-(define len2 (ocall1 List length (quote (1 2 3 4 5))))
+;; Test 2: ocall with List.length (single arg)
+(define len2 (ocall List length (quote (1 2 3 4 5))))
 (print len2)
 (assert (= len2 5))
 
-;; Test 3: ocall3 for three arguments (String.sub)
-(print "Test ocall3 (three args):")
-(define sub1 (ocall3 String sub "hello" 1 3))
+;; Test 3: ocall with three arguments (String.sub)
+(print "Test ocall (three args):")
+(define sub1 (ocall String sub "hello" 1 3))
 (print sub1)
 (assert (== sub1 "ell"))
 
-;; Test 4: ocall2 for two arguments (String.concat)
-(print "Test ocall2 (two args):")
-(define concat1 (ocall2 String concat "hello" " world"))
+;; Test 4: ocall with two arguments (String.concat)
+(print "Test ocall (two args):")
+(define concat1 (ocall String concat "hello" " world"))
 (print concat1)
 (assert (== concat1 "hello world"))
 
-;; Test 5: Using ocall1 with various String functions
-(define upper1 (ocall1 String upper "hello"))
+;; Test 5: Using ocall with various String functions (single arg)
+(define upper1 (ocall String upper "hello"))
 (print upper1)
 (assert (== upper1 "HELLO"))
 
-(define lower1 (ocall1 String lower "HELLO"))
+(define lower1 (ocall String lower "HELLO"))
 (print lower1)
 (assert (== lower1 "hello"))
 
-(define trim1 (ocall1 String trim "  hello  "))
+(define trim1 (ocall String trim "  hello  "))
 (print trim1)
 (assert (== trim1 "hello"))
 
-;; Test 6: Using ocall1 with List functions
-(define rev1 (ocall1 List rev (quote (1 2 3))))
+;; Test 6: Using ocall with List functions (single arg)
+(define rev1 (ocall List rev (quote (1 2 3))))
 (print rev1)
 (assert (== rev1 (quote (3 2 1))))
 
-(define sort1 (ocall1 List sort (quote (3 1 2))))
+(define sort1 (ocall List sort (quote (3 1 2))))
 (print sort1)
 (assert (== sort1 (quote (1 2 3))))
 
-;; Test 7: ocall2 with List.append
-(define append1 (ocall2 List append (quote (1 2)) (quote (3 4))))
+;; Test 7: ocall with List.append (two args)
+(define append1 (ocall List append (quote (1 2)) (quote (3 4))))
 (print append1)
 (assert (== append1 (quote (1 2 3 4))))
 
-;; Test 8: ocall2 with List.nth
-(define nth1 (ocall2 List nth (quote (10 20 30)) 1))
+;; Test 8: ocall with List.nth (two args)
+(define nth1 (ocall List nth (quote (10 20 30)) 1))
 (print nth1)
 (assert (= nth1 20))
+
+;; Note: The ocall macro handles any number of arguments (1, 2, 3, or more)
+;; replacing the previous ocall1, ocall2, ocall3 macros.
 
 (print "All syntax sugar tests passed!")
