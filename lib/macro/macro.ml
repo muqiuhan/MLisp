@@ -218,6 +218,78 @@ let rec expr_to_sexpr = function
         Object.list_to_pair [ Object.Symbol "load-module"; module_name_sexp ]
 ;;
 
+(** {2 Macro Parameter Binding} *)
+
+(** Bind macro parameters to arguments, handling &rest parameters.
+
+    This function handles both fixed parameters and rest parameters:
+    - Fixed parameters bind to individual arguments
+    - Rest parameters pack remaining arguments into a list
+
+    @param param_specs List of parameter specifications (Fixed or Rest)
+    @param arg_sexprs List of argument S-expressions
+    @param expansion_env Environment to bind parameters in
+    @raise Errors.Runtime_error_exn on argument count mismatch
+*)
+let bind_macro_params param_specs arg_sexprs expansion_env =
+  (* Count fixed parameters *)
+  let fixed_count =
+    List.fold param_specs ~init:0 ~f:(fun acc -> function
+      | Object.Fixed _ -> acc + 1
+      | Object.Rest _ -> acc)
+  in
+
+  (* Check if variadic *)
+  let has_rest =
+    List.exists param_specs ~f:(function Object.Rest _ -> true | Object.Fixed _ -> false)
+  in
+
+  (* Validate argument count *)
+  let arg_count = List.length arg_sexprs in
+  if has_rest then
+    if arg_count < fixed_count then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Not_found
+              [%string "Macro expects at least %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]))
+  else
+    if arg_count <> fixed_count then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Not_found
+              [%string "Macro expects %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]));
+
+  (* Helper to find and bind the rest parameter *)
+  let bind_rest remaining_args =
+    let rest_name =
+      match List.find_map param_specs ~f:(function
+          | Object.Rest name -> Some name
+          | Object.Fixed _ -> None) with
+      | Some name -> name
+      | None -> raise (Errors.Runtime_error_exn (Errors.Not_found "Rest parameter not found"))
+    in
+    let rest_list = Object.list_to_pair remaining_args in
+    Object.bind (rest_name, rest_list, expansion_env) |> ignore
+  in
+
+  (* Recursively bind fixed parameters, then rest *)
+  let rec bind_fixed params args =
+    match params, args with
+    | [], [] -> ()
+    | Object.Fixed name :: rest_params, arg :: rest_args ->
+        Object.bind (name, arg, expansion_env) |> ignore;
+        bind_fixed rest_params rest_args
+    | Object.Rest _ :: _, remaining_args ->
+        bind_rest remaining_args
+    | [], _ ->
+        (* No more params but we have args - this shouldn't happen due to validation above *)
+        raise (Errors.Runtime_error_exn (Errors.Not_found "Too many arguments for macro"))
+    | _ ->
+        raise (Errors.Runtime_error_exn (Errors.Not_found "Parameter binding error"))
+  in
+    bind_fixed param_specs arg_sexprs
+;;
+
 (** {2 Single Macro Call Expansion} *)
 
 (** Expand a single macro call (internal helper).
@@ -242,7 +314,7 @@ let expand_macro_call macro_name args macro_env env =
   (* Get the macro definition from the environment *)
   let macro_obj = Object.lookup (macro_name, env) in
     match macro_obj with
-    | Object.Macro (_, param_names, body_expr, _) ->
+    | Object.Macro (_, param_specs, body_expr, _) ->
       (** Convert arguments to S-expressions.
 
           Macro arguments are passed unevaluated, so we convert them directly
@@ -261,24 +333,11 @@ let expand_macro_call macro_name args macro_env env =
 
       (** Bind parameters to argument S-expressions.
 
-          Each parameter in the macro definition is bound to the corresponding
-          argument S-expression. These bindings are added to the expansion
-          environment for use during macro body evaluation.
+          Use new variadic-aware parameter binding that handles both fixed
+          parameters and &rest parameters.
       *)
-      let () =
-        try
-          List.iter2_exn param_names arg_sexprs ~f:(fun param_name arg_sexpr ->
-            Object.bind (param_name, arg_sexpr, expansion_env) |> ignore)
-        with
-        | Invalid_argument _ ->
-          raise
-            (Errors.Runtime_error_exn
-               (Errors.Not_found
-                  [%string
-                    "Macro %{macro_name} expects %{Int.to_string (List.length \
-                     param_names)} arguments, got %{Int.to_string (List.length \
-                     arg_sexprs)}"]))
-      in
+      let () = bind_macro_params param_specs arg_sexprs expansion_env in
+
         (** Return the macro body expression.
 
             The caller will evaluate this expression in the expansion environment
@@ -413,7 +472,7 @@ let rec expand_expr expr env ~eval_fn ~depth =
     | Object.Call (Object.Var fn_name, args) when is_macro fn_name env -> (
       let macro_obj = Object.lookup (fn_name, env) in
         match macro_obj with
-        | Object.Macro (_, param_names, body_expr, macro_env) ->
+        | Object.Macro (_, param_specs, body_expr, macro_env) ->
           (** Convert arguments to S-expressions (unevaluated).
 
               Unlike function calls, macro arguments are not evaluated before
@@ -431,24 +490,10 @@ let rec expand_expr expr env ~eval_fn ~depth =
 
           (** Bind parameters to argument S-expressions.
 
-              Each parameter is bound to its corresponding argument S-expression
-              in the expansion environment. These bindings are used when the
-              macro body is evaluated.
+              Use new variadic-aware parameter binding that handles both fixed
+              parameters and &rest parameters.
           *)
-          let () =
-            try
-              List.iter2_exn param_names arg_sexprs ~f:(fun param_name arg_sexpr ->
-                Object.bind (param_name, arg_sexpr, expansion_env) |> ignore)
-            with
-            | Invalid_argument _ ->
-              raise
-                (Errors.Runtime_error_exn
-                   (Errors.Not_found
-                      [%string
-                        "Macro %{fn_name} expects %{Int.to_string (List.length \
-                         param_names)} arguments, got %{Int.to_string (List.length \
-                         arg_sexprs)}"]))
-          in
+          let () = bind_macro_params param_specs arg_sexprs expansion_env in
 
           (** Evaluate the macro body.
 
@@ -755,28 +800,19 @@ let rec expand_1_expr expr env ~eval_fn =
   | Object.Call (Object.Var fn_name, args) when is_macro fn_name env ->
     let macro_obj = Object.lookup (fn_name, env) in
     (match macro_obj with
-     | Object.Macro (_, param_names, body_expr, macro_env) ->
+     | Object.Macro (_, param_specs, body_expr, macro_env) ->
          (** Convert arguments to S-expressions (unevaluated). *)
          let arg_sexprs = List.map ~f:expr_to_sexpr args in
 
          (** Create expansion environment. *)
          let expansion_env = Object.extend_env macro_env in
 
-         (** Bind parameters to arguments. *)
-         let () =
-           try
-             List.iter2_exn param_names arg_sexprs ~f:(fun param_name arg_sexpr ->
-               Object.bind (param_name, arg_sexpr, expansion_env) |> ignore)
-           with
-           | Invalid_argument _ ->
-             raise
-               (Errors.Runtime_error_exn
-                  (Errors.Not_found
-                     [%string
-                       "Macro %{fn_name} expects %{Int.to_string (List.length \
-                        param_names)} arguments, got %{Int.to_string (List.length \
-                        arg_sexprs)}"]))
-         in
+         (** Bind parameters to arguments.
+
+             Use new variadic-aware parameter binding that handles both fixed
+             parameters and &rest parameters.
+         *)
+         let () = bind_macro_params param_specs arg_sexprs expansion_env in
 
          (** Evaluate macro body to get S-expression result. *)
          let result_sexpr =
