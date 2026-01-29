@@ -78,14 +78,13 @@ let load_module_from_file_with_module file_path env =
     in
     let result_env = load_all env in
       In_channel.close input_channel;
-
       (* Extract the module object from the environment if it exists *)
       (* The module file name (without extension) should match the module name *)
       let module_name = Filename.chop_extension (Filename.basename file_path) in
       let module_obj =
-        try Some (Object.lookup (module_name, result_env))
-        with
-        | Errors.Runtime_error_exn _ -> None
+        try Some (Object.lookup (module_name, result_env)) with
+        | Errors.Runtime_error_exn _ ->
+          None
       in
         module_obj, result_env
   with
@@ -130,79 +129,79 @@ let load_module module_name search_paths env =
   let cache_ref = get_global_cache () in
   let state = !cache_ref in
   let string_equal = String.equal in
-
   (* Check for circular dependency *)
-  let is_loading = List.exists state.currently_loading ~f:(fun m -> string_equal m module_name) in
-  if is_loading then (
-    let cycle_path = String.concat ~sep:" -> " (List.rev (module_name :: state.currently_loading)) in
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Module_load_error
-              ( module_name
-              , [%string "Circular dependency detected: %{cycle_path}"] )))
-  );
-
-  (* Check cache *)
-  match Hashtbl.find state.cache module_name with
-  | Some cached ->
+  let is_loading =
+    List.exists state.currently_loading ~f:(fun m -> string_equal m module_name)
+  in
+    if is_loading then (
+      let cycle_path =
+        String.concat ~sep:" -> " (List.rev (module_name :: state.currently_loading))
+      in
+        raise
+          (Errors.Runtime_error_exn
+             (Errors.Module_load_error
+                (module_name, [%string "Circular dependency detected: %{cycle_path}"])))
+    );
+    (* Check cache *)
+    match Hashtbl.find state.cache module_name with
+    | Some cached ->
       (* Cache hit - bind the module object to the current environment *)
       Object.bind (module_name, cached.module_object, env) |> ignore;
       env
-  | None ->
+    | None -> (
       (* Cache miss - load the module *)
       let file_path = resolve_module_path module_name search_paths in
-      (* Add to currently_loading list *)
-      cache_ref :=
-        { state with currently_loading = module_name :: state.currently_loading };
-
-      let load_and_cache () =
-        let module_obj_opt, result_env = load_module_from_file_with_module file_path env in
-
-        (* Cache the module if found *)
-        (match module_obj_opt with
-        | Some (Object.Module { name = _; env = module_env; exports = _ }) ->
-            let cache_entry =
-              { module_object = (Object.lookup (module_name, result_env))
-              ; module_env = module_env
-              ; source_path = file_path
-              ; timestamp = Time.gettimeofday ()
-              }
-            in
-              Hashtbl.set state.cache ~key:module_name ~data:cache_entry
-        | Some obj ->
-            (* Not a module object, but we can still cache it *)
-            let cache_entry =
-              { module_object = obj
-              ; module_env = env  (* Use current env as fallback *)
-              ; source_path = file_path
-              ; timestamp = Time.gettimeofday ()
-              }
-            in
-              Hashtbl.set state.cache ~key:module_name ~data:cache_entry
-        | None ->
-            (* Module not found in file - this is OK if the file defines
+        (* Add to currently_loading list *)
+        cache_ref
+        := { state with currently_loading = module_name :: state.currently_loading };
+        let load_and_cache () =
+          let module_obj_opt, result_env =
+            load_module_from_file_with_module file_path env
+          in
+            (* Cache the module if found *)
+            (match module_obj_opt with
+             | Some (Object.Module { name = _; env = module_env; exports = _ }) ->
+               let cache_entry =
+                 { module_object = Object.lookup (module_name, result_env)
+                 ; module_env
+                 ; source_path = file_path
+                 ; timestamp = Time.gettimeofday ()
+                 }
+               in
+                 Hashtbl.set state.cache ~key:module_name ~data:cache_entry
+             | Some obj ->
+               (* Not a module object, but we can still cache it *)
+               let cache_entry =
+                 { module_object = obj
+                 ; module_env = env (* Use current env as fallback *)
+                 ; source_path = file_path
+                 ; timestamp = Time.gettimeofday ()
+                 }
+               in
+                 Hashtbl.set state.cache ~key:module_name ~data:cache_entry
+             | None ->
+               (* Module not found in file - this is OK if the file defines
                other things but no module with matching name *)
-            ());
-
-        (* Remove from currently_loading list *)
-        cache_ref :=
-          { !cache_ref with
-            currently_loading =
-              List.filter state.currently_loading ~f:(fun m -> not (string_equal m module_name))
-          };
-
-        result_env
-      in
-        try load_and_cache ()
-        with
-        | exn ->
-          (* On error, remove from currently_loading list *)
-          cache_ref :=
-            { !cache_ref with
-              currently_loading =
-                List.filter (!cache_ref).currently_loading ~f:(fun m -> not (string_equal m module_name))
-            };
-          raise exn
+               ());
+            (* Remove from currently_loading list *)
+            cache_ref
+            := { !cache_ref with
+                 currently_loading =
+                   List.filter state.currently_loading ~f:(fun m ->
+                     not (string_equal m module_name))
+               };
+            result_env
+        in
+          try load_and_cache () with
+          | exn ->
+            (* On error, remove from currently_loading list *)
+            cache_ref
+            := { !cache_ref with
+                 currently_loading =
+                   List.filter !cache_ref.currently_loading ~f:(fun m ->
+                     not (string_equal m module_name))
+               };
+            raise exn)
 ;;
 
 (** Get default module search paths.

@@ -28,6 +28,7 @@ type lobject =
   | Quasiquote of value (** Quasiquoted expressions (backtick) *)
   | Unquote of value (** Unquoted expressions (comma) *)
   | UnquoteSplicing of value (** Unquote-splicing expressions (comma-at) *)
+  | RestParam of string (** Rest parameter marker (e.g., &rest) *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
   | Macro of name * name list * expr * lobject env (** Macro definitions *)
   | Module of
@@ -140,6 +141,8 @@ let object_type = function
     "unquote"
   | UnquoteSplicing _ ->
     "unquote-splicing"
+  | RestParam _ ->
+    "rest-param"
   | Closure _ ->
     "closure"
   | Macro _ ->
@@ -280,6 +283,8 @@ let rec string_object e =
       [%string {|#<%{name}:(%{String.concat ~sep:" " name_list})>|}]
     | Macro (name, name_list, _, _) ->
       [%string {|#<macro:%{name}:(%{String.concat ~sep:" " name_list})>|}]
+    | RestParam name ->
+      "&rest " ^ name
     | Record (name, fields) ->
       let fields_string =
         let to_string (field_name, field_value) =
@@ -306,15 +311,17 @@ let rec string_object e =
 let parse_dotted_symbol (name : string) : (string * string) option =
   match String.rindex name '.' with
   | None ->
-      None  (* No dot in the name *)
+    None (* No dot in the name *)
   | Some dot_idx ->
-      if dot_idx <= 0 || dot_idx >= String.length name - 1 then
-        None  (* Dot at beginning, end - not valid namespace syntax *)
-      else
-        let module_name = String.sub name ~pos:0 ~len:dot_idx in
-        let symbol_len = String.length name - dot_idx - 1 in
-        let symbol_name = String.sub name ~pos:(dot_idx + 1) ~len:symbol_len in
-          Some (module_name, symbol_name)
+    if dot_idx <= 0 || dot_idx >= String.length name - 1 then
+      None
+    (* Dot at beginning, end - not valid namespace syntax *)
+    else (
+      let module_name = String.sub name ~pos:0 ~len:dot_idx in
+      let symbol_len = String.length name - dot_idx - 1 in
+      let symbol_name = String.sub name ~pos:(dot_idx + 1) ~len:symbol_len in
+        Some (module_name, symbol_name)
+    )
 ;;
 
 let rec lookup (name, env) =
@@ -330,26 +337,30 @@ let rec lookup (name, env) =
     (* Not found in current environment, try parent or dotted symbol lookup *)
     match parse_dotted_symbol name with
     | Some (module_name, symbol_name) -> (
-        (* This is a dotted symbol like "module.symbol" *)
-        (* First, try to look up the module part in the current environment chain *)
-        let rec lookup_module env =
-          match Hashtbl.find env.bindings module_name with
-          | Some v -> (
-            match !v with
-            | Some module_obj -> module_obj
-            | None -> Symbol "unspecified")
-          | None -> (
-            match env.parent with
-            | Some parent -> lookup_module parent
-            | None -> raise (Errors.Runtime_error_exn (Errors.Not_found module_name)))
-        in
+      (* This is a dotted symbol like "module.symbol" *)
+      (* First, try to look up the module part in the current environment chain *)
+      let rec lookup_module env =
+        match Hashtbl.find env.bindings module_name with
+        | Some v -> (
+          match !v with
+          | Some module_obj ->
+            module_obj
+          | None ->
+            Symbol "unspecified")
+        | None -> (
+          match env.parent with
+          | Some parent ->
+            lookup_module parent
+          | None ->
+            raise (Errors.Runtime_error_exn (Errors.Not_found module_name)))
+      in
         match lookup_module env with
         | Module { env = module_env; _ } ->
-            (* Found the module, now look up the symbol in the module's environment *)
-            lookup (symbol_name, module_env)
+          (* Found the module, now look up the symbol in the module's environment *)
+          lookup (symbol_name, module_env)
         | _ ->
-            (* module_name doesn't refer to a module, fall back to normal error *)
-            raise (Errors.Runtime_error_exn (Errors.Not_found name)))
+          (* module_name doesn't refer to a module, fall back to normal error *)
+          raise (Errors.Runtime_error_exn (Errors.Not_found name)))
     | None -> (
       (* Not a dotted symbol, try parent environment *)
       match env.parent with

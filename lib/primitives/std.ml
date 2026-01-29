@@ -274,31 +274,30 @@ let gensym = function
       (Errors.Parse_error_exn
          (Errors.Type_error "(gensym [optional-prefix-symbol-or-string])"))
 ;;
-;;
 
 (** Module cache management primitives *)
 
 let module_clear_cache = function
   | [] ->
-      clear_cache ();
-      Object.Symbol "ok"
+    clear_cache ();
+    Object.Symbol "ok"
   | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(module-clear-cache)"))
+    raise (Errors.Parse_error_exn (Errors.Type_error "(module-clear-cache)"))
 ;;
 
 let module_cache_stats = function
   | [] ->
-      Object.Fixnum (get_cache_stats ())
+    Object.Fixnum (get_cache_stats ())
   | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(module-cache-stats)"))
+    raise (Errors.Parse_error_exn (Errors.Type_error "(module-cache-stats)"))
 ;;
 
 let module_is_cached = function
   | [ Object.Symbol module_name ] ->
-      let cached = is_cached module_name in
+    let cached = is_cached module_name in
       Object.Boolean cached
   | _ ->
-      raise (Errors.Parse_error_exn (Errors.Type_error "(module-cached? module-name)"))
+    raise (Errors.Parse_error_exn (Errors.Type_error "(module-cached? module-name)"))
 ;;
 
 let basis =

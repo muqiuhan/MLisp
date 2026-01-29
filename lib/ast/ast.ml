@@ -53,7 +53,8 @@ let rec build_ast : Object.lobject -> Object.expr =
   | Object.Primitive _
   | Object.Closure _
   | Object.Macro _
-  | Object.Module _ ->
+  | Object.Module _
+  | Object.RestParam _ ->
     raise Errors.This_can't_happen_exn
   | Object.Fixnum _
   | Object.Float _
@@ -276,17 +277,16 @@ and import_expr import_args =
     raise
       (Errors.Parse_error_exn
          (Errors.Type_error "(import module-name [symbol ...] | :as alias)"))
+
 and load_module_expr module_name_expr =
   (* (load-module "module-name") - load module from file *)
   match module_name_expr with
   | Object.String module_name ->
-      Object.LoadModule (Object.Literal (Object.String module_name))
+    Object.LoadModule (Object.Literal (Object.String module_name))
   | Object.Symbol module_name ->
-      Object.LoadModule (Object.Literal (Object.String module_name))
+    Object.LoadModule (Object.Literal (Object.String module_name))
   | _ ->
-      raise
-        (Errors.Parse_error_exn
-           (Errors.Type_error "(load-module \"module-name\")"))
+    raise (Errors.Parse_error_exn (Errors.Type_error "(load-module \"module-name\")"))
 ;;
 
 let rec string_expr =

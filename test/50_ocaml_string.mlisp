@@ -1,0 +1,67 @@
+;; Test OCaml String module bindings
+;; The String module is a Record object bound in the global environment
+
+;; Helper: Get method from module (returns the primitive function)
+(defun get-method (mod field)
+  (record-get mod field))
+
+;; Test 1: String.length
+(print "String.length test:")
+(define string-length (get-method String (quote length)))
+(define result (string-length "hello world"))
+(print result)
+(assert (= result 11))
+
+;; Test 2: String.concat
+(print "String.concat test:")
+(define string-concat (get-method String (quote concat)))
+(define result2 (string-concat "hello" " world"))
+(print result2)
+(assert (== result2 "hello world"))
+
+;; Test 3: String.split
+(print "String.split test:")
+(define string-split (get-method String (quote split)))
+(define result3 (string-split "a,b,c" ","))
+(print result3)
+
+;; Test 4: String.upper
+(print "String.upper test:")
+(define string-upper (get-method String (quote upper)))
+(define result4 (string-upper "hello"))
+(print result4)
+(assert (== result4 "HELLO"))
+
+;; Test 5: String.lower
+(print "String.lower test:")
+(define string-lower (get-method String (quote lower)))
+(define result5 (string-lower "HELLO"))
+(print result5)
+(assert (== result5 "hello"))
+
+;; Test 6: String.sub
+(print "String.sub test:")
+(define string-sub (get-method String (quote sub)))
+(define result6 (string-sub "hello" 1 3))
+(print result6)
+(assert (== result6 "ell"))
+
+;; Test 7: String.contains?
+(print "String.contains? test:")
+(define string-contains (get-method String (quote contains?)))
+(define result7 (string-contains "hello world" "wor"))
+(print result7)
+(assert result7)
+
+(define result8 (string-contains "hello" "xyz"))
+(print result8)
+(assert (not. result8))
+
+;; Test 8: String.trim
+(print "String.trim test:")
+(define string-trim (get-method String (quote trim)))
+(define result9 (string-trim "  hello  "))
+(print result9)
+(assert (== result9 "hello"))
+
+(print "All OCaml String module tests passed!")

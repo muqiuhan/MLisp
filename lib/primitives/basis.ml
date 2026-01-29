@@ -26,15 +26,20 @@ open Mlisp_object
     - Arithmetic operations (Num.basis)
     - String manipulation functions (String.basis)
     - Core Lisp operations (Std.basis)
+    - OCaml standard library bindings (Ocaml.basis) - Record objects for String, List, etc.
     - Essential symbols like "empty-symbol"
 
     All MLisp programs start with this environment as their foundation. *)
 let basis =
   let newprim acc (name, func) = Object.bind (name, Object.Primitive (name, func), acc) in
+  let newmodule acc (name, lobj) = Object.bind (name, lobj, acc) in
   let initial_env = Object.create_env () in
     Object.bind ("empty-symbol", Object.Symbol "", initial_env) |> ignore;
     Object.bind ("nil", Object.Nil, initial_env) |> ignore;
-    [ Num.basis; String.basis; Std.basis ]
-    |> Core.List.concat
-    |> Core.List.fold_left ~f:newprim ~init:initial_env
+    let prim_env =
+      [ Num.basis; String.basis; Std.basis ]
+      |> Core.List.concat
+      |> Core.List.fold_left ~f:newprim ~init:initial_env
+    in
+      Ocaml.basis |> Core.List.fold_left ~f:newmodule ~init:prim_env
 ;;

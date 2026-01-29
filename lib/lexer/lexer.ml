@@ -76,17 +76,17 @@ let rec skip_leading_whitespace_and_comments : char stream -> unit =
   eat_whitespace stream;
   (* Check if the next character starts a comment *)
   let ch = peek_char stream in
-  if Char.equal ch '\000' then
-    (* End of input *)
-    ()
-  else if Char.equal ch ';' then
-    (* It's a comment, eat it and continue skipping *)
-    let _ = read_char stream in
-    eat_comment stream;
-    skip_leading_whitespace_and_comments stream
-  else
-    (* Not a comment, we're at the start of the expression *)
-    ()
+    if Char.equal ch '\000' then
+      (* End of input *)
+      ()
+    else if Char.equal ch ';' then (
+      (* It's a comment, eat it and continue skipping *)
+      let _ = read_char stream in
+        eat_comment stream;
+        skip_leading_whitespace_and_comments stream
+    ) else
+      (* Not a comment, we're at the start of the expression *)
+      ()
 ;;
 
 let read_fixnum : char stream -> char -> Object.lobject =

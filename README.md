@@ -22,6 +22,7 @@
 - [Modules](#modules)
 - [Macros](#macros)
 - [Standard Library](#standard-library)
+- [OCaml Standard Library Bindings](#ocaml-standard-library-bindings)
 - [Examples](#examples)
 - [License](#license)
 
@@ -595,6 +596,108 @@ MLisp includes a comprehensive standard library loaded automatically.
 ```lisp
 (assert (= result 10))         ;; Assert condition
 ```
+
+## OCaml Standard Library Bindings
+
+MLisp provides bindings to selected OCaml standard library functions through the `String` and `List` modules. These modules are exposed as Record objects accessible via `record-get`.
+
+### Accessing OCaml Module Functions
+
+#### Direct Access (record-get)
+
+```lisp
+;; Get a function from a module
+((record-get String (quote length)) "hello")  ;; 5
+
+;; Define a helper for repeated use
+(define string-length (record-get String (quote length)))
+(string-length "world")                          ;; 5
+```
+
+#### Using Syntax Sugar Macros (ocall*)
+
+The `ocall1`, `ocall2`, `ocall3` macros provide cleaner syntax for calling module methods:
+
+```lisp
+;; ocall1 - single argument functions
+(ocall1 String length "hello")      ;; 5
+(ocall1 List length '(1 2 3 4))     ;; 4
+
+;; ocall2 - two argument functions
+(ocall2 String concat "hello" " world")  ;; "hello world"
+(ocall2 List nth '(10 20 30) 1)         ;; 20
+
+;; ocall3 - three argument functions
+(ocall3 String sub "hello" 1 3)     ;; "ell"
+```
+
+### String Module
+
+The `String` module provides string manipulation functions:
+
+```lisp
+;; String.length - get string length
+(ocall1 String length "hello")      ;; 5
+
+;; String.concat - concatenate two strings
+(ocall2 String concat "hello" "world")  ;; "helloworld"
+
+;; String.split - split by separator (single char)
+(ocall2 String split "a,b,c" ",")    ;; ("a" "b" "c")
+
+;; String.upper - convert to uppercase
+(ocall1 String upper "hello")        ;; "HELLO"
+
+;; String.lower - convert to lowercase
+(ocall1 String lower "HELLO")        ;; "hello"
+
+;; String.sub - extract substring
+(ocall3 String sub "hello" 1 3)     ;; "ell" (pos=1, len=3)
+
+;; String.contains? - check if substring exists
+(ocall2 String contains? "hello" "ell")   ;; #t
+(ocall2 String contains? "hello" "xyz")   ;; #f
+
+;; String.trim - strip leading/trailing whitespace
+(ocall1 String trim "  hello  ")     ;; "hello"
+```
+
+### List Module
+
+The `List` module provides list manipulation functions:
+
+```lisp
+;; List.length - get list length
+(ocall1 List length '(1 2 3))       ;; 3
+
+;; List.append - concatenate two lists
+(ocall2 List append '(1 2) '(3 4))  ;; (1 2 3 4)
+
+;; List.rev - reverse a list
+(ocall1 List rev '(1 2 3))          ;; (3 2 1)
+
+;; List.nth - get element at index
+(ocall2 List nth '(10 20 30) 1)     ;; 20
+
+;; List.mem - check membership
+(ocall2 List mem 2 '(1 2 3))        ;; #t
+(ocall2 List mem 5 '(1 2 3))        ;; #f
+
+;; List.flatten - flatten one level of nesting
+(ocall1 List flatten '((1 2) (3 4))) ;; (1 2 3 4)
+
+;; List.concat - concatenate a list of lists
+(ocall1 List concat '((1 2) (3 4))) ;; (1 2 3 4)
+
+;; List.sort - sort numbers ascending
+(ocall1 List sort '(3 1 4 1 5))     ;; (1 1 3 4 5)
+```
+
+### Notes
+
+- Module names (`String`, `List`) are bound in the global environment
+- For functions with more than 3 arguments, use the direct `record-get` syntax
+- The `ocall*` macros are loaded automatically with the standard library
 
 ## Examples
 

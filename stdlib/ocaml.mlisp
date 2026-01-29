@@ -1,0 +1,22 @@
+;; OCaml Standard Library Bindings - Syntax Sugar
+;; This module provides convenient syntax for accessing OCaml stdlib functions
+
+;; Macro: ocall1 operator for single-argument module methods
+;; (ocall1 String length "hello") expands to ((record-get String (quote length)) "hello")
+(defmacro ocall1 (mod method arg)
+  `((record-get ,mod (quote ,method)) ,arg))
+
+;; Macro: ocall2 operator for two-argument module methods
+;; (ocall2 String sub "hello" 1) expands to ((record-get String (quote sub)) "hello" 1)
+(defmacro ocall2 (mod method arg1 arg2)
+  `((record-get ,mod (quote ,method)) ,arg1 ,arg2))
+
+;; Macro: ocall3 operator for three-argument module methods
+;; (ocall3 String sub "hello" 1 3) expands to ((record-get String (quote sub)) "hello" 1 3)
+(defmacro ocall3 (mod method arg1 arg2 arg3)
+  `((record-get ,mod (quote ,method)) ,arg1 ,arg2 ,arg3))
+
+;; Note: The ocall* macros provide cleaner syntax than raw record-get calls.
+;; For other arities or variadic functions, use the standard form:
+;; ((record-get String (quote concat)) "hello" " world")
+

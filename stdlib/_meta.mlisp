@@ -3,5 +3,5 @@
 
 (define stdlib-version "0.2.2")
 
-(define stdlib-modules (list "core" "list" "io" "assert" "helper_macros"))
+(define stdlib-modules (list "core" "list" "io" "assert" "helper_macros" "ocaml"))
 
