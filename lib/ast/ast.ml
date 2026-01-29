@@ -221,12 +221,25 @@ and lambda_expr args body =
     ) else
       build_ast body
   in
-    Lambda ("lambda", assert_unique_args args, body_expr)
+    (* Convert param_spec to name list - lambdas don't support &rest yet *)
+    let param_specs = assert_unique_args args in
+    let is_variadic = List.exists param_specs ~f:(function Rest _ -> true | Fixed _ -> false) in
+    if is_variadic then
+      raise (Errors.Parse_error_exn (Errors.Type_error "Lambda does not support &rest parameters yet"))
+    else
+      let names = param_specs |> List.map ~f:(function Fixed n -> n | Rest _ -> assert false) in
+      Lambda ("lambda", names, body_expr)
 
 and defun_expr fn_name args body =
-  let lam = Object.Lambda (fn_name, assert_unique_args args, build_ast body) in
-    Object.Defexpr
-      (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
+  let param_specs = assert_unique_args args in
+  let is_variadic = List.exists param_specs ~f:(function Rest _ -> true | Fixed _ -> false) in
+  if is_variadic then
+    raise (Errors.Parse_error_exn (Errors.Type_error "defun does not support &rest parameters yet"))
+  else
+    let names = param_specs |> List.map ~f:(function Fixed n -> n | Rest _ -> assert false) in
+    let lam = Object.Lambda (fn_name, names, build_ast body) in
+      Object.Defexpr
+        (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
 
 and macro_def_expr macro_name args body =
   let param_names = assert_unique_args args in
