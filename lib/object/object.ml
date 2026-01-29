@@ -30,7 +30,7 @@ type lobject =
   | UnquoteSplicing of value (** Unquote-splicing expressions (comma-at) *)
   | RestParam of string (** Rest parameter marker (e.g., &rest) *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
-  | Macro of name * name list * expr * lobject env (** Macro definitions *)
+  | Macro of name * param_spec list * expr * lobject env (** Macro definitions with &rest support *)
   | Module of
       { name : string (** Module name *)
       ; env : lobject env (** Module's internal environment *)
@@ -63,6 +63,10 @@ and let_kind =
   | LETSTAR
   | LETREC
 
+and param_spec =
+  | Fixed of string
+  | Rest of string
+
 and expr =
   | Literal of value
   | Var of name
@@ -78,13 +82,13 @@ and expr =
   (** Module definition: name, exports, body *)
   | Import of import_spec (** Module import *)
   | LoadModule of expr (** Load module from file by name *)
-  | MacroDef of name * name list * expr
-  (** Macro definition: (defmacro name (args) body) *)
+  | MacroDef of name * param_spec list * expr
+  (** Macro definition: (defmacro name (args) body) with &rest support *)
 
 and def =
   | Setq of name * expr
   | Defun of name * name list * expr
-  | Defmacro of name * name list * expr (** Macro definition *)
+  | Defmacro of name * param_spec list * expr (** Macro definition with &rest support *)
   | Expr of expr
 
 (** Import specification for module imports. *)
@@ -283,8 +287,15 @@ let rec string_object e =
       [%string ",@%{string_object expr}"]
     | Closure (name, name_list, _, _) ->
       [%string {|#<%{name}:(%{String.concat ~sep:" " name_list})>|}]
-    | Macro (name, name_list, _, _) ->
-      [%string {|#<macro:%{name}:(%{String.concat ~sep:" " name_list})>|}]
+    | Macro (name, param_specs, _, _) ->
+      let params_str =
+        let param_to_string = function
+          | Fixed name -> name
+          | Rest name -> "&rest " ^ name
+        in
+        String.concat ~sep:" " (List.map param_specs ~f:param_to_string)
+      in
+        [%string {|#<macro:%{name}:(%{params_str})>|}]
     | RestParam name ->
       "&rest " ^ name
     | Record (name, fields) ->
@@ -494,7 +505,7 @@ let analyze_free_vars expr bound_vars =
       | Defun (_name, _params, body) ->
         collect_vars body (* note: here we don't add function name to bound_vars *)
       | Defmacro (_name, _params, body) ->
-        collect_vars body
+        collect_vars body (* params are param_spec list, analyzed as free vars in body *)
       | Expr expr ->
         collect_vars expr)
     | Lambda (_name, _params, body) ->

@@ -18,39 +18,35 @@ let rec assert_unique : string list -> unit = function
       assert_unique xs
 ;;
 
-type param_spec =
-  | Fixed of string
-  | Rest of string
-
-let rec parse_params : Object.lobject -> param_spec list =
+let rec parse_params : Object.lobject -> Object.param_spec list =
   fun args ->
   match Object.pair_to_list args with
   | [] -> []
   | [Object.Symbol "&rest"] ->
       raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be followed by a symbol"))
   | Object.Symbol "&rest" :: Object.Symbol rest_name :: [] ->
-      [Rest rest_name]
+      [Object.Rest rest_name]
   | Object.Symbol "&rest" :: _ :: [] ->
       raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be followed by a symbol"))
   | Object.Symbol "&rest" :: _ ->
       raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be the last parameter"))
   | Object.Symbol name :: rest ->
-      Fixed name :: parse_params (Object.list_to_pair rest)
+      Object.Fixed name :: parse_params (Object.list_to_pair rest)
   | _ ->
       raise (Errors.Parse_error_exn (Errors.Type_error "(declare-expr symbol-name (formals) body)"))
 
-let assert_unique_args : Object.lobject -> param_spec list =
+let assert_unique_args : Object.lobject -> Object.param_spec list =
   fun args ->
   let params = parse_params args in
   (* Check that fixed params are unique *)
   let fixed_names = params |> List.filter_map ~f:(function
-    | Fixed name -> Some name
-    | Rest _ -> None) in
+    | Object.Fixed name -> Some name
+    | Object.Rest _ -> None) in
   assert_unique fixed_names;
   (* Check rest name doesn't conflict with fixed names *)
   let rest_name = params |> List.find_map ~f:(function
-    | Rest name -> Some name
-    | Fixed _ -> None) in
+    | Object.Rest name -> Some name
+    | Object.Fixed _ -> None) in
   (match rest_name with
   | None -> ()
   | Some rname ->
@@ -223,27 +219,27 @@ and lambda_expr args body =
   in
     (* Convert param_spec to name list - lambdas don't support &rest yet *)
     let param_specs = assert_unique_args args in
-    let is_variadic = List.exists param_specs ~f:(function Rest _ -> true | Fixed _ -> false) in
+    let is_variadic = List.exists param_specs ~f:(function Object.Rest _ -> true | Object.Fixed _ -> false) in
     if is_variadic then
       raise (Errors.Parse_error_exn (Errors.Type_error "Lambda does not support &rest parameters yet"))
     else
-      let names = param_specs |> List.map ~f:(function Fixed n -> n | Rest _ -> assert false) in
+      let names = param_specs |> List.map ~f:(function Object.Fixed n -> n | Object.Rest _ -> assert false) in
       Lambda ("lambda", names, body_expr)
 
 and defun_expr fn_name args body =
   let param_specs = assert_unique_args args in
-  let is_variadic = List.exists param_specs ~f:(function Rest _ -> true | Fixed _ -> false) in
+  let is_variadic = List.exists param_specs ~f:(function Object.Rest _ -> true | Object.Fixed _ -> false) in
   if is_variadic then
     raise (Errors.Parse_error_exn (Errors.Type_error "defun does not support &rest parameters yet"))
   else
-    let names = param_specs |> List.map ~f:(function Fixed n -> n | Rest _ -> assert false) in
+    let names = param_specs |> List.map ~f:(function Object.Fixed n -> n | Object.Rest _ -> assert false) in
     let lam = Object.Lambda (fn_name, names, build_ast body) in
       Object.Defexpr
         (Object.Setq (fn_name, Let (Object.LETREC, [ fn_name, lam ], Object.Var fn_name)))
 
 and macro_def_expr macro_name args body =
-  let param_names = assert_unique_args args in
-    Object.Defexpr (Object.Defmacro (macro_name, param_names, build_ast body))
+  let param_specs = assert_unique_args args in
+    Object.Defexpr (Object.Defmacro (macro_name, param_specs, build_ast body))
 
 and apply_expr fn_expr args = Apply (build_ast fn_expr, build_ast args)
 
@@ -354,11 +350,25 @@ let rec string_expr =
     | Object.Defexpr (Object.Defun (n, ns, e)) ->
       [%string "(defun %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
     | Object.Defexpr (Object.Defmacro (n, ns, e)) ->
-      [%string "(defmacro %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
+      let params_str =
+        let param_to_string = function
+          | Object.Fixed name -> name
+          | Object.Rest name -> "&rest " ^ name
+        in
+        String.concat ~sep:" " (List.map ns ~f:param_to_string)
+      in
+        [%string "(defmacro %{n} (%{params_str}) %{string_expr e})"]
     | Object.Defexpr (Object.Expr e) ->
       string_expr e
     | Object.MacroDef (n, ns, e) ->
-      [%string "(defmacro %{n} (%{Mlisp_utils.String.spacesep ns}) %{string_expr e})"]
+      let params_str =
+        let param_to_string = function
+          | Object.Fixed name -> name
+          | Object.Rest name -> "&rest " ^ name
+        in
+        String.concat ~sep:" " (List.map ns ~f:param_to_string)
+      in
+        [%string "(defmacro %{n} (%{params_str}) %{string_expr e})"]
     | Object.Let (kind, bs, e) ->
       let str =
         match kind with

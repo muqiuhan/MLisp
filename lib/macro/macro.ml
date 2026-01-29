@@ -150,7 +150,12 @@ let rec expr_to_sexpr = function
     (** Macro definition: (defmacro name (params...) body) *)
     | Object.Defmacro (name, params, body) ->
       let params_sexpr =
-        Object.list_to_pair (List.map ~f:(fun p -> Object.Symbol p) params)
+        let param_to_sexpr = function
+          | Object.Fixed name -> Object.Symbol name
+          | Object.Rest name ->
+              Object.list_to_pair [Object.Symbol "&rest"; Object.Symbol name]
+        in
+        Object.list_to_pair (List.map params ~f:param_to_sexpr)
       in
         Object.list_to_pair
           [ Object.Symbol "defmacro"
@@ -197,7 +202,12 @@ let rec expr_to_sexpr = function
   (** Macro definition (alternate form): (defmacro name (params...) body) *)
   | Object.MacroDef (name, params, body) ->
     let params_sexpr =
-      Object.list_to_pair (List.map ~f:(fun p -> Object.Symbol p) params)
+      let param_to_sexpr = function
+        | Object.Fixed name -> Object.Symbol name
+        | Object.Rest name ->
+            Object.list_to_pair [Object.Symbol "&rest"; Object.Symbol name]
+      in
+      Object.list_to_pair (List.map params ~f:param_to_sexpr)
     in
       Object.list_to_pair
         [ Object.Symbol "defmacro"; Object.Symbol name; params_sexpr; expr_to_sexpr body ]
