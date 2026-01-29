@@ -18,21 +18,45 @@ let rec assert_unique : string list -> unit = function
       assert_unique xs
 ;;
 
-let assert_unique_args : Object.lobject -> string list =
+type param_spec =
+  | Fixed of string
+  | Rest of string
+
+let rec parse_params : Object.lobject -> param_spec list =
   fun args ->
-  let names =
-    List.map
-      ~f:(function
-        | Object.Symbol s ->
-          s
-        | _ ->
-          raise
-            (Errors.Parse_error_exn
-               (Type_error "(declare-expr symbol-name (formals) body)")))
-      (Object.pair_to_list args)
-  in
-  let () = assert_unique names in
-    names
+  match Object.pair_to_list args with
+  | [] -> []
+  | [Object.Symbol "&rest"] ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be followed by a symbol"))
+  | Object.Symbol "&rest" :: Object.Symbol rest_name :: [] ->
+      [Rest rest_name]
+  | Object.Symbol "&rest" :: _ :: [] ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be followed by a symbol"))
+  | Object.Symbol "&rest" :: _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "&rest must be the last parameter"))
+  | Object.Symbol name :: rest ->
+      Fixed name :: parse_params (Object.list_to_pair rest)
+  | _ ->
+      raise (Errors.Parse_error_exn (Errors.Type_error "(declare-expr symbol-name (formals) body)"))
+
+let assert_unique_args : Object.lobject -> param_spec list =
+  fun args ->
+  let params = parse_params args in
+  (* Check that fixed params are unique *)
+  let fixed_names = params |> List.filter_map ~f:(function
+    | Fixed name -> Some name
+    | Rest _ -> None) in
+  assert_unique fixed_names;
+  (* Check rest name doesn't conflict with fixed names *)
+  let rest_name = params |> List.find_map ~f:(function
+    | Rest name -> Some name
+    | Fixed _ -> None) in
+  (match rest_name with
+  | None -> ()
+  | Some rname ->
+      if List.mem fixed_names rname ~equal:String.equal then
+        raise (Errors.Parse_error_exn (Unique_error rname)));
+  params
 ;;
 
 let let_kinds : (string * Object.let_kind) list =
