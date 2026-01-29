@@ -176,6 +176,8 @@ let rec print_sexpr sexpr =
     else
       print_pair sexpr;
     print_string ")"
+  | RestParam name ->
+    print_string ("&rest " ^ name)
   | _ ->
     failwith "print_sexpr"
 
