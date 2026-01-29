@@ -459,6 +459,39 @@ x                             ;; 20
 y                             ;; 10
 ```
 
+### Variadic Macros with &rest
+
+Macros can accept variable numbers of arguments using the `&rest` parameter. The `&rest` parameter collects any remaining arguments into a list:
+
+```lisp
+;; Macro that collects all arguments
+(defmacro list-all (&rest args)
+  `(quote ,args))
+
+(list-all 1 2 3 4)      ;; (1 2 3 4)
+
+;; Fixed parameters followed by rest parameter
+(defmacro with-fixed (first second &rest rest)
+  `(quote (,first ,second ,@rest)))
+
+(with-fixed 1 2 3 4)    ;; (1 2 3 4)
+(with-fixed 1 2)        ;; (1 2) - rest is empty list
+```
+
+The `&rest` parameter must be the last parameter in the parameter list. Any arguments beyond the fixed parameters are packed into a list and bound to the rest parameter name.
+
+This is especially useful for creating generic wrapper macros:
+
+```lisp
+;; Generic OCaml function call macro
+(defmacro ocall (mod method &rest args)
+  `((record-get ,mod (quote ,method)) ,@args))
+
+(ocall String length "hello")      ;; 5
+(ocall String concat "hello" " world")  ;; "hello world"
+(ocall List length '(1 2 3))       ;; 3
+```
+
 ### Alternative Style (Without Quasiquote)
 
 For completeness, macros can also be written using `list` and `quote`:
@@ -529,10 +562,12 @@ Generate unique symbols for multiple names:
        (,f (,g ,x)))))
 ```
 
-Since MLisp does not support `&rest` parameters, variants are provided for different arities:
+For convenience, variants are provided for different arities:
 - `with-gensym` - 1 symbol
 - `with-gensyms2` - 2 symbols
 - `with-gensyms3` - 3 symbols
+
+With `&rest` support, you can also create your own variadic helper macros for more symbols:
 
 #### Example: Avoiding Variable Capture
 
@@ -614,21 +649,22 @@ MLisp provides bindings to selected OCaml standard library functions through the
 (string-length "world")                          ;; 5
 ```
 
-#### Using Syntax Sugar Macros (ocall*)
+#### Using Variadic Macro (ocall)
 
-The `ocall1`, `ocall2`, `ocall3` macros provide cleaner syntax for calling module methods:
+The `ocall` macro handles any number of arguments:
 
 ```lisp
-;; ocall1 - single argument functions
-(ocall1 String length "hello")      ;; 5
-(ocall1 List length '(1 2 3 4))     ;; 4
+;; Single argument
+(ocall String length "hello")      ;; 5
 
-;; ocall2 - two argument functions
-(ocall2 String concat "hello" " world")  ;; "hello world"
-(ocall2 List nth '(10 20 30) 1)         ;; 20
+;; Two arguments
+(ocall String concat "hello" " world")  ;; "hello world"
 
-;; ocall3 - three argument functions
-(ocall3 String sub "hello" 1 3)     ;; "ell"
+;; Three arguments
+(ocall String sub "hello" 1 3)     ;; "ell"
+
+;; More arguments as needed
+(ocall YourModule your-method arg1 arg2 arg3 arg4 ...)
 ```
 
 ### String Module
@@ -637,29 +673,29 @@ The `String` module provides string manipulation functions:
 
 ```lisp
 ;; String.length - get string length
-(ocall1 String length "hello")      ;; 5
+(ocall String length "hello")      ;; 5
 
 ;; String.concat - concatenate two strings
-(ocall2 String concat "hello" "world")  ;; "helloworld"
+(ocall String concat "hello" "world")  ;; "helloworld"
 
 ;; String.split - split by separator (single char)
-(ocall2 String split "a,b,c" ",")    ;; ("a" "b" "c")
+(ocall String split "a,b,c" ",")    ;; ("a" "b" "c")
 
 ;; String.upper - convert to uppercase
-(ocall1 String upper "hello")        ;; "HELLO"
+(ocall String upper "hello")        ;; "HELLO"
 
 ;; String.lower - convert to lowercase
-(ocall1 String lower "HELLO")        ;; "hello"
+(ocall String lower "HELLO")        ;; "hello"
 
 ;; String.sub - extract substring
-(ocall3 String sub "hello" 1 3)     ;; "ell" (pos=1, len=3)
+(ocall String sub "hello" 1 3)     ;; "ell" (pos=1, len=3)
 
 ;; String.contains? - check if substring exists
-(ocall2 String contains? "hello" "ell")   ;; #t
-(ocall2 String contains? "hello" "xyz")   ;; #f
+(ocall String contains? "hello" "ell")   ;; #t
+(ocall String contains? "hello" "xyz")   ;; #f
 
 ;; String.trim - strip leading/trailing whitespace
-(ocall1 String trim "  hello  ")     ;; "hello"
+(ocall String trim "  hello  ")     ;; "hello"
 ```
 
 ### List Module
@@ -668,36 +704,36 @@ The `List` module provides list manipulation functions:
 
 ```lisp
 ;; List.length - get list length
-(ocall1 List length '(1 2 3))       ;; 3
+(ocall List length '(1 2 3))       ;; 3
 
 ;; List.append - concatenate two lists
-(ocall2 List append '(1 2) '(3 4))  ;; (1 2 3 4)
+(ocall List append '(1 2) '(3 4))  ;; (1 2 3 4)
 
 ;; List.rev - reverse a list
-(ocall1 List rev '(1 2 3))          ;; (3 2 1)
+(ocall List rev '(1 2 3))          ;; (3 2 1)
 
 ;; List.nth - get element at index
-(ocall2 List nth '(10 20 30) 1)     ;; 20
+(ocall List nth '(10 20 30) 1)     ;; 20
 
 ;; List.mem - check membership
-(ocall2 List mem 2 '(1 2 3))        ;; #t
-(ocall2 List mem 5 '(1 2 3))        ;; #f
+(ocall List mem 2 '(1 2 3))        ;; #t
+(ocall List mem 5 '(1 2 3))        ;; #f
 
 ;; List.flatten - flatten one level of nesting
-(ocall1 List flatten '((1 2) (3 4))) ;; (1 2 3 4)
+(ocall List flatten '((1 2) (3 4))) ;; (1 2 3 4)
 
 ;; List.concat - concatenate a list of lists
-(ocall1 List concat '((1 2) (3 4))) ;; (1 2 3 4)
+(ocall List concat '((1 2) (3 4))) ;; (1 2 3 4)
 
 ;; List.sort - sort numbers ascending
-(ocall1 List sort '(3 1 4 1 5))     ;; (1 1 3 4 5)
+(ocall List sort '(3 1 4 1 5))     ;; (1 1 3 4 5)
 ```
 
 ### Notes
 
 - Module names (`String`, `List`) are bound in the global environment
-- For functions with more than 3 arguments, use the direct `record-get` syntax
-- The `ocall*` macros are loaded automatically with the standard library
+- The `ocall` macro handles any number of arguments automatically
+- The `ocall` macro is loaded automatically with the standard library
 
 ## Examples
 
