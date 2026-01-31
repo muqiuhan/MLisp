@@ -246,18 +246,21 @@ let bind_macro_params param_specs arg_sexprs expansion_env =
 
   (* Validate argument count *)
   let arg_count = List.length arg_sexprs in
-  if has_rest then
-    if arg_count < fixed_count then
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Not_found
-              [%string "Macro expects at least %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]))
-  else
-    if arg_count <> fixed_count then
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Not_found
-              [%string "Macro expects %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]));
+  let () =
+    match has_rest with
+    | true ->
+        if arg_count < fixed_count then
+          raise
+            (Errors.Runtime_error_exn
+               (Errors.Not_found
+                  [%string "Macro expects at least %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]))
+    | false ->
+        if arg_count <> fixed_count then
+          raise
+            (Errors.Runtime_error_exn
+               (Errors.Not_found
+                  [%string "Macro expects %{Int.to_string fixed_count} arguments, got %{Int.to_string arg_count}"]))
+  in
 
   (* Helper to find and bind the rest parameter *)
   let bind_rest remaining_args =
