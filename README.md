@@ -75,6 +75,37 @@ MLisp uses S-expression syntax with prefix notation. All expressions are evaluat
 - **S-expressions**: `(function arg1 arg2 ...)`
 - **Quoting**: Use `` ` `` for quoting expressions: `` `foo`` or `(quote foo)`
 
+### Error Messages
+
+MLisp provides clear, actionable error messages to help diagnose issues:
+
+#### Error Types
+
+| Error | Code | Description |
+|-------|------|-------------|
+| Argument Count | E207 | Wrong number of arguments passed to a function |
+| Argument Type | E208 | Argument has wrong type (e.g., string instead of int) |
+| Value Error | E209 | Invalid value (e.g., negative index, out of bounds) |
+
+#### Examples
+
+```lisp
+;; Argument count error
+(String.length)
+;; Error: Argument count error: 'String.length'
+;;        Expected 1 argument(s), but got 0.
+
+;; Type error
+(String.length 123)
+;; Error: Argument type error: 'String.length'
+;;        Parameter 'string' expects type string.
+
+;; Value error
+(String.sub "hello" 10 3)
+;; Error: Value error: 'String.sub'
+;;        substring out of bounds (string length: 5, requested: 10 + 3)
+```
+
 ## Data Types
 
 ### Numbers
@@ -734,6 +765,7 @@ The `List` module provides list manipulation functions:
 - Module names (`String`, `List`) are bound in the global environment
 - The `ocall` macro handles any number of arguments automatically
 - The `ocall` macro is loaded automatically with the standard library
+- OCaml module functions provide clear error messages for argument count, type, and value errors
 
 ## Examples
 
