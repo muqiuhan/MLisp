@@ -20,6 +20,8 @@ This repository is organized as a monorepo containing:
 | [vscode-ext](packages/vscode-ext/) | VSCode language extension (OCaml + js_of_ocaml) | OCaml |
 | [shared](packages/shared/) | Shared language resources | JSON/TextMate |
 
+> **Note:** See [docs/monorepo-migration.md](docs/monorepo-migration.md) for migration details.
+
 ### Quick Start
 
 ```bash
