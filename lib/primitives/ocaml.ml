@@ -12,6 +12,8 @@ open Core
 let check_arg_count = Mlisp_primitives__Validate.check_arg_count
 let require_string = Mlisp_primitives__Validate.require_string
 let require_int = Mlisp_primitives__Validate.require_int
+let require_list = Mlisp_primitives__Validate.require_list
+let check_int_range = Mlisp_primitives__Validate.check_int_range
 
 (** Helper function to create a module Record from bindings.
 
@@ -148,145 +150,125 @@ let string_module =
 
 (** List length - returns the length of a list as Fixnum.
     (List.length '(1 2 3)) -> 3 *)
-let list_length = function
-  | [ Object.Nil ] ->
-    Object.Fixnum 0
-  | [ Object.Pair _ ] as args ->
-    Object.Fixnum (List.length (Object.pair_to_list (List.hd_exn args)))
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.length list)"))
+let list_length args =
+  check_arg_count "List.length" args 1;
+  let lst = require_list "List.length" "list" (List.hd_exn args) in
+  Object.Fixnum (List.length lst)
 ;;
 
 (** List append - concatenates two lists.
     (List.append '(1 2) '(3 4)) -> (1 2 3 4) *)
-let list_append = function
-  | [ lst1; lst2 ] ->
-    let list1 = Object.pair_to_list lst1 in
-    let list2 = Object.pair_to_list lst2 in
-      Object.list_to_pair (list1 @ list2)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.append list list)"))
+let list_append args =
+  check_arg_count "List.append" args 2;
+  let list1 = require_list "List.append" "first" (List.nth_exn args 0) in
+  let list2 = require_list "List.append" "second" (List.nth_exn args 1) in
+  Object.list_to_pair (list1 @ list2)
 ;;
 
 (** List reverse - reverses a list.
     (List.rev '(1 2 3)) -> (3 2 1) *)
-let list_rev = function
-  | [ Object.Nil ] ->
-    Object.Nil
-  | [ Object.Pair _ ] as args ->
-    let lst = Object.pair_to_list (List.hd_exn args) in
-      Object.list_to_pair (List.rev lst)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.rev list)"))
+let list_rev args =
+  check_arg_count "List.rev" args 1;
+  let lst = require_list "List.rev" "list" (List.hd_exn args) in
+  Object.list_to_pair (List.rev lst)
 ;;
 
 (** List nth - gets element at index (0-based).
     (List.nth '(1 2 3) 1) -> 2 *)
-let list_nth = function
-  | [ (Object.Pair _ as lst_obj); Object.Fixnum idx ] ->
-    let lst = Object.pair_to_list lst_obj in
-    let idx_int = Int.to_int_exn idx in
-      if idx_int < 0 || idx_int >= List.length lst then
-        raise
-          (Errors.Parse_error_exn
-             (Errors.Type_error "(List.nth list index) - index out of bounds"))
-      else
-        List.nth_exn lst idx_int
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.nth list index)"))
+let list_nth args =
+  check_arg_count "List.nth" args 2;
+  let lst = require_list "List.nth" "list" (List.nth_exn args 0) in
+  let idx = require_int "List.nth" "index" (List.nth_exn args 1) in
+  (* Validate index bounds *)
+  let lst_len = List.length lst in
+  if idx < 0 then
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Value_error ("List.nth", "index must be non-negative")))
+  else if idx >= lst_len then
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Value_error ("List.nth", [%string "index out of bounds (list length: %{Int.to_string lst_len}, index: %{Int.to_string idx})"])))
+  else
+    List.nth_exn lst idx
 ;;
 
 (** List membership check - tests if element is in list using = comparison.
     (List.mem 2 '(1 2 3)) -> #t *)
-let list_mem = function
-  | [ _elem; Object.Nil ] ->
-    Object.Boolean false
-  | [ elem; Object.Pair _ ] as args ->
-    let lst = Object.pair_to_list (List.hd_exn (List.tl_exn args)) in
-    let result = ref false in
-    let rec loop = function
-      | [] ->
+let list_mem args =
+  check_arg_count "List.mem" args 2;
+  let elem = List.nth_exn args 0 in
+  let lst = require_list "List.mem" "list" (List.nth_exn args 1) in
+  let result = ref false in
+  let rec loop = function
+    | [] ->
         ()
-      | x :: rest ->
-        if Stdlib.compare x elem = 0 then
-          result := true
-        else
-          loop rest
-    in
-      loop lst;
-      Object.Boolean !result
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.mem element list)"))
+    | x :: rest ->
+      if Stdlib.compare x elem = 0 then
+        result := true
+      else
+        loop rest
+  in
+    loop lst;
+    Object.Boolean !result
 ;;
 
 (** List flatten - flattens one level of nesting.
     (List.flatten '((1 2) (3 4))) -> (1 2 3 4) *)
-let list_flatten = function
-  | [ Object.Nil ] ->
-    Object.Nil
-  | [ Object.Pair _ ] as args ->
-    let lst = Object.pair_to_list (List.hd_exn args) in
-    let rec flatten_aux acc = function
-      | [] ->
-        List.rev acc
-      | (Object.Pair _ as pair) :: rest ->
-        (* Reverse each inner list and prepend to acc, so final reversal gives correct order *)
-        let pair_elems = List.rev (Object.pair_to_list pair) in
-          flatten_aux (pair_elems @ acc) rest
-      | _ :: rest ->
-        (* skip non-list elements *)
-        flatten_aux acc rest
-    in
-      Object.list_to_pair (flatten_aux [] lst)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.flatten list-of-lists)"))
+let list_flatten args =
+  check_arg_count "List.flatten" args 1;
+  let lst = require_list "List.flatten" "list-of-lists" (List.hd_exn args) in
+  let rec flatten_aux acc = function
+    | [] ->
+      List.rev acc
+    | (Object.Pair _ as pair) :: rest ->
+      (* Reverse each inner list and prepend to acc, so final reversal gives correct order *)
+      let pair_elems = List.rev (Object.pair_to_list pair) in
+        flatten_aux (pair_elems @ acc) rest
+    | _ :: rest ->
+      (* skip non-list elements *)
+      flatten_aux acc rest
+  in
+    Object.list_to_pair (flatten_aux [] lst)
 ;;
 
 (** List concat - concatenates a list of lists.
     (List.concat '((1 2) (3 4) (5))) -> (1 2 3 4 5) *)
-let list_concat = function
-  | [ Object.Nil ] ->
-    Object.Nil
-  | [ Object.Pair _ ] as args ->
-    let lst = Object.pair_to_list (List.hd_exn args) in
-    let rec concat_aux acc = function
-      | [] ->
-        List.rev acc
-      | (Object.Pair _ as pair) :: rest ->
-        (* Reverse each inner list and prepend to acc, so final reversal gives correct order *)
-        let pair_elems = List.rev (Object.pair_to_list pair) in
-          concat_aux (pair_elems @ acc) rest
-      | Object.Nil :: rest ->
-        concat_aux acc rest
-      | _ :: rest ->
-        (* skip non-list elements *)
-        concat_aux acc rest
-    in
-      Object.list_to_pair (concat_aux [] lst)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.concat list-of-lists)"))
+let list_concat args =
+  check_arg_count "List.concat" args 1;
+  let lst = require_list "List.concat" "list-of-lists" (List.hd_exn args) in
+  let rec concat_aux acc = function
+    | [] ->
+      List.rev acc
+    | (Object.Pair _ as pair) :: rest ->
+      (* Reverse each inner list and prepend to acc, so final reversal gives correct order *)
+      let pair_elems = List.rev (Object.pair_to_list pair) in
+        concat_aux (pair_elems @ acc) rest
+    | Object.Nil :: rest ->
+      concat_aux acc rest
+    | _ :: rest ->
+      (* skip non-list elements *)
+      concat_aux acc rest
+  in
+    Object.list_to_pair (concat_aux [] lst)
 ;;
 
 (** List sort - sorts a list of numbers in ascending order.
     (List.sort '(3 1 2)) -> (1 2 3) *)
-let list_sort = function
-  | [ Object.Nil ] ->
-    Object.Nil
-  | [ Object.Pair _ ] as args ->
-    let lst = Object.pair_to_list (List.hd_exn args) in
-    let extract_fixnum = function
-      | Object.Fixnum n ->
-        Int.to_int_exn n
-      | _ ->
-        raise
-          (Errors.Parse_error_exn
-             (Errors.Type_error "(List.sort list) - all elements must be numbers"))
-    in
-    let fixnum_list = List.map lst ~f:extract_fixnum in
-    let sorted = List.sort ~compare:Int.compare fixnum_list in
-      Object.list_to_pair (List.map sorted ~f:(fun n -> Object.Fixnum (Int.of_int n)))
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(List.sort list)"))
+let list_sort args =
+  check_arg_count "List.sort" args 1;
+  let lst = require_list "List.sort" "list" (List.hd_exn args) in
+  let extract_fixnum = function
+    | Object.Fixnum n ->
+      Int.to_int_exn n
+    | _ ->
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Argument_type_error ("List.sort", "element", "number")))
+  in
+  let fixnum_list = List.map lst ~f:extract_fixnum in
+  let sorted = List.sort ~compare:Int.compare fixnum_list in
+    Object.list_to_pair (List.map sorted ~f:(fun n -> Object.Fixnum (Int.of_int n)))
 ;;
 
 (** Create the List module with all bindings. *)
