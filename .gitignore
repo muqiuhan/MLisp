@@ -32,3 +32,19 @@ _opam/
 .mlisp-repl-history
 
 legacy-docs
+
+# Node.js (VSCode extension)
+node_modules/
+packages/vscode-ext/node_modules/
+*.vsix
+
+# js_of_ocaml build artifacts
+*.bc.js
+*.bc.js.map
+
+# VSCode
+.vscode-test/
+dist/
+
+# esbuild
+packages/vscode-ext/dist/
