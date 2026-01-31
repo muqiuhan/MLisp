@@ -30,7 +30,8 @@ type lobject =
   | UnquoteSplicing of value (** Unquote-splicing expressions (comma-at) *)
   | RestParam of string (** Rest parameter marker (e.g., &rest) *)
   | Closure of name * name list * expr * closure_data (** Function closures *)
-  | Macro of name * param_spec list * expr * lobject env (** Macro definitions with &rest support *)
+  | Macro of name * param_spec list * expr * lobject env
+  (** Macro definitions with &rest support *)
   | Module of
       { name : string (** Module name *)
       ; env : lobject env (** Module's internal environment *)
@@ -290,10 +291,12 @@ let rec string_object e =
     | Macro (name, param_specs, _, _) ->
       let params_str =
         let param_to_string = function
-          | Fixed name -> name
-          | Rest name -> "&rest " ^ name
+          | Fixed name ->
+            name
+          | Rest name ->
+            "&rest " ^ name
         in
-        String.concat ~sep:" " (List.map param_specs ~f:param_to_string)
+          String.concat ~sep:" " (List.map param_specs ~f:param_to_string)
       in
         [%string {|#<macro:%{name}:(%{params_str})>|}]
     | RestParam name ->

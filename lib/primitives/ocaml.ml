@@ -38,7 +38,7 @@ let make_module name bindings =
 let string_length args =
   check_arg_count "String.length" args 1;
   let s = require_string "String.length" "string" (List.hd_exn args) in
-  Object.Fixnum (String.length s)
+    Object.Fixnum (String.length s)
 ;;
 
 (** String concatenation - joins two strings.
@@ -47,7 +47,7 @@ let string_concat args =
   check_arg_count "String.concat" args 2;
   let s1 = require_string "String.concat" "first" (List.nth_exn args 0) in
   let s2 = require_string "String.concat" "second" (List.nth_exn args 1) in
-  Object.String (s1 ^ s2)
+    Object.String (s1 ^ s2)
 ;;
 
 (** String split - splits a string by separator, returns Lisp list.
@@ -73,7 +73,7 @@ let string_split args =
 let string_upper args =
   check_arg_count "String.upper" args 1;
   let s = require_string "String.upper" "string" (List.hd_exn args) in
-  Object.String (String.uppercase s)
+    Object.String (String.uppercase s)
 ;;
 
 (** Lowercase conversion - converts string to lowercase.
@@ -81,7 +81,7 @@ let string_upper args =
 let string_lower args =
   check_arg_count "String.lower" args 1;
   let s = require_string "String.lower" "string" (List.hd_exn args) in
-  Object.String (String.lowercase s)
+    Object.String (String.lowercase s)
 ;;
 
 (** Substring - extracts substring starting at position with given length.
@@ -93,16 +93,20 @@ let string_sub args =
   let len = require_int "String.sub" "len" (List.nth_exn args 2) in
   (* Validate bounds *)
   let s_len = String.length s in
-  if pos < 0 || len < 0 then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Value_error ("String.sub", "position and length must be non-negative")))
-  else if pos + len > s_len then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Value_error ("String.sub", [%string "substring out of bounds (string length: %{Int.to_string s_len}, requested: %{Int.to_string pos} + %{Int.to_string len})"])))
-  else
-    Object.String (String.sub s ~pos ~len)
+    if pos < 0 || len < 0 then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Value_error ("String.sub", "position and length must be non-negative")))
+    else if pos + len > s_len then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Value_error
+              ( "String.sub"
+              , [%string
+                  "substring out of bounds (string length: %{Int.to_string s_len}, \
+                   requested: %{Int.to_string pos} + %{Int.to_string len})"] )))
+    else
+      Object.String (String.sub s ~pos ~len)
 ;;
 
 (** Contains check - tests if pattern is contained in string.
@@ -111,7 +115,7 @@ let string_contains args =
   check_arg_count "String.contains?" args 2;
   let s = require_string "String.contains?" "string" (List.nth_exn args 0) in
   let pattern = require_string "String.contains?" "pattern" (List.nth_exn args 1) in
-  Object.Boolean (String.is_substring ~substring:pattern s)
+    Object.Boolean (String.is_substring ~substring:pattern s)
 ;;
 
 (** Trim whitespace - strips leading and trailing whitespace.
@@ -119,7 +123,7 @@ let string_contains args =
 let string_trim args =
   check_arg_count "String.trim" args 1;
   let s = require_string "String.trim" "string" (List.hd_exn args) in
-  Object.String (String.strip s)
+    Object.String (String.strip s)
 ;;
 
 (** Create the String module with all bindings. *)
@@ -153,7 +157,7 @@ let string_module =
 let list_length args =
   check_arg_count "List.length" args 1;
   let lst = require_list "List.length" "list" (List.hd_exn args) in
-  Object.Fixnum (List.length lst)
+    Object.Fixnum (List.length lst)
 ;;
 
 (** List append - concatenates two lists.
@@ -162,7 +166,7 @@ let list_append args =
   check_arg_count "List.append" args 2;
   let list1 = require_list "List.append" "first" (List.nth_exn args 0) in
   let list2 = require_list "List.append" "second" (List.nth_exn args 1) in
-  Object.list_to_pair (list1 @ list2)
+    Object.list_to_pair (list1 @ list2)
 ;;
 
 (** List reverse - reverses a list.
@@ -170,7 +174,7 @@ let list_append args =
 let list_rev args =
   check_arg_count "List.rev" args 1;
   let lst = require_list "List.rev" "list" (List.hd_exn args) in
-  Object.list_to_pair (List.rev lst)
+    Object.list_to_pair (List.rev lst)
 ;;
 
 (** List nth - gets element at index (0-based).
@@ -181,16 +185,20 @@ let list_nth args =
   let idx = require_int "List.nth" "index" (List.nth_exn args 1) in
   (* Validate index bounds *)
   let lst_len = List.length lst in
-  if idx < 0 then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Value_error ("List.nth", "index must be non-negative")))
-  else if idx >= lst_len then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Value_error ("List.nth", [%string "index out of bounds (list length: %{Int.to_string lst_len}, index: %{Int.to_string idx})"])))
-  else
-    List.nth_exn lst idx
+    if idx < 0 then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Value_error ("List.nth", "index must be non-negative")))
+    else if idx >= lst_len then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Value_error
+              ( "List.nth"
+              , [%string
+                  "index out of bounds (list length: %{Int.to_string lst_len}, index: \
+                   %{Int.to_string idx})"] )))
+    else
+      List.nth_exn lst idx
 ;;
 
 (** List membership check - tests if element is in list using = comparison.
@@ -202,7 +210,7 @@ let list_mem args =
   let result = ref false in
   let rec loop = function
     | [] ->
-        ()
+      ()
     | x :: rest ->
       if Stdlib.compare x elem = 0 then
         result := true

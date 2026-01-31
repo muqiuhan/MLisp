@@ -23,6 +23,8 @@
 - [Macros](#macros)
 - [Standard Library](#standard-library)
 - [OCaml Standard Library Bindings](#ocaml-standard-library-bindings)
+  - [Implementation Architecture](#implementation-architecture)
+  - [Creating Custom OCaml Bindings](#creating-custom-ocaml-bindings)
 - [Examples](#examples)
 - [License](#license)
 
@@ -760,12 +762,173 @@ The `List` module provides list manipulation functions:
 (ocall List sort '(3 1 4 1 5))     ;; (1 1 3 4 5)
 ```
 
-### Notes
+### Implementation Architecture
 
-- Module names (`String`, `List`) are bound in the global environment
-- The `ocall` macro handles any number of arguments automatically
-- The `ocall` macro is loaded automatically with the standard library
-- OCaml module functions provide clear error messages for argument count, type, and value errors
+OCaml bindings are implemented in `lib/primitives/ocaml.ml` using the following architecture:
+
+```ocaml
+(* 1. Validation helper functions from Mlisp_primitives__Validate *)
+let check_arg_count = Mlisp_primitives__Validate.check_arg_count
+let require_string = Mlisp_primitives__Validate.require_string
+let require_int = Mlisp_primitives__Validate.require_int
+let require_list = Mlisp_primitives__Validate.require_list
+
+(* 2. Each binding function validates arguments and returns MLisp objects *)
+let string_length args =
+  check_arg_count "String.length" args 1;
+  let s = require_string "String.length" "string" (List.hd_exn args) in
+  Object.Fixnum (String.length s)
+
+(* 3. Modules are created as Record objects containing function bindings *)
+let string_module =
+  make_module "String"
+    [ "length", string_length
+    ; "concat", string_concat
+    ; ...
+    ]
+
+(* 4. All modules are exported via the basis list *)
+let basis = [ "String", string_module; "List", list_module ]
+```
+
+## Creating Custom OCaml Bindings
+
+This section explains how to add new OCaml standard library bindings to MLisp.
+
+### Step-by-Step Guide
+
+#### Step 1: Write the Binding Function
+
+Add your function to `lib/primitives/ocaml.ml`:
+
+```ocaml
+(** String.replace - replaces all occurrences of pattern.
+    (String.replace "hello world" "world" "there") -> "hello there" *)
+let string_replace args =
+  check_arg_count "String.replace" args 3;
+  let s = require_string "String.replace" "string" (List.nth_exn args 0) in
+  let pattern = require_string "String.replace" "pattern" (List.nth_exn args 1) in
+  let replacement = require_string "String.replace" "replacement" (List.nth_exn args 2) in
+  Object.String (String.replace_all ~substr:pattern ~with_:replacement s)
+;;
+```
+
+#### Step 2: Add to Module Definition
+
+Add the function name to the module's binding list:
+
+```ocaml
+let string_module =
+  make_module "String"
+    [ "length", string_length
+    ; "concat", string_concat
+    ; ...
+    ; "replace", string_replace  (* New function *)
+    ]
+;;
+```
+
+#### Step 3: Rebuild
+
+```bash
+dune build
+```
+
+#### Step 4: Test
+
+```lisp
+(ocall String.replace "hello world" "world" "there")
+;; => "hello there"
+```
+
+### Binding Function Template
+
+```ocaml
+(** <Function description>
+    (<Module>.<name> <example-args>) -> <return-value> *)
+let function_name args =
+  (* 1. Validate argument count *)
+  check_arg_count "<Module>.<name>" args <expected-count>;
+
+  (* 2. Extract and validate each argument *)
+  let arg1 = require_<type> "<Module>.<name>" "<param-name>" (List.nth_exn args 0) in
+  let arg2 = require_<type> "<Module>.<name>" "<param-name>" (List.nth_exn args 1) in
+
+  (* 3. Perform OCaml operations *)
+  let result = (* OCaml code *) in
+
+  (* 4. Return as MLisp object *)
+  Object.<type> result
+;;
+```
+
+### Validation Helpers
+
+| Function | Purpose |
+|----------|---------|
+| `check_arg_count name args n` | Validate exact argument count |
+| `require_string name param value` | Extract string, raise error if not string |
+| `require_int name param value` | Extract integer, raise error if not int |
+| `require_list name param value` | Extract list, raise error if not list |
+| `check_int_range name param value ~min_value ~max_value` | Validate integer is within range |
+
+### Return Value Constructors
+
+| MLisp Type | OCaml Constructor |
+|------------|-------------------|
+| String | `Object.String "value"` |
+| Integer | `Object.Fixnum (Int.of_int 42)` |
+| Float | `Object.Float 3.14` |
+| Boolean | `Object.Boolean true` |
+| List | `Object.list_to_pair [ocaml_list]` |
+| Pair | `Object.Pair (car, cdr)` |
+
+### Example: Adding a New Module
+
+To add a completely new module (e.g., `Array`):
+
+```ocaml
+(** Array module bindings *)
+
+(** Array.of-list - creates array from list *)
+let array_of_list args =
+  check_arg_count "Array.of-list" args 1;
+  let lst = require_list "Array.of-list" "list" (List.hd_exn args) in
+  let arr = Array.of_list lst in
+  Object.Array arr
+
+(** Array.length - returns array length *)
+let array_length args =
+  check_arg_count "Array.length" args 1;
+  (match List.hd_exn args with
+   | Object.Array arr -> Object.Fixnum (Array.length arr)
+   | _ -> raise (Errors.Runtime_error_exn
+                  (Errors.Argument_type_error ("Array.length", "array", "array"))))
+
+(** Create the module *)
+let array_module =
+  make_module "Array"
+    [ "of-list", array_of_list
+    ; "length", array_length
+    ]
+
+(** Add to basis *)
+let basis = [
+  "String", string_module;
+  "List", list_module;
+  "Array", array_module  (* New *)
+]
+```
+
+After rebuilding, use it in MLisp:
+
+```lisp
+(ocall Array.of-list (quote (1 2 3)))
+;; => #[1 2 3]
+
+(ocall Array.length #[1 2 3])
+;; => 3
+```
 
 ## Examples
 

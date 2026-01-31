@@ -56,9 +56,16 @@ let message = function
     | Module_load_error (mod_name, reason) ->
       [%string "Module load error: '%{mod_name}' - %{reason}"]
     | Argument_count_error (func_name, expected, got) ->
-      "Argument count error: '" ^ func_name ^ "' - expected " ^ Int.to_string expected ^ " argument(s), got " ^ Int.to_string got
+      "Argument count error: '"
+      ^ func_name
+      ^ "' - expected "
+      ^ Int.to_string expected
+      ^ " argument(s), got "
+      ^ Int.to_string got
     | Argument_type_error (func_name, param_name, expected_type) ->
-      [%string "Argument type error: '%{func_name}' - parameter '%{param_name}' expects %{expected_type}"]
+      [%string
+        "Argument type error: '%{func_name}' - parameter '%{param_name}' expects \
+         %{expected_type}"]
     | Value_error (func_name, description) ->
       [%string "Value error: '%{func_name}' - %{description}"])
   | exn ->

@@ -22,10 +22,10 @@ open Core
 *)
 let check_arg_count func_name args expected =
   let got = List.length args in
-  if got <> expected then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Argument_count_error (func_name, expected, got)))
+    if got <> expected then
+      raise
+        (Errors.Runtime_error_exn (Errors.Argument_count_error (func_name, expected, got)))
+;;
 
 (** Check minimum argument count and raise if too few.
 
@@ -36,10 +36,11 @@ let check_arg_count func_name args expected =
 *)
 let check_min_args func_name args min_required =
   let got = List.length args in
-  if got < min_required then
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Argument_count_error (func_name, min_required, got)))
+    if got < min_required then
+      raise
+        (Errors.Runtime_error_exn
+           (Errors.Argument_count_error (func_name, min_required, got)))
+;;
 
 (** Validate that an argument is a String.
 
@@ -50,12 +51,14 @@ let check_min_args func_name args min_required =
     @raise Runtime_error_exn if not a String
 *)
 let require_string func_name param_name = function
-  | Object.String s -> s
+  | Object.String s ->
+    s
   | _ ->
-      let expected_type = "string" in
+    let expected_type = "string" in
       raise
         (Errors.Runtime_error_exn
            (Errors.Argument_type_error (func_name, param_name, expected_type)))
+;;
 
 (** Validate that an argument is a Fixnum.
 
@@ -66,11 +69,13 @@ let require_string func_name param_name = function
     @raise Runtime_error_exn if not a Fixnum
 *)
 let require_int func_name param_name = function
-  | Object.Fixnum n -> Int.to_int_exn n
+  | Object.Fixnum n ->
+    Int.to_int_exn n
   | _ ->
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Argument_type_error (func_name, param_name, "integer")))
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Argument_type_error (func_name, param_name, "integer")))
+;;
 
 (** Validate that an argument is a Number (Fixnum or Float).
 
@@ -82,13 +87,14 @@ let require_int func_name param_name = function
 *)
 let require_number func_name param_name = function
   | Object.Fixnum n ->
-      Float.of_int (Int.to_int_exn n)
+    Float.of_int (Int.to_int_exn n)
   | Object.Float f ->
-      f
+    f
   | _ ->
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Argument_type_error (func_name, param_name, "number")))
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Argument_type_error (func_name, param_name, "number")))
+;;
 
 (** Validate that an argument is a proper list (Nil or Pair).
 
@@ -100,13 +106,14 @@ let require_number func_name param_name = function
 *)
 let require_list func_name param_name = function
   | Object.Nil ->
-      []
+    []
   | Object.Pair _ as pair ->
-      Object.pair_to_list pair
+    Object.pair_to_list pair
   | _ ->
-      raise
-        (Errors.Runtime_error_exn
-           (Errors.Argument_type_error (func_name, param_name, "list")))
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Argument_type_error (func_name, param_name, "list")))
+;;
 
 (** Check that an integer is within a range.
 
@@ -118,23 +125,28 @@ let require_list func_name param_name = function
     @return The value if valid
     @raise Runtime_error_exn if out of range
 *)
-let check_int_range func_name param_name value ?(min_value=None) ?(max_value=None) () =
-  let check_min = min_value |> Option.value_map ~default:true ~f:(fun min -> value >= min) in
-  let check_max = max_value |> Option.value_map ~default:true ~f:(fun max -> value <= max) in
-  if not (check_min && check_max) then
-    let description =
-      match min_value, max_value with
-      | Some min, Some max ->
+let check_int_range func_name param_name value ?(min_value = None) ?(max_value = None) () =
+  let check_min =
+    min_value |> Option.value_map ~default:true ~f:(fun min -> value >= min)
+  in
+  let check_max =
+    max_value |> Option.value_map ~default:true ~f:(fun max -> value <= max)
+  in
+    if not (check_min && check_max) then (
+      let description =
+        match min_value, max_value with
+        | Some min, Some max ->
           [%string "must be between %{Int.to_string min} and %{Int.to_string max}"]
-      | Some min, None ->
+        | Some min, None ->
           [%string "must be at least %{Int.to_string min}"]
-      | None, Some max ->
+        | None, Some max ->
           [%string "must be at most %{Int.to_string max}"]
-      | None, None ->
+        | None, None ->
           "out of range"
-    in
-    raise
-      (Errors.Runtime_error_exn
-         (Errors.Value_error (func_name, [%string "%{param_name} %{description}"])))
-  else
-    value
+      in
+        raise
+          (Errors.Runtime_error_exn
+             (Errors.Value_error (func_name, [%string "%{param_name} %{description}"])))
+    ) else
+      value
+;;
