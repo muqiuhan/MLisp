@@ -10,6 +10,31 @@
 
 ![./demo](.github/demo.png)
 
+## Monorepo Structure
+
+This repository is organized as a monorepo containing:
+
+| Package | Description | Language |
+|---------|-------------|----------|
+| [interpreter](packages/interpreter/) | MLisp interpreter implementation | OCaml |
+| [vscode-ext](packages/vscode-ext/) | VSCode language extension (OCaml + js_of_ocaml) | OCaml |
+| [shared](packages/shared/) | Shared language resources | JSON/TextMate |
+
+### Quick Start
+
+```bash
+# Build the interpreter
+npm run build:interpreter
+
+# Build VSCode extension
+npm run build:vscode && npm run bundle:vscode
+
+# Start the REPL
+cd packages/interpreter && dune exec mlisp
+```
+
+---
+
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -51,20 +76,24 @@ cd mlisp
 opam install . --deps-only
 
 # Build the project
-dune build
+npm run build
+# or
+cd packages/interpreter && dune build
 
 # Install globally (optional)
-dune install
+npm run install
+# or
+cd packages/interpreter && dune install
 ```
 
 ### Running
 
 ```bash
 # Start the REPL
-dune exec mlisp
+cd packages/interpreter && dune exec mlisp
 
 # Run a MLisp file
-dune exec mlisp -- <file.mlisp>
+cd packages/interpreter && dune exec mlisp -- <file.mlisp>
 ```
 
 ## Language Overview
@@ -831,7 +860,9 @@ let string_module =
 #### Step 3: Rebuild
 
 ```bash
-dune build
+npm run build:interpreter
+# or
+cd packages/interpreter && dune build
 ```
 
 #### Step 4: Test
