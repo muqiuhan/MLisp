@@ -8,6 +8,11 @@ open Mlisp_object
 open Mlisp_error
 open Core
 
+(* Use Validate functions through fully qualified name *)
+let check_arg_count = Mlisp_primitives__Validate.check_arg_count
+let require_string = Mlisp_primitives__Validate.require_string
+let require_int = Mlisp_primitives__Validate.require_int
+
 (** Helper function to create a module Record from bindings.
 
     Creates a MLisp Record object containing all bindings as fields.
@@ -28,89 +33,91 @@ let make_module name bindings =
 
 (** String length - returns the length of a string as Fixnum.
     (String.length "hello") -> 5 *)
-let string_length = function
-  | [ Object.String s ] ->
-    Object.Fixnum (String.length s)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.length string)"))
+let string_length args =
+  check_arg_count "String.length" args 1;
+  let s = require_string "String.length" "string" (List.hd_exn args) in
+  Object.Fixnum (String.length s)
 ;;
 
 (** String concatenation - joins two strings.
     (String.concat "hello" "world") -> "helloworld" *)
-let string_concat = function
-  | [ Object.String a; Object.String b ] ->
-    Object.String (a ^ b)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.concat string string)"))
+let string_concat args =
+  check_arg_count "String.concat" args 2;
+  let s1 = require_string "String.concat" "first" (List.nth_exn args 0) in
+  let s2 = require_string "String.concat" "second" (List.nth_exn args 1) in
+  Object.String (s1 ^ s2)
 ;;
 
 (** String split - splits a string by separator, returns Lisp list.
     (String.split "a,b,c" ",") -> ("a" "b" "c")
     Note: Supports single-character separators only. *)
-let string_split = function
-  | [ Object.String s; Object.String sep ] ->
-    (* Core's String.split takes a char; use first char of separator *)
-    let sep_char =
-      if String.length sep > 0 then
-        String.get sep 0
-      else
-        ','
-    in
-    let parts = String.split ~on:sep_char s in
-      Object.list_to_pair (List.map parts ~f:(fun p -> Object.String p))
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.split string separator)"))
+let string_split args =
+  check_arg_count "String.split" args 2;
+  let s = require_string "String.split" "string" (List.nth_exn args 0) in
+  let sep = require_string "String.split" "separator" (List.nth_exn args 1) in
+  (* Core's String.split takes a char; use first char of separator *)
+  let sep_char =
+    if String.length sep > 0 then
+      String.get sep 0
+    else
+      ','
+  in
+  let parts = String.split ~on:sep_char s in
+    Object.list_to_pair (List.map parts ~f:(fun p -> Object.String p))
 ;;
 
 (** Uppercase conversion - converts string to uppercase.
     (String.upper "hello") -> "HELLO" *)
-let string_upper = function
-  | [ Object.String s ] ->
-    Object.String (String.uppercase s)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.upper string)"))
+let string_upper args =
+  check_arg_count "String.upper" args 1;
+  let s = require_string "String.upper" "string" (List.hd_exn args) in
+  Object.String (String.uppercase s)
 ;;
 
 (** Lowercase conversion - converts string to lowercase.
     (String.lower "HELLO") -> "hello" *)
-let string_lower = function
-  | [ Object.String s ] ->
-    Object.String (String.lowercase s)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.lower string)"))
+let string_lower args =
+  check_arg_count "String.lower" args 1;
+  let s = require_string "String.lower" "string" (List.hd_exn args) in
+  Object.String (String.lowercase s)
 ;;
 
 (** Substring - extracts substring starting at position with given length.
     (String.sub "hello" 1 3) -> "ell" *)
-let string_sub = function
-  | [ Object.String s; Object.Fixnum pos; Object.Fixnum len ] ->
-    if pos < 0 || len < 0 || pos + len > String.length s then
-      raise
-        (Errors.Parse_error_exn
-           (Errors.Type_error "(String.sub string pos len) - index out of bounds"))
-    else
-      Object.String (String.sub s ~pos ~len)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.sub string pos len)"))
+let string_sub args =
+  check_arg_count "String.sub" args 3;
+  let s = require_string "String.sub" "string" (List.nth_exn args 0) in
+  let pos = require_int "String.sub" "pos" (List.nth_exn args 1) in
+  let len = require_int "String.sub" "len" (List.nth_exn args 2) in
+  (* Validate bounds *)
+  let s_len = String.length s in
+  if pos < 0 || len < 0 then
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Value_error ("String.sub", "position and length must be non-negative")))
+  else if pos + len > s_len then
+    raise
+      (Errors.Runtime_error_exn
+         (Errors.Value_error ("String.sub", [%string "substring out of bounds (string length: %{Int.to_string s_len}, requested: %{Int.to_string pos} + %{Int.to_string len})"])))
+  else
+    Object.String (String.sub s ~pos ~len)
 ;;
 
 (** Contains check - tests if pattern is contained in string.
     (String.contains? "hello" "ell") -> #t *)
-let string_contains = function
-  | [ Object.String s; Object.String pattern ] ->
-    (* Check if pattern string is contained within s *)
-    Object.Boolean (String.is_substring ~substring:pattern s)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.contains? string pattern)"))
+let string_contains args =
+  check_arg_count "String.contains?" args 2;
+  let s = require_string "String.contains?" "string" (List.nth_exn args 0) in
+  let pattern = require_string "String.contains?" "pattern" (List.nth_exn args 1) in
+  Object.Boolean (String.is_substring ~substring:pattern s)
 ;;
 
 (** Trim whitespace - strips leading and trailing whitespace.
     (String.trim "  hello  ") -> "hello" *)
-let string_trim = function
-  | [ Object.String s ] ->
-    Object.String (String.strip s)
-  | _ ->
-    raise (Errors.Parse_error_exn (Errors.Type_error "(String.trim string)"))
+let string_trim args =
+  check_arg_count "String.trim" args 1;
+  let s = require_string "String.trim" "string" (List.hd_exn args) in
+  Object.String (String.strip s)
 ;;
 
 (** Create the String module with all bindings. *)
