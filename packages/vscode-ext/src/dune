@@ -1,0 +1,8 @@
+(executable
+ (name vscode_mlisp)
+ (public_name vscode_mlisp.bc)
+ (modules vscode_mlisp)
+ (libraries vscode_bindings js_of_ocaml)
+ (js_of_ocaml)
+ (preprocess (pps gen_js_api))
+ (modes js))
