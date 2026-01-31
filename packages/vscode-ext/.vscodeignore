@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+src/**
+src-bindings/**
+.gitignore**
+dune
+dune-project
+*.opam
+_git**
+.ocamlformat

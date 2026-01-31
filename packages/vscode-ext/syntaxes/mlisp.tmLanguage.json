@@ -1,0 +1,83 @@
+{
+  "name": "MLisp",
+  "scopeName": "source.mlisp",
+  "fileTypes": ["mlisp"],
+  "patterns": [
+    {
+      "name": "comment.line.semicolon.mlisp",
+      "match": ";;.*$",
+      "captures": {
+        "0": {"name": "punctuation.definition.comment.mlisp"}
+      }
+    },
+    {
+      "name": "constant.language.boolean.mlisp",
+      "match": "\\b(#t|#f)\\b"
+    },
+    {
+      "name": "constant.numeric.mlisp",
+      "match": "\\b-?\\d+\\.?\\d*\\b"
+    },
+    {
+      "name": "string.quoted.double.mlisp",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.mlisp",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "keyword.control.mlisp",
+      "match": "\\b(if|cond|else|begin|quote|quasiquote|unquote|unquote-splicing)\\b"
+    },
+    {
+      "name": "keyword.control.special.mlisp",
+      "match": "\\b(let|let\\*|letrec|define|defun|defmacro|set!|setq)\\b"
+    },
+    {
+      "name": "keyword.operator.mlisp",
+      "match": "\\b(lambda|module|import|export|ocall)\\b"
+    },
+    {
+      "name": "keyword.operator.rest-parameter.mlisp",
+      "match": "&rest"
+    },
+    {
+      "name": "constant.language.nil.mlisp",
+      "match": "\\bnil\\b"
+    },
+    {
+      "match": "\\b([a-zA-Z][a-zA-Z0-9-*/<>!=?+]+)\\b",
+      "captures": {
+        "1": {"name": "entity.name.function.mlisp"}
+      }
+    },
+    {
+      "name": "punctuation.definition.expression.begin.mlisp",
+      "match": "\\("
+    },
+    {
+      "name": "punctuation.definition.expression.end.mlisp",
+      "match": "\\)"
+    },
+    {
+      "name": "punctuation.definition.quote.mlisp",
+      "match": "'"
+    },
+    {
+      "name": "punctuation.definition.quasiquote.mlisp",
+      "match": "`"
+    },
+    {
+      "name": "punctuation.definition.unquote.mlisp",
+      "match": ","
+    },
+    {
+      "name": "punctuation.definition.unquote-splicing.mlisp",
+      "match": ",@"
+    }
+  ]
+}
