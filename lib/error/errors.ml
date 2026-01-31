@@ -25,6 +25,9 @@ type runtime_error =
   | Not_a_module of string
   | Export_not_found of string * string
   | Module_load_error of string * string
+  | Argument_count_error of string * int * int
+  | Argument_type_error of string * string * string
+  | Value_error of string * string
 
 exception This_can't_happen_exn
 exception Undefined_symbol_exn of string

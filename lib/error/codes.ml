@@ -60,7 +60,13 @@ let error_code = function
     | Export_not_found _ ->
       Some "E205"
     | Module_load_error _ ->
-      Some "E206")
+      Some "E206"
+    | Argument_count_error _ ->
+      Some "E207"
+    | Argument_type_error _ ->
+      Some "E208"
+    | Value_error _ ->
+      Some "E209")
   | _ ->
     None
 ;;

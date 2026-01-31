@@ -128,7 +128,22 @@ let help = function
         \  - Module not defined in file\n\
         \  - Circular dependency in module imports\n\n\
          Check file path and module syntax.\n\
-         For circular dependencies, check if imported modules also load this module."])
+         For circular dependencies, check if imported modules also load this module."]
+    | Argument_count_error (func_name, expected, got) ->
+      "Argument count error: '" ^ func_name ^ "'\n\n\
+       Expected " ^ Int.to_string expected ^ " argument(s), but got " ^ Int.to_string got ^
+      ".\n\n\
+       Check the function signature and provide the correct number of arguments."
+    | Argument_type_error (func_name, param_name, expected_type) ->
+      [%string
+        "Argument type error: '%{func_name}'\n\n\
+         Parameter '%{param_name}' expects type %{expected_type}.\n\n\
+         Check the function signature and ensure arguments match expected types."]
+    | Value_error (func_name, description) ->
+      [%string
+        "Value error: '%{func_name}'\n\n\
+         %{description}\n\n\
+         The provided value is not valid for this operation."])
   | _ ->
     "Unknown error occurred. Please report this issue."
 ;;
