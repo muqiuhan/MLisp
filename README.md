@@ -20,6 +20,70 @@ This repository is organized as a monorepo containing:
 | [vscode-ext](packages/vscode-ext/) | VSCode language extension (OCaml + js_of_ocaml) | OCaml |
 | [shared](packages/shared/) | Shared language resources | JSON/TextMate |
 
+### Architecture Diagram
+
+```
+mlisp/
+├── packages/
+│   ├── interpreter/          # OCaml interpreter (core)
+│   │   ├── bin/              # Entry point (mlisp.ml)
+│   │   ├── lib/              # Core: ast, lexer, eval, object, macro, primitives
+│   │   ├── stdlib/           # Standard library (.mlisp files)
+│   │   └── test/             # Test suite
+│   │
+│   ├── vscode-ext/           # VSCode extension (OCaml → JavaScript)
+│   │   ├── src/              # Extension code (vscode_mlisp.ml)
+│   │   ├── src-bindings/     # VSCode API bindings (gen_js_api)
+│   │   ├── syntaxes/         # TextMate grammar (from shared/)
+│   │   └── package.json      # Extension manifest
+│   │
+│   └── shared/               # Shared resources
+│       └── syntax/           # mlisp.tmLanguage.json, language-config.json
+│
+├── package.json              # Root orchestration scripts
+└── docs/                     # Documentation
+```
+
+### Package Dependencies
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Dependency Graph                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐                                          │
+│  │   shared/        │  ──────────────┐                       │
+│  │  (syntax files)  │               │                       │
+│  └─────────────────┘               │                       │
+│                                     ▼                        │
+│  ┌─────────────────────────────────────┐                       │
+│  │   vscode-ext/                        │                       │
+│  │  ┌────────────────────────────────┐  │                       │
+│  │  │ src/vscode_mlisp.ml          │  │                       │
+│  │  └────────────────────────────────┘  │                       │
+│  │  │ uses VSCode API bindings │     │  │                       │
+│  │  └────────────────────────────────┘  │                       │
+│  │                                     │  │                       │
+│  │  ┌────────────────────────────────┐  │                       │
+│  │  │ src-bindings/vscode/          │  │                       │
+│  │  │ (gen_js_api → js_of_ocaml)    │  │                       │
+│  │  └────────────────────────────────┘  │                       │
+│  │                                     │  │                       │
+│  │  ┌────────────────────────────────┐  │                       │
+│  │  │ dune-project                 │  │                       │
+│  │  │ depends: mlisp (optional)     │──┼──► can embed REPL │ │
+│  │  └────────────────────────────────┘  │                       │
+│  └─────────────────────────────────────┘  │                       │
+│                                     │                        │
+│  ┌─────────────────┐                  │                        │
+│  │ interpreter/    │                  │                        │
+│  │ └─────────────────┘                  │                        │
+│  │  (standalone)     │                  │                        │
+│  └───────────────────────────────────────┘                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 > **Note:** See [docs/monorepo-migration.md](docs/monorepo-migration.md) for migration details.
 
 ### Quick Start
@@ -34,6 +98,123 @@ npm run build:vscode && npm run bundle:vscode
 # Start the REPL
 cd packages/interpreter && dune exec mlisp
 ```
+
+---
+
+## Monorepo Development
+
+### Developing the Interpreter
+
+The `packages/interpreter/` package is the core MLisp interpreter and can be developed independently:
+
+```bash
+cd packages/interpreter
+
+# Build
+dune build
+
+# Run tests
+./run_tests.sh
+
+# Start REPL
+dune exec mlisp
+
+# Run a specific file
+dune exec mlisp -- test/example.mlisp
+```
+
+**Key files:**
+- `lib/eval/eval.ml` - Expression evaluator
+- `lib/lexer/lexer.ml` - Lexical analyzer
+- `lib/object/object.ml` - MLisp object types
+- `lib/primitives/ocaml.ml` - OCaml standard library bindings
+
+### Developing the VSCode Extension
+
+The `packages/vscode-ext/` package is a VSCode extension written entirely in OCaml, compiled to JavaScript via `js_of_ocaml`:
+
+```bash
+cd packages/vscode-ext
+
+# Install OCaml dependencies
+opam install . --deps-only
+
+# Install npm dependencies (esbuild, vsce)
+npm install
+
+# Build OCaml → JavaScript bytecode
+dune build
+
+# Bundle with esbuild (external:vscode)
+npm run bundle
+
+# Package as .vsix
+npm run package
+
+# Install locally for testing
+npm run install:ext
+```
+
+**Unique architecture:**
+
+```
+OCaml Source (vscode_mlisp.ml)
+    ↓ js_of_ocaml (compile OCaml to JS)
+_build/default/src/vscode_mlisp.bc.js
+    ↓ esbuild (bundle, minify, external:vscode)
+dist/vscode_mlisp.bc.js
+    ↓ VSCode Extension Host
+Loaded as VSCode extension
+```
+
+**Key files:**
+- `src/vscode_mlisp.ml` - Extension entry point (exports `activate`/`deactivate`)
+- `src-bindings/vscode/vscode.ml` - VSCode API bindings (using gen_js_api)
+- `syntaxes/mlisp.tmLanguage.json` - Syntax highlighting grammar
+
+### Shared Language Resources
+
+The `packages/shared/syntax/` package contains language definition files used by editor extensions:
+
+- `mlisp.tmLanguage.json` - TextMate grammar for syntax highlighting
+- `language-configuration.json` - Comment style, bracket pairs, indentation
+
+When updating grammar files, the VSCode extension will automatically pick up the changes (files are copied during build).
+
+### Version Management
+
+Each package has independent versioning:
+
+| Package | Version File | Published To |
+|---------|-------------|-------------|
+| interpreter | `packages/interpreter/dune-project` | opam |
+| vscode-ext | `packages/vscode-ext/package.json` | VSCode Marketplace |
+| shared | (none, resource only) | N/A |
+
+### Building Individual Packages
+
+```bash
+# Just the interpreter
+cd packages/interpreter && dune build && dune runtest
+
+# Just the VSCode extension
+cd packages/vscode-ext && dune build && npm run bundle
+
+# Both (from root)
+npm run build
+```
+
+### Testing
+
+```bash
+# Test interpreter
+cd packages/interpreter && ./run_tests.sh
+
+# Test VSCode extension (manual - press F5 in VSCode)
+code --extensionDevelopmentPath=$PWD/packages/vscode-ext
+```
+
+---
 
 ---
 
