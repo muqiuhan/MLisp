@@ -303,17 +303,27 @@ let start_repl (_args : O.t array) : O.t =
   repl_panel := Some panel;
   O.unit_to_js ()
 
+(* Helper function to check if a JavaScript value is null or undefined *)
+let js_is_truthy (js_val : O.t) : bool =
+  (* Use JavaScript's Boolean() constructor to convert to boolean *)
+  let bool_constructor = Ojs.variable "Boolean" in
+  let js_bool = Ojs.apply bool_constructor [| js_val |] in
+  Ojs.bool_of_js js_bool
+
 (* Evaluate selection command *)
 let evaluate_selection (_args : O.t array) : O.t =
   let window = Ojs.get_prop_ascii vscode "window" in
   let active_text_editor = Ojs.get_prop_ascii window "activeTextEditor" in
 
-  (* Try to use the editor, catch any errors *)
-  try
-    (* Check if the editor is valid *)
-    let is_valid = Ojs.bool_of_js (Ojs.call active_text_editor "isValid" [||]) in
-    if is_valid then (
-      let document = Ojs.get_prop_ascii active_text_editor "document" in
+  (* First check: does activeTextEditor exist? *)
+  if not (js_is_truthy active_text_editor) then (
+    ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |]);
+    O.unit_to_js ()
+  ) else (
+    (* Second check: is the editor valid? *)
+    (* Use a safe approach: check if the document property exists *)
+    let document = Ojs.get_prop_ascii active_text_editor "document" in
+    if js_is_truthy document then (
       let selection = Ojs.get_prop_ascii active_text_editor "selection" in
       let selected_text = Ojs.call document "getText" [| selection |] in
       let text = Ojs.string_of_js selected_text in
@@ -330,15 +340,13 @@ let evaluate_selection (_args : O.t array) : O.t =
       ) else (
         let result = eval_mlisp text in
         ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js result |])
-      )
+      );
+      O.unit_to_js ()
     ) else (
-      ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |])
-    );
-    O.unit_to_js ()
-  with
-  | _ -> (* Catch any JavaScript errors (e.g., when activeTextEditor is undefined) *)
       ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |]);
       O.unit_to_js ()
+    )
+  )
 
 (* Register all commands *)
 let register_commands (_context : VscodeAPI.ExtensionContext.t) : VscodeAPI.Disposable.t =
