@@ -233,6 +233,7 @@ code --extensionDevelopmentPath=$PWD/packages/vscode-ext
 - [OCaml Standard Library Bindings](#ocaml-standard-library-bindings)
   - [Implementation Architecture](#implementation-architecture)
   - [Creating Custom OCaml Bindings](#creating-custom-ocaml-bindings)
+- [VSCode Extension](#vscode-extension)
 - [Examples](#examples)
 - [License](#license)
 
@@ -1142,6 +1143,101 @@ After rebuilding, use it in MLisp:
 
 (ocall Array.length #[1 2 3])
 ;; => 3
+```
+
+## VSCode Extension
+
+MLisp includes a VSCode language extension written entirely in OCaml using `js_of_ocaml`. This extension provides syntax highlighting, REPL integration, and code evaluation support for `.mlisp` files.
+
+### Installation
+
+#### From VSCode Marketplace (Coming Soon)
+
+1. Open VSCode
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "MLisp"
+4. Click Install
+
+#### From Source
+
+```bash
+cd packages/vscode-ext
+
+# Install dependencies
+opam install . --deps-only
+npm install
+
+# Build and package
+npm run build
+npm run package
+
+# Install locally
+code --install-extension mlisp-vscode.vsix
+```
+
+### Features
+
+#### Syntax Highlighting
+- Full syntax highlighting for MLisp S-expressions
+- Keywords (`if`, `cond`, `define`, `lambda`, etc.)
+- Booleans (`#t`, `#f`), numbers, and strings
+- Comments (`;;`)
+- Quasiquoting (`` ` ``, `,`, `,@``)
+
+#### REPL Integration
+- Open the Command Palette (Ctrl+Shift+P)
+- Type "MLisp: Start REPL"
+- Results appear in the "MLisp REPL" output channel
+
+#### Code Evaluation
+- Select code in the editor
+- Press `Ctrl+Enter` to evaluate
+- Results display in the output panel
+
+#### Editor Support
+- Bracket matching for parentheses, brackets, and braces
+- Auto-closing pairs
+- Comment toggling
+- Code folding with region markers (`;(` ... `;)`)
+
+### Keyboard Shortcuts
+
+| Keybinding | Command |
+|------------|---------|
+| `Ctrl+Enter` | MLisp: Evaluate Selection |
+
+### Unique Architecture
+
+The extension is written entirely in OCaml and compiled to JavaScript:
+
+```
+OCaml Source (vscode_mlisp.ml)
+    ↓ js_of_ocaml
+JavaScript Bytecode
+    ↓ esbuild
+Bundled Extension
+```
+
+This architecture allows:
+- Type-safe OCaml development
+- Potential to embed the MLisp interpreter directly
+- Code sharing with the core interpreter
+
+### Development
+
+For contributing to the extension, see [packages/vscode-ext/README.md](packages/vscode-ext/README.md) and [packages/vscode-ext/DEVELOPMENT.md](packages/vscode-ext/DEVELOPMENT.md).
+
+```bash
+cd packages/vscode-ext
+
+# Watch mode for development
+npm run dev
+
+# Run linter
+npm run check
+
+# Fix formatting
+npm run fix
 ```
 
 ## Examples

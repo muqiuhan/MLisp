@@ -1,13 +1,23 @@
 {
   "name": "mlisp-vscode",
   "displayName": "MLisp Language Support",
-  "description": "Syntax highlighting and REPL for MLisp",
+  "description": "Syntax highlighting, REPL, and code evaluation for MLisp - a Lisp dialect implemented in OCaml",
   "version": "0.1.0",
   "publisher": "mlisp",
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": ["Programming Languages"],
+  "keywords": ["lisp", "mlisp", "scheme", "functional", "ocaml", "repl", "syntax"],
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/somhairle/mlisp#readme",
+  "bugs": {
+    "url": "https://github.com/somhairle/mlisp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/somhairle/mlisp"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
