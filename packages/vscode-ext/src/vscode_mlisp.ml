@@ -384,10 +384,24 @@ let deactivate () : unit =
       ignore (Ojs.call proc "kill" [||]);
       mlisp_process := None
 
-(* Export activate function for VSCode *)
+(* Export activate and deactivate functions for VSCode using CommonJS *)
 let () =
-  Js.export "activate" (Js.wrap_callback activate)
+  (* VSCode Extension Host expects module.exports.activate and module.exports.deactivate *)
+  let module_obj = Ojs.variable "module" in
+  let exports_obj = Ojs.get_prop_ascii module_obj "exports" in
 
-(* Export deactivate function *)
-let () =
-  Js.export "deactivate" (Js.wrap_callback deactivate)
+  (* Wrap activate to accept the context parameter from VSCode *)
+  (* Ojs.fun_to_js_args spreads JS args as individual OCaml parameters *)
+  let activate_wrapper = Ojs.fun_to_js_args (fun (context : O.t) ->
+    activate context;
+    O.unit_to_js ()
+  ) in
+
+  let deactivate_wrapper = Ojs.fun_to_js_args (fun (_unused : O.t) ->
+    deactivate ();
+    O.unit_to_js ()
+  ) in
+
+  (* Set exports.activate and exports.deactivate *)
+  ignore (Ojs.set_prop_ascii exports_obj "activate" activate_wrapper);
+  ignore (Ojs.set_prop_ascii exports_obj "deactivate" deactivate_wrapper)
