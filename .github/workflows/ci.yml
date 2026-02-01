@@ -10,58 +10,78 @@ jobs:
   interpreter:
     name: Interpreter (OCaml)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/interpreter
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5.0
+          dune-cache: true
 
       - name: Install dependencies
-        run: opam install . --deps-only
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          opam install . --deps-only
 
       - name: Build
-        run: dune build
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          dune build
 
       - name: Run tests
-        run: ./run_tests.sh
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          ./run_tests.sh
 
   vscode:
     name: VSCode Extension (OCaml + js_of_ocaml)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/vscode-ext
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5.0
+          dune-cache: true
 
-      - name: Install OCaml dependencies
-        run: opam install . --deps-only
+      - name: Build mlisp interpreter
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          opam install . --deps-only
+          dune build
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install npm dependencies
-        run: npm install
+      - name: Install OCaml dependencies for vscode-ext
+        run: |
+          eval $(opam env)
+          opam install "js_of_ocaml>=6.0" gen_js_api ojs promise_jsoo yojson ppxlib dune
 
       - name: Build extension
-        run: dune build
+        working-directory: packages/vscode-ext
+        run: |
+          eval $(opam env)
+          dune build
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install npm dependencies
+        working-directory: packages/vscode-ext
+        run: npm install
 
       - name: Bundle extension
+        working-directory: packages/vscode-ext
         run: npm run bundle
 
       - name: Package extension
+        working-directory: packages/vscode-ext
         run: npm run package

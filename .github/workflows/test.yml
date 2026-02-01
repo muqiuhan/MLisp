@@ -12,64 +12,59 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup OCaml
-      uses: ocaml/setup-ocaml@v2
+      uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: 4.14.x
         dune-cache: true
 
     - name: Install dependencies
+      working-directory: packages/interpreter
       run: |
+        eval $(opam env)
         opam install . --deps-only --with-test
-        opam install dune
 
     - name: Build project
+      working-directory: packages/interpreter
       run: |
         eval $(opam env)
         dune build
 
     - name: Run test suite
+      working-directory: packages/interpreter
       run: |
         eval $(opam env)
         ./run_tests.sh
-
-    - name: Generate test summary
-      if: always()
-      run: |
-        eval $(opam env)
-        ./test/test_summary.sh > test-summary.txt
-        cat test-summary.txt
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: test-summary.txt
 
   quick-test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup OCaml
-      uses: ocaml/setup-ocaml@v2
+      uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: 4.14.x
+        dune-cache: true
 
     - name: Install dependencies
-      run: opam install . --deps-only
+      working-directory: packages/interpreter
+      run: |
+        eval $(opam env)
+        opam install . --deps-only
 
     - name: Build
+      working-directory: packages/interpreter
       run: |
         eval $(opam env)
         dune build
 
     - name: Quick tests
+      working-directory: packages/interpreter
       run: |
         eval $(opam env)
         make test-quick

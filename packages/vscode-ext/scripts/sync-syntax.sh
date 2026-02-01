@@ -15,6 +15,7 @@ fi
 
 # Copy syntax files
 echo "Syncing syntax files from shared package..."
+mkdir -p "$SCRIPT_DIR/../syntaxes/"
 cp "$SHARED_DIR/syntax/mlisp.tmLanguage.json" "$SCRIPT_DIR/../syntaxes/"
 cp "$SHARED_DIR/syntax/language-configuration.json" "$SCRIPT_DIR/../"
 
