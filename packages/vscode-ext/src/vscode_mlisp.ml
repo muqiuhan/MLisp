@@ -308,30 +308,37 @@ let evaluate_selection (_args : O.t array) : O.t =
   let window = Ojs.get_prop_ascii vscode "window" in
   let active_text_editor = Ojs.get_prop_ascii window "activeTextEditor" in
 
-  if Ojs.bool_of_js (Ojs.call active_text_editor "isValid" [||]) then (
-    let document = Ojs.get_prop_ascii active_text_editor "document" in
-    let selection = Ojs.get_prop_ascii active_text_editor "selection" in
-    let selected_text = Ojs.call document "getText" [| selection |] in
-    let text = Ojs.string_of_js selected_text in
+  (* Try to use the editor, catch any errors *)
+  try
+    (* Check if the editor is valid *)
+    let is_valid = Ojs.bool_of_js (Ojs.call active_text_editor "isValid" [||]) in
+    if is_valid then (
+      let document = Ojs.get_prop_ascii active_text_editor "document" in
+      let selection = Ojs.get_prop_ascii active_text_editor "selection" in
+      let selected_text = Ojs.call document "getText" [| selection |] in
+      let text = Ojs.string_of_js selected_text in
 
-    if text = "" then (
-      (* No selection, get current line *)
-      let position = Ojs.get_prop_ascii selection "active" in
-      let line_num = Ojs.float_of_js (Ojs.get_prop_ascii position "line") in
-      let line_int = int_of_float line_num in
-      let line_obj = Ojs.call document "lineAt" [| Ojs.int_to_js line_int |] in
-      let line_text = Ojs.string_of_js (Ojs.call line_obj "text" [||]) in
-      let result = eval_mlisp line_text in
-      ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js result |])
+      if text = "" then (
+        (* No selection, get current line *)
+        let position = Ojs.get_prop_ascii selection "active" in
+        let line_num = Ojs.float_of_js (Ojs.get_prop_ascii position "line") in
+        let line_int = int_of_float line_num in
+        let line_obj = Ojs.call document "lineAt" [| Ojs.int_to_js line_int |] in
+        let line_text = Ojs.string_of_js (Ojs.call line_obj "text" [||]) in
+        let result = eval_mlisp line_text in
+        ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js result |])
+      ) else (
+        let result = eval_mlisp text in
+        ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js result |])
+      )
     ) else (
-      let result = eval_mlisp text in
-      ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js result |])
-    )
-  ) else (
-    ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |])
-  );
-
-  O.unit_to_js ()
+      ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |])
+    );
+    O.unit_to_js ()
+  with
+  | _ -> (* Catch any JavaScript errors (e.g., when activeTextEditor is undefined) *)
+      ignore (Ojs.call window "showInformationMessage" [| Ojs.string_to_js "No active editor" |]);
+      O.unit_to_js ()
 
 (* Register all commands *)
 let register_commands (_context : VscodeAPI.ExtensionContext.t) : VscodeAPI.Disposable.t =
