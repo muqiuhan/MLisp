@@ -1,0 +1,45 @@
+;; MLisp Test File for VSCode Extension
+;; This file is used to test syntax highlighting
+
+;; Basic arithmetic
+(+ 1 2 3)
+(- 10 5)
+(* 3 4)
+(/ 20 4)
+
+;; Variable definition
+(define x 42)
+(define y (+ x 10))
+
+;; Function definition
+(define (factorial n)
+  (if (< n 2)
+      1
+      (* n (factorial (- n 1)))))
+
+;; List operations
+(define lst (list 1 2 3 4 5))
+(car lst)
+(cdr lst)
+(cons 0 lst)
+
+;; Quasiquote example
+(define template `(hello ,world))
+(define nested ``(foo ,bar))
+
+;; Let expression
+(let ((a 1)
+      (b 2))
+  (+ a b))
+
+;; Lambda
+(define square (lambda (x) (* x x)))
+
+;; Boolean expressions
+(and #t #f)
+(or #t #f)
+(not #f)
+
+;; String operations
+(string-append "Hello" " "World")
+(print "Testing VSCode extension")
