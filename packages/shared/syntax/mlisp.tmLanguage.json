@@ -30,15 +30,23 @@
       ]
     },
     {
+      "name": "constant.language.nil.mlisp",
+      "match": "\\bnil\\b"
+    },
+    {
       "name": "keyword.control.mlisp",
       "match": "\\b(if|cond|else|begin|quote|quasiquote|unquote|unquote-splicing)\\b"
     },
     {
-      "name": "keyword.control.special.mlisp",
+      "name": "keyword.definition.mlisp",
       "match": "\\b(let|let\\*|letrec|define|defun|defmacro|set!|setq)\\b"
     },
     {
-      "name": "keyword.operator.mlisp",
+      "name": "keyword.operator.word.mlisp",
+      "match": "\\b(and|or|not|eq\\?|null\\?|atom\\?|symbol\\?|list\\?|number\\?|string\\?)\\b"
+    },
+    {
+      "name": "keyword.operator.lambda.mlisp",
       "match": "\\b(lambda|module|import|export|ocall)\\b"
     },
     {
@@ -46,11 +54,15 @@
       "match": "&rest"
     },
     {
-      "name": "constant.language.nil.mlisp",
-      "match": "\\bnil\\b"
+      "name": "constant.language.builtin-function.mlisp",
+      "match": "\\b(apply|list|cons|car|cdr|caar|cadr|cdar|cddr|append\\.|length|print|println|getline|getchar|gensym|macroexpand|int->char|symbol-concat|null\\.|assert)\\b"
     },
     {
-      "match": "\\b([a-zA-Z][a-zA-Z0-9-*/<>!=?+]+)\\b",
+      "name": "support.function.primitive.mlisp",
+      "match": "\\b(record-get|string-concat)\\b"
+    },
+    {
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9-*/<>!=?+_]*)\\b",
       "captures": {
         "1": {"name": "entity.name.function.mlisp"}
       }
