@@ -1,10 +1,46 @@
+# Exclude parent directories - this is critical!
+../**
+
+# VSCode specific
 .vscode/**
 .vscode-test/**
+
+# Source files
 src/**
 src-bindings/**
+**/*.ml
+**/*.mli
+**/*.ml.ts
+
+# Build artifacts - exclude everything, the bundle goes in dist/
+_build/**
+node_modules/.cache/**
+
+# Git
 .gitignore**
-dune
-dune-project
-*.opam
+.git**
 _git**
+
+# OCaml build files
+dune
+dune-workspace
+*.opam
 .ocamlformat
+ocaml.lock
+
+# Documentation
+docs/
+**/*.md
+!README.md
+
+# Test files
+test/
+*.test.*
+
+# Misc
+*.log
+*.swp
+*~
+
+# Root level files from parent
+../../**
