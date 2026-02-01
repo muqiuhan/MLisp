@@ -43,21 +43,55 @@ A VSCode extension for MLisp, a Lisp dialect implemented in OCaml. This extensio
 
 ### From Source
 
+#### Prerequisites
+
+1. **OCaml toolchain** (for compiling the extension):
+   ```bash
+   # Install OCaml 5.0+ via opam
+   opam init
+   opam switch create 5.0.0
+   eval $(opam env)
+   ```
+
+2. **Node.js 18+** (for bundling):
+   ```bash
+   node --version  # Should be 18.x or later
+   npm --version
+   ```
+
+#### Build Steps
+
 ```bash
 # Clone the repository
 git clone https://github.com/somhairle/mlisp.git
 cd mlisp/packages/vscode-ext
 
-# Install dependencies
-npm install
+# Install OCaml dependencies
 opam install . --deps-only
 
-# Build and package
-npm run build
+# Install npm dependencies
+npm install
+
+# Build OCaml to JavaScript bytecode
+dune build
+# Output: _build/default/src/vscode_mlisp.bc.js (2.6 MB)
+
+# Bundle with esbuild (externalizes vscode module)
+npm run bundle
+# Output: dist/vscode_mlisp.bc.js (417 KB)
+
+# Package as .vsix
 npm run package
+# Output: mlisp-vscode-0.1.0.vsix (135 KB)
 
 # Install locally
-code --install-extension mlisp-vscode.vsix
+code --install-extension mlisp-vscode-0.1.0.vsix
+```
+
+#### Quick Build Command
+
+```bash
+npm run build    # = dune build + npm run bundle
 ```
 
 ## Usage
@@ -174,6 +208,58 @@ npm run bundle
 npm run package
 ```
 
+### Development Workflow
+
+**Watch Mode** (recommended for development):
+
+```bash
+# Terminal 1: Watch both OCaml and JavaScript
+npm run dev
+
+# Terminal 2: Press F5 in VSCode to launch Extension Development Host
+```
+
+This runs:
+- `dune build -w` - Watch for OCaml changes
+- `esbuild --watch` - Watch for JavaScript bundle changes
+
+**Individual Commands:**
+
+```bash
+npm run build:ocaml      # Compile OCaml only
+npm run watch:ocaml      # Watch OCaml compilation
+npm run bundle           # Bundle JavaScript only
+npm run watch:bundle     # Watch JavaScript bundling
+npm run build            # Build OCaml + bundle (no watch)
+```
+
+### Build Pipeline
+
+```
+┌─────────────────┐
+│  OCaml Source   │
+│  vscode_mlisp.ml│
+└────────┬────────┘
+         │ dune build
+         ▼
+┌─────────────────────────┐
+│  JavaScript Bytecode    │
+│  _build/.../bc.js       │  (2.6 MB)
+└────────┬────────────────┘
+         │ esbuild --bundle
+         ▼
+┌─────────────────────────┐
+│  Bundled Extension      │
+│  dist/vscode_mlisp.bc.js│  (417 KB)
+└────────┬────────────────┘
+         │ vsce package
+         ▼
+┌─────────────────────────┐
+│  VSIX Package           │
+│  mlisp-vscode-0.1.0.vsix│  (135 KB)
+└─────────────────────────┘
+```
+
 ### Project Structure
 
 ```
@@ -213,12 +299,31 @@ This architecture allows:
 
 ### Testing
 
-```bash
-# Open the Extension Development Host
-code --extensionDevelopmentPath=$PWD
+**Automated Tests:**
 
-# Or press F5 in VSCode with this project open
+```bash
+# Run automated test script
+./test-extension.sh
+# 19 tests verify: build, bundle, package.json, grammar, etc.
 ```
+
+**Manual Testing:**
+
+```bash
+# Method 1: Launch Extension Development Host from terminal
+code --extensionDevelopmentPath=$PWD /path/to/test-workspace
+
+# Method 2: Press F5 in VSCode with this project open
+# Then use the test workspace at ../../test-workspace/
+```
+
+**Test Checklist:**
+
+- [ ] Syntax highlighting works for `.mlisp` files
+- [ ] Opening `(` auto-inserts `)`
+- [ ] `Ctrl+Enter` evaluates selection
+- [ ] "MLisp: Start REPL" command opens output channel
+- [ ] No errors in Developer Tools console
 
 ## Contributing
 
