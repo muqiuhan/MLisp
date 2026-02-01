@@ -15,15 +15,17 @@ jobs:
         working-directory: packages/interpreter
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5.0
 
       - name: Install dependencies
-        run: opam install . --deps-only
+        run: |
+          opam install . --deps-only
+          opam install dune
 
       - name: Build
         run: dune build
@@ -39,18 +41,20 @@ jobs:
         working-directory: packages/vscode-ext
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5.0
 
       - name: Install OCaml dependencies
-        run: opam install . --deps-only
+        run: |
+          opam install . --deps-only
+          opam install dune
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
