@@ -1,0 +1,137 @@
+;; MLisp Macro System Test File
+;; Tests macro definition, quasiquote, and hygiene
+
+;; ============================================================================
+;; MACRO DEFINITION
+;; ============================================================================
+
+;; Simple unless macro (inverse of if)
+(defmacro unless (condition . body)
+  `(if (not ,condition)
+      (begin ,@body)))
+
+;; Usage: (unless (< x 0) (print "x is non-negative"))
+
+;; When macro (if without else)
+(defmacro when (condition . body)
+  `(if ,condition (begin ,@body) #f))
+
+;; Usage: (when (> x 10) (print "large") (set! flag #t))
+
+;; Let macro using lambda
+(defmacro my-let (bindings . body)
+  `((lambda ,(map car bindings)
+      ,@body)
+    ,@(map cadr bindings)))
+
+;; Usage: (my-let ((x 1) (y 2)) (+ x y))
+
+;; ============================================================================
+;; QUASIQUOTE
+;; ============================================================================
+
+;; Basic quasiquote
+(define template `(hello world))
+;; Result: (hello world)
+
+;; Unquote
+(define x 42)
+`(the answer is ,x)
+;; Result: (the answer is 42)
+
+;; Unquote-splicing
+(define numbers (list 1 2 3))
+`(values ,@numbers)
+;; Result: (values 1 2 3)
+
+;; Nested quasiquote
+(define nested ``(foo ,bar))
+;; Result: (` (foo ,bar))
+
+;; Nested unquote
+``(foo ,,bar)
+;; Result: (foo bar)
+
+;; ============================================================================
+;; MACRO HYGIENE
+;; ============================================================================
+
+;; Macro with potential variable capture
+(defmacro bad-inc (var)
+  `(let ((temp ,var))
+     (set! ,var (+ temp 1))
+     ,var))
+
+;; Macro using gensym for hygiene
+(defmacro good-inc (var)
+  (let ((g (gensym)))
+    `(let ((,g ,var))
+       (set! ,var (+ ,g 1))
+       ,var)))
+
+;; ============================================================================
+;; COMPLEX MACROS
+;; ============================================================================
+
+;; Cond macro (multi-branch conditional)
+(defmacro cond clauses
+  (if (null? clauses)
+      #f
+      (if (eq? (car (car clauses)) 'else)
+          `(begin ,@(cdr (car clauses)))
+          `(if ,(car (car clauses))
+               (begin ,@(cdr (car clauses)))
+               (cond ,(cdr clauses))))))
+
+;; Usage:
+;; (cond
+;;   ((= x 0) "zero")
+;;   ((> x 0) "positive")
+;;   (else "negative"))
+
+;; For loop macro
+(defmacro for (var start end . body)
+  (let ((limit (gensym)))
+    `(let ((,var ,start)
+           (,limit ,end))
+       (while (<= ,var ,limit)
+         ,@body
+         (set! ,var (+ ,var 1))))))
+
+;; Usage: (for i 1 10 (print i))
+
+;; ============================================================================
+;; MACRO EXPANSION EXAMPLES
+;; ============================================================================
+
+;; Anaphoric if (makes test result available as 'it')
+(defmacro aif (test then else)
+  `(let ((it ,test))
+     (if it ,then ,else)))
+
+;; Usage: (aif (car list) (print it) (print "empty"))
+
+;; Thread-first macro (pipelining)
+(defmacro -> initial . forms
+  (if (null? forms)
+      initial
+      (let ((form (car forms))
+            (rest (cdr forms)))
+        (if (list? form)
+            `(-> (,(car form) ,initial ,@(cdr form)) ,@rest)
+            `(-> (,form ,initial) ,@rest)))))
+
+;; Usage: (-> 5 (square) (+ 3) (* 2))
+;; Equivalent to: (* (+ (square 5) 3) 2)
+
+;; Thread-last macro
+(defmacro ->> initial . forms
+  (if (null? forms)
+      initial
+      (let ((form (car forms))
+            (rest (cdr forms)))
+        (if (list? form)
+            `(->> (,(car form) ,@(cdr form) ,initial) ,@rest)
+            `(->> (,form ,initial) ,@rest)))))
+
+;; Usage: (->> (list 1 2 3) (map square) (filter even?))

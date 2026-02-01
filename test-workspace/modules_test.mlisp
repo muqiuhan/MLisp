@@ -1,0 +1,62 @@
+;; MLisp Module System Test File
+;; Tests module definition, imports, and exports
+
+;; ============================================================================
+;; MODULE DEFINITION
+;; ============================================================================
+
+;; Simple module with exports
+(module Math
+  (export square cube abs)
+  (define (square x) (* x x))
+  (define (cube x) (* x x x))
+  (define (abs x) (if (< x 0) (- x) x)))
+
+;; Module with multiple exports
+(module StringHelpers
+  (export reverse uppercase lowercase)
+  (define (reverse s)
+    ;; Implementation here
+    s)
+  (define (uppercase s)
+    ;; Implementation here
+    s)
+  (define (lowercase s)
+    ;; Implementation here
+    s))
+
+;; Module that imports from another module
+(module AdvancedMath
+  (export power factorial)
+  (import Math)
+  (define (power base exp)
+    ;; Implementation
+    base)
+  (define (factorial n)
+    (if (< n 2)
+        1
+        (* n (factorial (- n 1))))))
+
+;; ============================================================================
+;; MODULE IMPORTS
+;; ============================================================================
+
+;; Import all from module
+(import Math)
+
+;; Import specific functions
+(import (square cube) from Math)
+
+;; Import multiple modules
+(import Math StringHelpers)
+
+;; ============================================================================
+;; USING IMPORTED FUNCTIONS
+;; ============================================================================
+
+;; Use imported function
+(square 5)
+(cube 3)
+
+;; Use function from imported module
+(Math.abs -10)
