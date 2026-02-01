@@ -1,70 +1,76 @@
 (* MLisp VSCode Extension - Main Entry Point
    Activates the extension and registers commands *)
 
-open Vscode_bindings
+module VscodeAPI = Vscode_bindings.Vscode
+module O = Ojs
+module Js = Js_of_ocaml.Js
 
 (* Output channel for REPL *)
-let output_channel = ref None
+let output_channel : O.t option ref = ref None
 
 (* Initialize output channel *)
-let init_output () =
+let init_output () : unit =
   match !output_channel with
   | Some _ -> ()
   | None ->
-      let channel = Window.createOutputChannel ~name:"MLisp REPL" in
+      let channel = VscodeAPI.Window.createOutputChannel ~name:"MLisp REPL" in
       output_channel := Some channel;
-      Window.showInformationMessage ~message:"MLisp extension activated!" ()
+      ignore (VscodeAPI.Window.showInformationMessage ~message:"MLisp extension activated!" ())
 
 (* Start REPL command *)
-let start_repl () =
+let start_repl (_args : O.t array) : O.t =
   init_output ();
   match !output_channel with
-  | None -> Window.showInformationMessage ~message:"REPL not available" ()
+  | None ->
+      ignore (VscodeAPI.Window.showInformationMessage ~message:"REPL not available" ());
+      O.unit_to_js ()
   | Some channel ->
-      Ojs.call (Ojs.method channel "append") channel [| Js.string "MLisp REPL Started\n" |];
-      Ojs.call (Ojs.method channel "show") channel [||];
-      Js.undefined
+      ignore (O.call channel "append" [| O.string_to_js "MLisp REPL Started\n" |]);
+      ignore (O.call channel "show" [||]);
+      O.unit_to_js ()
 
 (* Evaluate selection command *)
-let evaluate_selection () =
+let evaluate_selection (_args : O.t array) : O.t =
   init_output ();
-  (* TODO: Get editor selection and evaluate *)
-  Window.showInformationMessage ~message:"Evaluation coming soon!" ()
+  ignore (VscodeAPI.Window.showInformationMessage ~message:"Evaluation coming soon!" ());
+  O.unit_to_js ()
 
 (* Register all commands *)
-let register_commands (context : ExtensionContext.t) =
+let register_commands (_context : VscodeAPI.ExtensionContext.t) : VscodeAPI.Disposable.t =
   let start_repl_cmd =
-    Commands.registerCommand ~command:"mlisp.startREPL"
-      ~callback:(fun _args -> start_repl ()) ()
+    VscodeAPI.Commands.registerCommand ~command:"mlisp.startREPL"
+      ~callback:start_repl
   in
   let evaluate_cmd =
-    Commands.registerCommand ~command:"mlisp.evaluateSelection"
-      ~callback:(fun _args -> evaluate_selection ()) ()
+    VscodeAPI.Commands.registerCommand ~command:"mlisp.evaluateSelection"
+      ~callback:evaluate_selection
   in
-  Disposable.from [| start_repl_cmd; evaluate_cmd |]
+  VscodeAPI.Disposable.from [| start_repl_cmd; evaluate_cmd |]
 
 (* Extension activation *)
-let activate (context : ExtensionContext.t) =
+let activate (context : VscodeAPI.ExtensionContext.t) : unit =
   (* Register commands *)
-  let disposable = register_commands context in
-  ExtensionContext.subscriptions context |> Array.iter Disposable.dispose;
+  let _disposable = register_commands context in
 
   (* Subscribe to configuration changes *)
-  ignore (Workspace.onDidChangeConfiguration
-    ~listener:(fun _event -> Js.undefined)
-    ());
+  let _config_disposable =
+    VscodeAPI.Workspace.onDidChangeConfiguration
+      ~listener:(fun (_event : O.t) -> O.unit_to_js ())
+  in
 
   (* Show activation message *)
   init_output ();
 
-  Js.undefined
+  ()
+
+(* Deactivate function *)
+let deactivate () : unit =
+  ()
 
 (* Export activate function for VSCode *)
 let () =
-  let open Js_of_ocaml.Js in
-  export "activate" (wrap_callback activate)
+  Js.export "activate" (Js.wrap_callback activate)
 
 (* Export deactivate function *)
 let () =
-  let open Js_of_ocaml.Js in
-  export "deactivate" (wrap_callback (fun () -> Js.undefined))
+  Js.export "deactivate" (Js.wrap_callback deactivate)

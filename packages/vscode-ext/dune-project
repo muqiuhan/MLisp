@@ -8,12 +8,14 @@
 (package
  (name vscode-mlisp)
  (synopsis "VSCode extension for MLisp")
+ (allow_empty)
  (depends
   (ocaml (>= 5.0))
   (js_of_ocaml (>= 6.0))
   (gen_js_api (= 1.1.6))
+  (ojs (= 1.1.6))
   (mlisp (>= 0.0.44))
   (promise_jsoo (>= 0.4.3))
-  (jsonoo (>= 0.3))
+  (yojson (>= 0.3))
   (ocaml-version (>= 4.0))
   (ppxlib (>= 0.36))))

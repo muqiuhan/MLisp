@@ -1,7 +1,5 @@
 (library
  (name vscode_bindings)
- (public_name vscode.mlisp_bindings)
  (modules vscode)
- (libraries js_of_ocaml gen_js_api promise_jsoo jsonoo)
- (js_of_ocaml)
- (preprocess (pps gen_js_api)))
+ (libraries ojs js_of_ocaml promise_jsoo yojson)
+ (js_of_ocaml))
