@@ -55,12 +55,16 @@
   "scripts": {
     "check": "biome check",
     "fix": "biome check --fix",
+    "sync:syntax": "bash scripts/sync-syntax.sh",
+    "prebuild:ocaml": "npm run sync:syntax",
     "build:ocaml": "dune build",
     "watch:ocaml": "dune build -w",
+    "prebundle": "npm run sync:syntax",
     "bundle": "esbuild _build/default/src/vscode_mlisp.bc.js --bundle --external:vscode --minify --outdir=dist --platform=node --target=node18",
     "watch:bundle": "esbuild _build/default/src/vscode_mlisp.bc.js --bundle --external:vscode --outdir=dist --platform=node --target=node18 --watch",
     "dev": "npm-run-all --parallel watch:ocaml watch:bundle",
     "build": "npm-run-all build:ocaml bundle",
+    "prepackage": "npm run sync:syntax",
     "package": "vsce package --out mlisp-vscode.vsix",
     "install:ext": "code --force --install-extension mlisp-vscode.vsix"
   },
