@@ -4,7 +4,7 @@ MLisp
 
 A hobby project. A clean, practical Lisp interpreter.
 
-[Chinese version](./README_zh.txt)
+中文: ./README_zh.txt
 
 ================================================================================
 Status
