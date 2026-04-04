@@ -1,93 +1,93 @@
-# MLisp
+================================================================================
+MLisp
+================================================================================
 
-A Lisp dialect implemented in OCaml.
+A hobby project. A clean, practical Lisp interpreter.
 
-[中文版](./README_zh.txt)
+[Chinese version](./README_zh.txt)
 
-## What is this?
-
-A hobby project. The goal is a clean, practical Lisp interpreter without unnecessary complexity.
-
-## Status
+================================================================================
+Status
+================================================================================
 
 Core interpreter: working
-- S-expression parsing, lexical scoping, closures
-- Macros (quasiquote/unquote, gensym for hygiene)
-- Modules
-- REPL
+  - S-expression parsing, lexical scoping, closures
+  - Macros (quasiquote/unquote, gensym for hygiene)
+  - Modules
+  - REPL
 
 Package manager (mlp): basic features done
-- Project initialization
-- Local package installation
-- Test framework (module-test macro)
+  - Project initialization
+  - Local package installation
+  - Test framework (module-test macro)
 
 VSCode extension: basic features
-- Syntax highlighting
-- Code evaluation
+  - Syntax highlighting
+  - Code evaluation
 
-## Structure
+================================================================================
+Structure
+================================================================================
 
-```
 mlisp/
 ├── packages/
-│   ├── interpreter/      # OCaml interpreter
-│   ├── mlp/              # Package manager
-│   ├── vscode-ext/       # VSCode extension
-│   └── shared/          # Shared resources
-├── docs/                 # Documentation
+│   ├── interpreter/      OCaml interpreter
+│   ├── mlp/              Package manager
+│   ├── vscode-ext/       VSCode extension
+│   └── shared/            Shared resources
+├── docs/                 Documentation
 │   └── language-spec.txt
-└── example/              # Example project
-```
+└── example/              Example project
 
-## Quick Start
+================================================================================
+Quick Start
+================================================================================
 
-### Build the interpreter
+Build the interpreter
+-------------------
+  cd packages/interpreter
+  opam install . --deps-only
+  dune build
 
-```bash
-cd packages/interpreter
-opam install . --deps-only
-dune build
+  # REPL
+  dune exec mlisp
 
-# REPL
-dune exec mlisp
+  # Run a file
+  dune exec mlisp -- file.mlisp
 
-# Run a file
-dune exec mlisp -- file.mlisp
-```
+Build the package manager
+------------------------
+  cd packages/mlp
+  dune build
 
-### Build the package manager
+  # Run tests
+  dune exec mlp -- test
 
-```bash
-cd packages/mlp
-dune build
+Build the VSCode extension
+------------------------
+  cd packages/vscode-ext
+  opam install . --deps-only
+  npm install
+  npm run build
+  npm run package
 
-# Run tests
-dune exec mlp -- test
-```
+================================================================================
+Documentation
+================================================================================
 
-### Build the VSCode extension
+The language spec (./docs/language-spec.txt) covers:
 
-```bash
-cd packages/vscode-ext
-opam install . --deps-only
-npm install
-npm run build
-npm run package
-```
+  - Data types
+  - Expressions and control flow
+  - Functions and closures
+  - Variable bindings
+  - Modules
+  - Macros
+  - Standard library
+  - OCaml bindings
 
-## Documentation
-
-The [language spec](./docs/language-spec.txt) covers:
-
-- Data types
-- Expressions and control flow
-- Functions and closures
-- Variable bindings
-- Modules
-- Macros
-- Standard library
-- OCaml bindings
-
-## License
+================================================================================
+License
+================================================================================
 
 Mozilla Public License 2.0
