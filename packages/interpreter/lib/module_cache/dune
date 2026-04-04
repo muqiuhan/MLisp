@@ -1,0 +1,6 @@
+(library
+ (name mlisp_module_cache)
+ (wrapped false)
+ (preprocess
+  (pps ppx_string))
+ (libraries core core_unix mlisp_object))

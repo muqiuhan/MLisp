@@ -1,0 +1,20 @@
+
+;; Package: example
+;; MLisp package configuration
+
+(define package-name "example")
+(define package-version "0.1.0")
+(define package-description "A MLisp package")
+
+;; Dependencies: list of (name constraint) pairs
+(define dependencies (list))
+
+;; Build configuration
+(define build-config
+  (list))
+
+;; Test configuration
+(define test-config
+  (list "test/*.mlisp"))
+
+(export package-name package-version package-description dependencies)

@@ -1,0 +1,10 @@
+;; Test enhanced assertion functions
+
+;; Test assert-eq (should fail - not implemented)
+;(assert-eq (+ 2 2) 4)
+
+;; Test assert-true (should fail - not implemented)
+;(assert-true #t)
+
+;; Test assert-false (should fail - not implemented)
+;(assert-false #f)

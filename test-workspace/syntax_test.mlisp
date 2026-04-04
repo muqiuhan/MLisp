@@ -1,0 +1,307 @@
+;; MLisp Syntax Highlighting Test File
+;; This file exercises all syntax elements for the VSCode extension
+
+;; ============================================================================
+;; 1. COMMENTS
+;; ============================================================================
+
+;; Single line comment - should be highlighted as comment
+;; Another comment with special chars: () [] {} "'`,
+
+;; ============================================================================
+;; 2. NUMBERS
+;; ============================================================================
+
+;; Integers
+42
+-10
+0
+12345
+
+;; Floating point
+3.14
+-0.5
+2.0
+
+;; ============================================================================
+;; 3. BOOLEANS
+;; ============================================================================
+
+#t
+#f
+
+;; ============================================================================
+;; 4. STRINGS
+;; ============================================================================
+
+"Hello, World!"
+"String with escape: \n"
+"String with quote: \""
+"Path: /usr/local/bin"
+"Special chars: @#$%"
+
+;; ============================================================================
+;; 5. CONTROL KEYWORDS
+;; ============================================================================
+
+;; if
+(if (< x 10)
+    "small"
+    "large")
+
+;; cond
+(cond
+  ((= x 0) "zero")
+  ((> x 0) "positive")
+  (else "negative"))
+
+;; else
+(if #t
+    "true"
+    (else "false"))
+
+;; begin
+(begin
+  (set! x 1)
+  (set! y 2)
+  (+ x y))
+
+;; quote
+'(1 2 3)
+(quote (a b c))
+
+;; quasiquote
+`(hello world)
+
+;; unquote
+`(1 2 ,x)
+
+;; unquote-splicing
+`(1 2 ,@lst)
+
+;; ============================================================================
+;; 6. DEFINITION KEYWORDS
+;; ============================================================================
+
+;; define
+(define pi 3.14159)
+
+;; defun
+(defun square (x) (* x x))
+
+;; defmacro
+(defmacro when (condition . body)
+  `(if ,condition (begin ,@body) #f))
+
+;; let
+(let ((x 1)
+      (y 2))
+  (+ x y))
+
+;; let*
+(let* ((x 1)
+       (y (+ x 1)))
+  y)
+
+;; letrec
+(letrec ((fact (lambda (n)
+                 (if (< n 2)
+                     1
+                     (* n (fact (- n 1))))))
+  (fact 5))
+
+;; set!
+(define counter 0)
+(set! counter (+ counter 1))
+
+;; setq
+(setq x 10)
+(setq y 20)
+
+;; ============================================================================
+;; 7. OPERATOR KEYWORDS
+;; ============================================================================
+
+;; lambda
+(lambda (x) (+ x 1))
+(lambda (x y) (+ x y))
+
+;; lambda with rest
+(lambda (x &rest args) (cons x args))
+
+;; module
+(module Math (export square cube)
+  (define (square x) (* x x))
+  (define (cube x) (* x x x)))
+
+;; import
+(import Math)
+(import (square cube) from Math)
+
+;; export
+(export factorial fibonacci)
+
+;; ocall
+(ocall obj method arg1 arg2)
+
+;; rest parameter
+(lambda (x &rest rest) rest)
+
+;; ============================================================================
+;; 8. NIL
+;; ============================================================================
+
+nil
+(null? nil)
+
+;; ============================================================================
+;; 9. PUNCTUATION
+;; ============================================================================
+
+;; Parentheses for grouping
+(function (arg1 arg2) (body))
+
+;; Quote for literals
+'(quoted list)
+
+;; Quasiquote
+`(template ,value)
+
+;; Unquote
+,(expression)
+
+;; Unquote-splicing
+,@(list of elements)
+
+;; ============================================================================
+;; 10. FUNCTION NAMES
+;; ============================================================================
+
+;; Standard functions
+(car list)
+(cdr list)
+(cons head tail)
+(append list1 list2)
+
+;; Predicates
+(null? x)
+(atom? x)
+(symbol? x)
+(number? x)
+(string? x)
+(list? x)
+
+;; Arithmetic
+(+ 1 2)
+(- 5 3)
+(* 4 5)
+(/ 10 2)
+
+;; Comparison
+(= 1 2)
+(< 3 4)
+(> 5 6)
+(<= 7 8)
+(>= 9 10)
+
+;; Logic
+(and #t #f)
+(or #t #f)
+(not #f)
+
+;; String functions
+(string-append "a" "b")
+(string-length "hello")
+
+;; I/O
+(print "Output")
+(println "Line")
+(getline)
+(getchar)
+
+;; List functions
+(length list)
+(take list n)
+(drop list n)
+(mergesort list)
+(zip. list1 list2)
+
+;; Compound function names
+string->number
+number->string
+int->char
+symbol-concat
+
+;; Functions with special characters
+make-empty?
+get-first!
+set-value*
+new-object+
+
+;; ============================================================================
+;; 11. NESTED EXPRESSIONS
+;; ============================================================================
+
+;; Nested function calls
+(+ (* 2 3) (/ 10 2))
+
+;; Nested conditionals
+(if (if (pred1 x) #t (pred2 y))
+    (then-branch)
+    (else-branch))
+
+;; Nested lists
+'(1 (2 (3 4) 5) 6)
+
+;; ============================================================================
+;; 12. MULTI-LINE EXPRESSIONS
+;; ============================================================================
+
+;; Multi-line function definition
+(define (complex-function x y z)
+  (let ((temp1 (* x y))
+        (temp2 (+ y z)))
+    (if (> temp1 10)
+        (list temp1 temp2)
+        (list temp2 temp1))))
+
+;; Multi-line quasiquote
+(define template
+  `(html
+    (body
+      (h1 ,title)
+      (p ,content)
+      (ul ,@(map li items)))))
+
+;; ============================================================================
+;; 13. FOLDING MARKERS
+;; ============================================================================
+
+;; Folding region with #| |# style (if supported)
+;(
+  This is a folded region
+  containing multiple lines
+  of code or documentation
+;)
+
+;; ============================================================================
+;; 14. EDGE CASES
+;; ============================================================================
+
+;; Empty list
+'()
+
+;; Nested quotes
+''x
+
+;; Nested quasiquotes
+``(foo ,bar)
+
+;; Atoms
+foo
+bar123
+some-atom
+another_atom
+
+;; Special symbols in names
++ - * / = < > ! ? &

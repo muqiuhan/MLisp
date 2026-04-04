@@ -1,0 +1,39 @@
+;; Assertion functions for testing
+;; This module provides assertion utilities for unit testing
+
+;; Basic assertion - returns #t if condition is true
+(defun assert (condition)
+  (if condition
+    #t
+    (begin
+      (println "Assertion failed")
+      #f)))
+
+;; Assert equality - compares two values
+(defun assert-eq (expected actual)
+  (if (== expected actual)
+    #t
+    (begin
+      (print "Assertion failed: expected ")
+      (print expected)
+      (print ", got ")
+      (println actual)
+      #f)))
+
+;; Assert boolean true
+(defun assert-true (value)
+  (if (== value #t)
+    #t
+    (begin
+      (print "Assertion failed: expected #t, got ")
+      (println value)
+      #f)))
+
+;; Assert boolean false
+(defun assert-false (value)
+  (if (== value #f)
+    #t
+    (begin
+      (print "Assertion failed: expected #f, got ")
+      (println value)
+      #f)))

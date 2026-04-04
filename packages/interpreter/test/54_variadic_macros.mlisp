@@ -1,0 +1,72 @@
+;; Test variadic macros with &rest parameter
+
+;; Test 1: Basic &rest macro - pack all arguments
+(print "Test 1: Basic &rest macro")
+(defmacro list-all (&rest args)
+  `(quote ,args))
+(define result1 (list-all 1 2 3 4 5))
+(print result1)
+(assert (== result1 (quote (1 2 3 4 5))))
+
+;; Test 2: Mixed fixed and rest parameters
+(print "Test 2: Fixed + rest parameters")
+(defmacro with-fixed (first second &rest rest)
+  `(quote (,first ,second ,@rest)))
+(define result2 (with-fixed 1 2 3 4))
+(print result2)
+(assert (== result2 (quote (1 2 3 4))))
+
+;; Test 3: &rest with no extra arguments (empty list)
+(print "Test 3: &rest with no extra arguments")
+(define result3 (with-fixed 1 2))
+(print result3)
+(assert (== result3 (quote (1 2))))
+
+;; Test 4: Single rest argument
+(print "Test 4: Single rest argument")
+(define result4 (with-fixed 1 2 3))
+(print result4)
+(assert (== result4 (quote (1 2 3))))
+
+;; Test 5: Using &rest with unquote-splicing
+(print "Test 5: &rest with unquote-splicing")
+(defmacro wrap-with-list (name &rest body)
+  `(quote (,name ,@body)))
+(define result5 (wrap-with-list my-function a b c))
+(print result5)
+(assert (== result5 (quote (my-function a b c))))
+
+;; Test 6: Nested macro with &rest
+(print "Test 6: Nested macro with &rest")
+(defmacro outer (&rest args)
+  `(list-all ,@args))
+(define result6 (outer x y z))
+(print result6)
+(assert (== result6 (quote (x y z))))
+
+;; Test 7: Error case - &rest not last parameter (should fail at parse time)
+;; This test is commented out - it should cause a parse error
+;; (defmacro invalid (&rest rest another) `(quote ,rest))
+
+;; Test 8: Create an ocall macro using variadic parameters
+(print "Test 8: Dynamic ocall using &rest")
+(defmacro ocall (mod method &rest args)
+  `((record-get ,mod (quote ,method)) ,@args))
+(define test-list (quote (1 2 3)))
+(define result8 (ocall List length test-list))
+(print result8)
+(assert (= result8 3))
+
+;; Test 9: Multiple arities with same macro
+(print "Test 9: Single argument through &rest")
+(define result9 (list-all only-one))
+(print result9)
+(assert (== result9 (quote (only-one))))
+
+;; Test 10: No arguments through &rest
+(print "Test 10: No arguments")
+(define result10 (list-all))
+(print result10)
+(assert (== result10 (quote ())))
+
+(print "All variadic macro tests passed!")

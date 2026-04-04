@@ -1,0 +1,7 @@
+; MLisp Package Manager - Dune configuration
+
+(executable
+ (name mlp)
+ (public_name mlp)
+ (libraries mlp_lib core core_unix core_unix.command_unix sexplib)
+ (preprocess (pps ppx_jane)))

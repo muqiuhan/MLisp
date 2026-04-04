@@ -1,0 +1,5 @@
+(library
+ (name vscode_bindings)
+ (modules vscode)
+ (libraries ojs js_of_ocaml promise_jsoo yojson)
+ (js_of_ocaml))

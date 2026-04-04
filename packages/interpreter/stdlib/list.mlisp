@@ -1,0 +1,112 @@
+;; List manipulation functions
+;; This module provides functions for working with lists
+
+(defun append. (x y)
+  (cond ((null. x) y)
+    (#t (cons (car x)
+      (append. (cdr x) y)))))
+
+(defun list. (x y) (cons x (cons y '())))
+
+(defun zip. (x y)
+  (cond ((and. (null. x) (null. y)) '())
+      ((and. (not. (atom? x)) (not. (atom? y)))
+       (cons (list. (car x) (car y))
+             (zip. (cdr x) (cdr y))))))
+
+(defun lookup. (key alist)
+  (cond ((null. alist) 'error)
+    ((== (caar alist) key) (cadar alist))
+    (#t (lookup. key (cdr alist)))))
+
+(defun null? (xs) (== xs '()))
+
+(defun length (ls)
+  (if (null? ls)
+    0
+    (+ 1 (length (cdr ls)))))
+
+(defun take (n ls)
+  (if (or (< n 1) (null? ls))
+    '()
+    (cons (car ls) (take (- n 1) (cdr ls)))))
+
+(defun drop (n ls)
+  (if (or (< n 1) (null? ls))
+    ls
+    (drop (- n 1) (cdr ls))))
+
+(defun merge (xs ys)
+  (if (null? xs)
+    ys
+    (if (null? ys)
+      xs
+      (if (< (car xs) (car ys))
+        (cons (car xs) (merge (cdr xs) ys))
+        (cons (car ys) (merge xs (cdr ys)))))))
+
+(defun mergesort (ls)
+  (if (null? ls)
+    ls
+    (if (null? (cdr ls))
+      ls
+      (let* ((size (length ls))
+            (half (/ size 2))
+            (first (take half ls))
+            (second (drop half ls)))
+        (merge (mergesort first) (mergesort second))))))
+
+;; pair? - Check if x is a pair (cons cell)
+;; Returns #t if x is a pair, #f otherwise
+(defun pair? (x)
+  (not. (atom? x)))
+
+;; map - Higher-order function that applies f to each element of lst
+;; Returns a new list with the results
+(defun map (f lst)
+  (cond ((null. lst) '())
+        (#t (cons (f (car lst))
+                 (map f (cdr lst))))))
+
+;; Enhanced list processing functions
+
+;; filter - filter list by predicate
+(defun filter (pred lst)
+  (cond ((null. lst) '())
+        ((pred (car lst)) (cons (car lst) (filter pred (cdr lst))))
+        (#t (filter pred (cdr lst)))))
+
+;; fold-left - left fold (accumulator on left)
+(defun fold-left (op acc lst)
+  (if (null. lst)
+    acc
+    (fold-left op (op acc (car lst)) (cdr lst))))
+
+;; fold-right - right fold (accumulator on right)
+(defun fold-right (op lst acc)
+  (if (null. lst)
+    acc
+    (op (car lst) (fold-right op (cdr lst) acc))))
+
+;; any? - returns #t if any element satisfies predicate
+(defun any? (pred lst)
+  (cond ((null. lst) #f)
+        ((pred (car lst)) #t)
+        (#t (any? pred (cdr lst)))))
+
+;; all? - returns #t if all elements satisfy predicate
+(defun all? (pred lst)
+  (cond ((null. lst) #t)
+        ((not. (pred (car lst))) #f)
+        (#t (all? pred (cdr lst)))))
+
+;; find - returns first element matching predicate, or nil
+(defun find (pred lst)
+  (cond ((null. lst) nil)
+        ((pred (car lst)) (car lst))
+        (#t (find pred (cdr lst)))))
+
+;; reverse - reverse a list using fold-left
+(defun reverse (lst)
+  (fold-left (lambda (acc x) (cons x acc)) '() lst))
+

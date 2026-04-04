@@ -1,0 +1,5 @@
+(library
+ (name mlisp_error)
+ (preprocess
+  (pps ppx_string bisect_ppx))
+ (libraries core mlisp_utils))

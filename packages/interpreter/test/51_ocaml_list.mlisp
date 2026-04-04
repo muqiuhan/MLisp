@@ -1,0 +1,78 @@
+;; Test OCaml List module bindings
+;; The List module is a Record object bound in the global environment
+
+;; Helper: Get method from module (returns the primitive function)
+(defun get-method (mod field)
+  (record-get mod field))
+
+;; Test 1: List.length
+(print "List.length test:")
+(define list-length (get-method List (quote length)))
+(define result (list-length (quote (1 2 3 4 5))))
+(print result)
+(assert (= result 5))
+
+;; Test empty list
+(define result2 (list-length (quote ())))
+(print result2)
+(assert (= result2 0))
+
+;; Test 2: List.append
+(print "List.append test:")
+(define list-append (get-method List (quote append)))
+(define result3 (list-append (quote (1 2)) (quote (3 4))))
+(print result3)
+(assert (== result3 (quote (1 2 3 4))))
+
+;; Test 3: List.rev
+(print "List.rev test:")
+(define list-rev (get-method List (quote rev)))
+(define result4 (list-rev (quote (1 2 3))))
+(print result4)
+(assert (== result4 (quote (3 2 1))))
+
+;; Test 4: List.nth
+(print "List.nth test:")
+(define list-nth (get-method List (quote nth)))
+(define result5 (list-nth (quote (10 20 30)) 1))
+(print result5)
+(assert (= result5 20))
+
+;; Test first element
+(define result6 (list-nth (quote (a b c)) 0))
+(print result6)
+(assert (== result6 (quote a)))
+
+;; Test 5: List.mem
+(print "List.mem test:")
+(define list-mem (get-method List (quote mem)))
+(define result7 (list-mem 2 (quote (1 2 3))))
+(print result7)
+(assert result7)
+
+(define result8 (list-mem 5 (quote (1 2 3))))
+(print result8)
+(assert (not. result8))
+
+;; Test 6: List.flatten
+(print "List.flatten test:")
+(define list-flatten (get-method List (quote flatten)))
+(define result9 (list-flatten (quote ((1 2) (3 4) (5)))))
+(print result9)
+(assert (== result9 (quote (1 2 3 4 5))))
+
+;; Test 7: List.concat
+(print "List.concat test:")
+(define list-concat (get-method List (quote concat)))
+(define result10 (list-concat (quote ((1 2) (3 4) (5)))))
+(print result10)
+(assert (== result10 (quote (1 2 3 4 5))))
+
+;; Test 8: List.sort
+(print "List.sort test:")
+(define list-sort (get-method List (quote sort)))
+(define result11 (list-sort (quote (3 1 4 1 5 9 2 6))))
+(print result11)
+(assert (== result11 (quote (1 1 2 3 4 5 6 9))))
+
+(print "All OCaml List module tests passed!")

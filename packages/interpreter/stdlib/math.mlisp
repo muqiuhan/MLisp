@@ -1,0 +1,32 @@
+;; Math extension functions
+;; Provides common mathematical functions
+
+;; factorial - compute n!
+(defun factorial (n)
+  (if (<= n 1)
+    1
+    (* n (factorial (- n 1)))))
+
+;; gcd - greatest common divisor (Euclidean algorithm)
+(defun gcd (a b)
+  (if (== b 0)
+    a
+    (gcd b (% a b))))
+
+;; lcm - least common multiple
+(defun lcm (a b)
+  (if (or (== a 0) (== b 0))
+    0
+    (/ (* a b) (gcd a b))))
+
+;; power - exponentiation (base^exp)
+(defun power (base exp)
+  (if (== exp 0)
+    1
+    (* base (power base (- exp 1)))))
+
+;; clamp - constrain value to range [min, max]
+(defun clamp (x min max)
+  (cond ((< x min) min)
+        ((> x max) max)
+        (#t x)))

@@ -1,0 +1,6 @@
+; MLisp Package Manager Library - Dune configuration
+
+(library
+ (name mlp_lib)
+ (libraries core core_unix sexplib str)
+ (modules mlp_lib test_runner reporter installer))

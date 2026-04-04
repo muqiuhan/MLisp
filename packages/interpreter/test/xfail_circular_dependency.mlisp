@@ -1,0 +1,34 @@
+;; ============================================================================
+;; XFAIL: Circular Dependency Detection Test
+;; ============================================================================
+;; This test is expected to FAIL with a circular dependency error.
+;; It demonstrates that the module system correctly detects and prevents
+;; circular dependencies when using load-module.
+;; ============================================================================
+
+(print "=== XFAIL: Circular Dependency Detection ===")
+(print "")
+(print "This test attempts to load module 'a' which imports 'b',")
+(print "and 'b' imports 'a' - creating a circular dependency.")
+(print "")
+(print "Expected error: Circular dependency detected")
+(print "")
+
+;; Clear cache to ensure clean state
+(module-clear-cache)
+
+;; Attempt to load module 'a' - this should trigger circular dependency error
+;; The error occurs because:
+;;   1. load-module "modules/circular/a" starts
+;;   2. currently_loading = ["a"]
+;;   3. a.mlisp executes and does (load-module b)
+;;   4. load-module "b" is triggered
+;;   5. currently_loading = ["b", "a"]
+;;   6. b.mlisp executes and does (load-module a)
+;;   7. ERROR: "a" is in currently_loading!
+(load-module "modules/circular/a")
+
+;; If we reach here, the test failed (no circular dependency was detected)
+(print "")
+(print "ERROR: No circular dependency was detected!")
+(print "This should have failed with a circular dependency error.")

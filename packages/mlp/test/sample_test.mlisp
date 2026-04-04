@@ -1,0 +1,7 @@
+;; Sample tests for mlp
+;; Note: testing module functions are loaded into global environment
+
+;; Run some tests - deftest is from testing module
+(deftest "addition" (== (+ 2 2) 4))
+(deftest "subtraction" (== (- 5 3) 2))
+(deftest "multiplication" (== (* 3 4) 12))

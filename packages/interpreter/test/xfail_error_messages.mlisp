@@ -1,0 +1,35 @@
+;; Test error messages for primitive functions
+
+;; Test 1: Argument count error - too few
+(print "Test 1: String.length with no args")
+(ocall String length)  ;; Should say: expects 1 argument, got 0
+
+;; Test 2: Argument count error - too many
+(print "Test 2: String.length with too many args")
+(ocall String length "hello" "world")  ;; Should say: expects 1 argument, got 2
+
+;; Test 3: Argument type error
+(print "Test 3: String.length with number")
+(ocall String length 123)  ;; Should say: expected string, got number
+
+;; Test 4: Value error - negative index
+(print "Test 4: String.sub with negative index")
+(ocall String sub "hello" -1 3)  ;; Should say: position and length must be non-negative
+
+;; Test 5: Value error - out of bounds
+(print "Test 5: String.sub out of bounds")
+(ocall String sub "hello" 10 3)  ;; Should say: substring out of bounds with details
+
+;; Test 6: List.nth out of bounds
+(print "Test 6: List.nth out of bounds")
+(ocall List nth (quote (1 2 3)) 5)  ;; Should say: index out of bounds with details
+
+;; Test 7: List.nth with non-list
+(print "Test 7: List.nth with non-list")
+(ocall List nth 123 0)  ;; Should say: expected list, got number
+
+;; Test 8: List.append with wrong types
+(print "Test 8: List.append with non-list")
+(ocall List append 123 (quote (1 2)))  ;; Should say: expected list, got number
+
+(print "All error message tests complete")

@@ -1,0 +1,30 @@
+;; Test Array module
+
+(print "=== Array Tests ===")
+
+(print "Test: Array.make")
+(define arr (ocall Array make 5 0))
+(print "Created array of length 5")
+
+(print "Test: Array.length")
+(define len (ocall Array length arr))
+(print "Length:")
+(print len)
+
+(print "Test: Array.get")
+(print "arr[0]:")
+(print (ocall Array get arr 0))
+(print "arr[4]:")
+(print (ocall Array get arr 4))
+
+(print "Test: Array.set")
+(ocall Array set arr 2 100)
+(print "After set arr[2]=100, arr[2] is:")
+(print (ocall Array get arr 2))
+
+(print "Test: Array.to-list")
+(define lst (ocall Array to-list arr))
+(print "Converted to list:")
+(print lst)
+
+(print "=== Array Tests Complete ===")

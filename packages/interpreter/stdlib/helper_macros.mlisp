@@ -1,0 +1,41 @@
+;; Helper Macros for Hygienic Macro Programming
+;; This module provides utility macros that simplify writing hygienic macros
+
+;; with-gensym - Generate a unique symbol for a single name
+;; Usage: (with-gensym name body)
+;; Expands body with 'name' bound to a gensym
+;; Use 'begin' to sequence multiple expressions in body
+(defmacro with-gensym (name body)
+  `(let ((,name (gensym (quote ,name))))
+     ,body))
+
+;; with-gensyms2 - Generate unique symbols for two names
+;; Usage: (with-gensyms2 name1 name2 body)
+;; Expands body with both names bound to gensyms
+;; Use 'begin' to sequence multiple expressions in body
+(defmacro with-gensyms2 (n1 n2 body)
+  `(let ((,n1 (gensym (quote ,n1)))
+         (,n2 (gensym (quote ,n2))))
+     ,body))
+
+;; with-gensyms3 - Generate unique symbols for three names
+;; Usage: (with-gensyms3 name1 name2 name3 body)
+;; Expands body with all three names bound to gensyms
+;; Use 'begin' to sequence multiple expressions in body
+(defmacro with-gensyms3 (n1 n2 n3 body)
+  `(let ((,n1 (gensym (quote ,n1)))
+         (,n2 (gensym (quote ,n2)))
+         (,n3 (gensym (quote ,n3))))
+     ,body))
+
+;; Example: A simple macro that creates an adder function
+;; This demonstrates the basic use of helper macros
+(defmacro make-adder (value)
+  `(lambda (x) (+ x ,value)))
+
+;; Example: A macro that creates a multiplier using with-gensym
+;; This demonstrates when gensym is useful - to avoid capture
+(defmacro make-multiplier (value)
+  (with-gensym result
+    `(lambda (x)
+       (* x ,value))))

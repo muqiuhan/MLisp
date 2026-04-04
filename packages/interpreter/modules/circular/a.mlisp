@@ -1,0 +1,5 @@
+;; Module A - loads Module B to create circular dependency
+(module a (export get-a)
+  (define get-a 100))
+;; Load module b (which will load a again, causing circular dependency)
+(load-module "modules/circular/b")

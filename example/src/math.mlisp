@@ -1,0 +1,25 @@
+;; Example: Math utilities
+;; Using correct module syntax: (module name (export ...) ...)
+
+(module math
+  (export factorial power is-even is-odd)
+
+  ;; Factorial function
+  (defun factorial (n)
+    (if (<= n 1)
+      1
+      (* n (factorial (- n 1)))))
+
+  ;; Power function
+  (defun power (base exp)
+    (if (== exp 0)
+      1
+      (* base (power base (- exp 1)))))
+
+  ;; Check if even
+  (defun is-even (n)
+    (== 0 (% n 2)))
+
+  ;; Check if odd
+  (defun is-odd (n)
+    (not. (is-even n))))

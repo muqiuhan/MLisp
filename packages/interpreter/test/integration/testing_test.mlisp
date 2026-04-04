@@ -1,0 +1,8 @@
+;; Test the testing framework
+
+;; Load testing module by evaluating it
+(eval. (read-file "packages/interpreter/stdlib/testing.mlisp"))
+
+;; Run some tests - each should print a result line
+(deftest "addition" (== (+ 2 2) 4))
+(deftest "subtraction" (== (- 5 3) 2))

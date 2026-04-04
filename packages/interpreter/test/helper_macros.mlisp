@@ -1,0 +1,112 @@
+;; Test suite for helper_macros module
+;; Tests with-gensym, with-gensyms2, with-gensyms3
+
+;; Test 1: Basic with-gensym
+(print "Test 1: with-gensym")
+(define g1
+  (with-gensym temp
+    temp))
+(print g1)
+
+;; Test 2: with-gensyms2
+(print "Test 2: with-gensyms2")
+(define g2
+  (with-gensyms2 s1 s2
+    (list s1 s2)))
+(print g2)
+
+;; Test 3: with-gensyms3
+(print "Test 3: with-gensyms3")
+(define g3
+  (with-gensyms3 s1 s2 s3
+    (list s1 s2 s3)))
+(print g3)
+
+;; Test 4: Verify gensym creates unique symbols
+(print "Test 4: Verify gensym uniqueness")
+(define u1 (gensym))
+(define u2 (gensym))
+(print (list "Generated symbols:" u1 u2))
+(print "Passed: gensym generates symbols")
+
+;; Test 5: Gensym with prefix
+(print "Test 5: Gensym with prefix")
+(define gp1 (gensym "temp"))
+(define gp2 (gensym "temp"))
+(print (list "Prefixed gensyms:" gp1 gp2))
+(print "Passed: gensym with prefix works")
+
+;; Test 6: map function from list.mlisp
+(print "Test 6: map function")
+(define doubled (map (lambda (x) (* x 2)) '(1 2 3 4 5)))
+(print doubled)
+(assert (== doubled '(2 4 6 8 10)))
+(print "Passed: map function works correctly")
+
+;; Test 7: pair? function from list.mlisp
+(print "Test 7: pair? function")
+(assert (== (pair? '(1 2 3)) #t))
+(assert (== (pair? '()) #f))
+(assert (== (pair? 42) #f))
+(assert (== (pair? "hello") #f))
+(print "Passed: pair? predicate works correctly")
+
+;; Test 8: append. function
+(print "Test 8: append. function")
+(define appended (append. '(1 2) '(3 4)))
+(print appended)
+(assert (== appended '(1 2 3 4)))
+(print "Passed: append. function works correctly")
+
+;; Test 9: make-adder example macro
+(print "Test 9: make-adder example macro")
+(define add10 (make-adder 10))
+(print (list "add10(5):" (add10 5)))
+(assert (== (add10 5) 15))
+(print "Passed: make-adder macro works correctly")
+
+;; Test 9b: make-multiplier example using with-gensym
+(print "Test 9b: make-multiplier with with-gensym")
+(define mult5 (make-multiplier 5))
+(print (list "mult5(7):" (mult5 7)))
+(assert (== (mult5 7) 35))
+(print "Passed: make-multiplier macro works correctly")
+
+;; Test 10: Custom macro using with-gensyms2
+(print "Test 10: Custom macro with with-gensyms2")
+(defmacro make-doubler-func (value)
+  (with-gensyms2 x y
+    `(lambda (,x) (* ,x ,value))))
+
+(define double-func (make-doubler-func 2))
+(print (list "double-func(21):" (double-func 21)))
+(assert (== (double-func 21) 42))
+(print "Passed: custom macro using with-gensyms2")
+
+;; Test 11: Complex macro with with-gensyms3
+(print "Test 11: Complex macro with with-gensyms3")
+(defmacro triple-compose (f g h)
+  (with-gensyms3 a b c
+    `(lambda (,a)
+       (,f (,g (,h ,a))))))
+
+(define triple-func (triple-compose (lambda (x) (+ x 1))
+                                    (lambda (x) (* x 2))
+                                    (lambda (x) (- x 10))))
+(print (list "triple-func(15):" (triple-func 15)))
+(assert (== (triple-func 15) 11))
+(print "Passed: complex macro with with-gensyms3")
+
+;; Test 12: Using with-gensym in a macro that avoids capture
+(print "Test 12: Macro with hygienic temp variable")
+(defmacro safe-inc (varname)
+  (with-gensym tmp
+    `(lambda (,varname)
+       (+ ,varname 1))))
+
+(define inc-by-1 (safe-inc x))
+(print (list "inc-by-1(99):" (inc-by-1 99)))
+(assert (== (inc-by-1 99) 100))
+(print "Passed: macro with hygienic temp variable")
+
+(print "All helper_macros tests passed!")

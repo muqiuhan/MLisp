@@ -1,5 +1,0 @@
-(executable
- (public_name mlisp)
- (name mlisp)
- (modes byte native)
- (libraries mlisp mlisp_version))

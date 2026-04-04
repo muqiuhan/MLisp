@@ -1,0 +1,15 @@
+(library
+ (name mlisp_eval)
+ (preprocess
+  (pps ppx_string bisect_ppx))
+ (flags
+  (:standard -w -21))
+ (libraries
+  core
+  core_unix
+  mlisp_object
+  mlisp_ast
+  mlisp_macro
+  mlisp_print
+  mlisp_module_cache
+  mlisp_lexer))

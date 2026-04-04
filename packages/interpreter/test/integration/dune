@@ -1,0 +1,8 @@
+;; packages/interpreter/test/integration/dune
+;;
+;; MLisp Integration Tests - Cram
+;;
+
+(cram
+ (alias cram)
+ (deps %{bin:mlisp}))

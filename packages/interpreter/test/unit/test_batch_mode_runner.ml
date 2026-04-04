@@ -1,0 +1,1 @@
+let () = Test_batch_mode.run ()

@@ -1,4 +1,0 @@
-(library
- (name mlisp)
- (modes byte native)
- (libraries core mlisp_utils mlisp_repl mlisp_stdlib))

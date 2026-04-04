@@ -1,0 +1,61 @@
+;; Integration test for module-test framework
+;; This file demonstrates the Rust-style module-test macro
+;; Note: testing module is auto-loaded from stdlib
+
+;; ============================================================================
+;; Math Functions to Test
+;; ============================================================================
+
+(defun factorial (n)
+  (if (<= n 1)
+    1
+    (* n (factorial (- n 1)))))
+
+(defun add (x y)
+  (+ x y))
+
+(defun multiply (x y)
+  (* x y))
+
+(defun is-even (n)
+  (== 0 (% n 2)))
+
+;; ============================================================================
+;; Test Modules
+;; ============================================================================
+
+(module-test math-basics
+  (deftest "factorial of 0 is 1"
+    (== (factorial 0) 1))
+  
+  (deftest "factorial of 1 is 1"
+    (== (factorial 1) 1))
+  
+  (deftest "factorial of 5 is 120"
+    (== (factorial 5) 120))
+  
+  (deftest "factorial of 10 is 3628800"
+    (== (factorial 10) 3628800)))
+
+(module-test arithmetic
+  (deftest "add 2 and 3 is 5"
+    (== (add 2 3) 5))
+  
+  (deftest "add negative numbers"
+    (== (add -5 3) -2))
+  
+  (deftest "multiply 3 and 4 is 12"
+    (== (multiply 3 4) 12))
+  
+  (deftest "multiply by zero"
+    (== (multiply 100 0) 0)))
+
+(module-test predicates
+  (deftest "is-even returns true for 2"
+    (== (is-even 2) #t))
+  
+  (deftest "is-even returns true for 4"
+    (== (is-even 4) #t))
+  
+  (deftest "is-even returns false for 3"
+    (== (is-even 3) #f)))

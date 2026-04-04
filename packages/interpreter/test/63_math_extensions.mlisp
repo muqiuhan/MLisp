@@ -1,0 +1,35 @@
+;; Test math extension functions
+
+(print "=== Math Extensions Tests ===")
+
+(print "Test: factorial")
+(print "5! =")
+(print (factorial 5))
+(print "0! =")
+(print (factorial 0))
+
+(print "Test: gcd")
+(print "gcd(12, 8) =")
+(print (gcd 12 8))
+(print "gcd(48, 18) =")
+(print (gcd 48 18))
+
+(print "Test: lcm")
+(print "lcm(4, 6) =")
+(print (lcm 4 6))
+
+(print "Test: power")
+(print "2^10 =")
+(print (power 2 10))
+(print "3^4 =")
+(print (power 3 4))
+
+(print "Test: clamp")
+(print "clamp(5, 0, 10) =")
+(print (clamp 5 0 10))
+(print "clamp(-5, 0, 10) =")
+(print (clamp -5 0 10))
+(print "clamp(15, 0, 10) =")
+(print (clamp 15 0 10))
+
+(print "=== Math Extensions Tests Complete ===")

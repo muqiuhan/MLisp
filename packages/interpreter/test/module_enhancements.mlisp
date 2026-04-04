@@ -1,0 +1,44 @@
+;; Test module enhancements - Import returns module object
+;; This file tests that the import statement returns the module object
+
+;; Test 1: Import returns module object
+(print "Test 1: import returns module object")
+(module math (export add sub)
+  (define add (lambda (x y) (+ x y)))
+  (define sub (lambda (x y) (- x y))))
+
+(define math-mod (import math))
+;; math-mod should be a module object
+(print "Module object loaded successfully")
+
+;; Test 2: Verify we can use the module after import
+(print "Test 2: use imported module functions")
+(assert (= (add 5 3) 8))
+(assert (= (sub 10 3) 7))
+(print "Module functions work!")
+
+;; Test 3: Import with :as also returns module object
+(print "Test 3: import with :as returns module object")
+(module utils (export double triple)
+  (define double (lambda (x) (* x 2)))
+  (define triple (lambda (x) (* x 3))))
+
+(define utils-mod (import utils :as u))
+(assert (= (u.double 5) 10))
+(assert (= (u.triple 5) 15))
+(print "Import with :as works!")
+
+;; Test 4: Selective import also returns module object
+(print "Test 4: selective import returns module object")
+(module calc (export add multiply divide)
+  (define add (lambda (x y) (+ x y)))
+  (define multiply (lambda (x y) (* x y)))
+  (define divide (lambda (x y) (/ x y))))
+
+(define calc-mod (import calc add multiply))
+(assert (= (add 2 3) 5))
+(assert (= (multiply 3 4) 12))
+(print "Selective import works!")
+
+(print "")
+(print "All module enhancement tests passed!")

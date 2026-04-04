@@ -1,0 +1,30 @@
+;; Test module cache fix
+;; Verify that import re-registers modules in cache
+
+(print "Test: module cache after import following clear")
+
+;; Define a module
+(module x (export y)
+  (define y 1))
+
+;; Check it's cached
+(print "After module definition:")
+(assert (module-cached? (quote x)))
+(print "module-cached? x = #t")
+
+;; Clear cache
+(module-clear-cache)
+(print "After cache clear:")
+(assert (if (module-cached? (quote x)) #f #t))
+(print "module-cached? x = #f")
+
+;; Import the module
+(import x)
+(print "After import x:")
+
+;; Check if it's now cached again
+(assert (module-cached? (quote x)))
+(print "module-cached? x = #t")
+
+(print "")
+(print "Cache fix works correctly!")

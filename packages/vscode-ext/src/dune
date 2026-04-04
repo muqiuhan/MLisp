@@ -1,0 +1,6 @@
+(executable
+ (name vscode_mlisp)
+ (modes js)
+ (libraries vscode_bindings ojs js_of_ocaml)
+ (preprocess (pps gen_js_api.ppx))
+ (js_of_ocaml))

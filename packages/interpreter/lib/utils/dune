@@ -1,0 +1,4 @@
+(library
+ (name mlisp_utils)
+ (preprocess (pps bisect_ppx))
+ (libraries core camlp-streams))

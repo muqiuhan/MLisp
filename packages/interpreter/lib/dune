@@ -1,0 +1,5 @@
+(library
+ (name mlisp)
+ (modes byte native)
+ (preprocess (pps bisect_ppx))
+ (libraries core mlisp_utils mlisp_repl mlisp_stdlib))

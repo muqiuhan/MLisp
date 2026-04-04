@@ -1,0 +1,25 @@
+# Build outputs
+dist/
+_build/
+
+# Synced syntax files (source of truth is in packages/shared/syntax/)
+syntaxes/mlisp.tmLanguage.json
+language-configuration.json
+
+# Node modules
+node_modules/
+
+# Package output
+*.vsix
+
+# Editor
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,77 @@
+{
+  "name": "mlisp-vscode",
+  "displayName": "MLisp Language Support",
+  "description": "Syntax highlighting, REPL, and code evaluation for MLisp - a Lisp dialect implemented in OCaml",
+  "version": "0.1.0",
+  "publisher": "mlisp",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "keywords": ["lisp", "mlisp", "scheme", "functional", "ocaml", "repl", "syntax"],
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/somhairle/mlisp#readme",
+  "bugs": {
+    "url": "https://github.com/somhairle/mlisp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/somhairle/mlisp"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/vscode_mlisp.bc.js",
+  "contributes": {
+    "languages": [{
+      "id": "mlisp",
+      "aliases": ["MLisp", "mlisp"],
+      "extensions": [".mlisp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "mlisp",
+      "scopeName": "source.mlisp",
+      "path": "./syntaxes/mlisp.tmLanguage.json"
+    }],
+    "commands": [
+      {
+        "command": "mlisp.startREPL",
+        "title": "MLisp: Start REPL"
+      },
+      {
+        "command": "mlisp.evaluateSelection",
+        "title": "MLisp: Evaluate Selection"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "mlisp.evaluateSelection",
+        "key": "ctrl+enter",
+        "when": "editorLangId == mlisp"
+      }
+    ]
+  },
+  "scripts": {
+    "check": "biome check",
+    "fix": "biome check --fix",
+    "sync:syntax": "bash scripts/sync-syntax.sh",
+    "prebuild:ocaml": "npm run sync:syntax",
+    "build:ocaml": "dune build",
+    "watch:ocaml": "dune build -w",
+    "prebundle": "npm run sync:syntax",
+    "bundle": "esbuild _build/default/src/vscode_mlisp.bc.js --bundle --external:vscode --minify --outdir=dist --platform=node --target=node20",
+    "watch:bundle": "esbuild _build/default/src/vscode_mlisp.bc.js --bundle --external:vscode --outdir=dist --platform=node --target=node20 --watch",
+    "dev": "npm-run-all --parallel watch:ocaml watch:bundle",
+    "build": "npm-run-all build:ocaml bundle",
+    "prepackage": "npm run sync:syntax",
+    "package": "vsce package --out mlisp-vscode.vsix",
+    "install:ext": "code --force --install-extension mlisp-vscode.vsix"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "esbuild": "^0.20.0",
+    "@vscode/vsce": "^3.7.0",
+    "npm-run-all": "^4.1.5"
+  }
+}

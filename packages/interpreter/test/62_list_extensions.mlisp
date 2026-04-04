@@ -1,0 +1,49 @@
+;; Test enhanced list processing functions
+
+(print "=== List Extensions Tests ===")
+
+(print "Test: filter")
+(define lst '(1 2 3 4 5 6 7 8 9 10))
+(define evens (filter (lambda (x) (== 0 (% x 2))) lst))
+(print "Evens:")
+(print evens)
+
+(print "Test: fold-left sum")
+(define sum (fold-left + 0 lst))
+(print "Sum:")
+(print sum)
+
+(print "Test: fold-left product")
+(define product (fold-left * 1 lst))
+(print "Product:")
+(print product)
+
+(print "Test: any? - found")
+(print "any? (x > 9):")
+(print (any? (lambda (x) (> x 9)) lst))
+
+(print "Test: any? - not found")
+(print "any? (x > 10):")
+(print (any? (lambda (x) (> x 10)) lst))
+
+(print "Test: all? - all pass")
+(print "all? (x > 0):")
+(print (all? (lambda (x) (> x 0)) lst))
+
+(print "Test: all? - some fail")
+(print "all? (x < 5):")
+(print (all? (lambda (x) (< x 5)) lst))
+
+(print "Test: find - found")
+(print "find (x > 3):")
+(print (find (lambda (x) (> x 3)) lst))
+
+(print "Test: find - not found")
+(print "find (x > 100):")
+(print (find (lambda (x) (> x 100)) lst))
+
+(print "Test: reverse")
+(print "Reverse:")
+(print (reverse lst))
+
+(print "=== List Extensions Tests Complete ===")

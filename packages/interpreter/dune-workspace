@@ -1,0 +1,9 @@
+(lang dune 3.3)
+
+(context
+ (default
+  (profile dev)))
+
+(env
+ (coverage
+  (flags (:standard -w -39))))

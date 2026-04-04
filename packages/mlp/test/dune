@@ -1,0 +1,11 @@
+; Dune configuration for mlp tests
+
+(executable
+ (name mlp_test_runner)
+ (libraries mlp_lib core alcotest)
+ (modules mlp_test_runner test_runner_test reporter_test installer_test))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:mlp_test_runner.exe})))

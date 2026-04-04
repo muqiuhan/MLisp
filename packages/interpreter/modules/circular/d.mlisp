@@ -1,0 +1,3 @@
+;; Module D - does NOT import Module C (safe for testing)
+(module d (export func-d)
+  (define func-d (lambda (x) (* x 2))))

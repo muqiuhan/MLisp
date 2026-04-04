@@ -1,0 +1,126 @@
+ (library
+  (name mlisp_test_unit)
+  (preprocess (pps bisect_ppx))
+  (libraries alcotest mlisp_object mlisp_object_closure mlisp_error mlisp_lexer mlisp_utils)
+  (modules test_object test_lexer test_error test_object_types test_sexpr test_environment test_closure test_lexer_location test_lexer_token test_lexer_error test_tokenizer test_batch_mode)
+  (wrapped false))
+
+(executable
+ (name test_object_runner)
+ (libraries mlisp_test_unit)
+ (modules test_object_runner))
+
+(executable
+ (name test_lexer_runner)
+ (libraries mlisp_test_unit)
+ (modules test_lexer_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_object_runner.exe})))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_lexer_runner.exe})))
+
+(executable
+ (name test_error_runner)
+ (libraries mlisp_test_unit)
+ (modules test_error_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_error_runner.exe})))
+
+(executable
+ (name test_object_types_runner)
+ (libraries mlisp_test_unit)
+ (modules test_object_types_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_object_types_runner.exe})))
+
+(executable
+ (name test_sexpr_runner)
+ (libraries mlisp_test_unit)
+ (modules test_sexpr_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_sexpr_runner.exe})))
+
+(executable
+ (name test_environment_runner)
+ (libraries mlisp_test_unit)
+ (modules test_environment_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_environment_runner.exe})))
+
+(executable
+ (name test_closure_runner)
+ (libraries mlisp_test_unit)
+ (modules test_closure_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_closure_runner.exe})))
+
+(executable
+ (name test_lexer_location_runner)
+ (libraries mlisp_test_unit)
+ (modules test_lexer_location_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_lexer_location_runner.exe})))
+
+(executable
+ (name test_lexer_token_runner)
+ (libraries mlisp_test_unit)
+ (modules test_lexer_token_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_lexer_token_runner.exe})))
+
+(executable
+ (name test_lexer_error_runner)
+ (libraries mlisp_test_unit)
+ (modules test_lexer_error_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_lexer_error_runner.exe})))
+
+(executable
+ (name test_tokenizer_runner)
+ (libraries mlisp_test_unit)
+ (modules test_tokenizer_runner))
+
+(rule
+  (alias runtest)
+  (action
+   (run %{exe:test_tokenizer_runner.exe})))
+
+(executable
+ (name test_batch_mode_runner)
+ (libraries mlisp_test_unit)
+ (modules test_batch_mode_runner))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_batch_mode_runner.exe})))

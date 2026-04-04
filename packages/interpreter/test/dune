@@ -1,0 +1,7 @@
+(rule
+ (alias regression)
+ (deps %{bin:mlisp})
+ (action
+  (chdir %{workspace_root}
+   (setenv MLISP_BIN %{bin:mlisp}
+    (run %{workspace_root}/run_tests.sh)))))

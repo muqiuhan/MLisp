@@ -1,0 +1,11 @@
+;; Test record-get with String module
+(print "String module:")
+(print String)
+
+;; Try to get length function
+(define length-fn (record-get String (quote length)))
+(print "length function:")
+(print length-fn)
+
+;; Call the function
+(print (length-fn "hello"))

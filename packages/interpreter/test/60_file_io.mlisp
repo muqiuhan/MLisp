@@ -1,0 +1,38 @@
+;; Test File I/O module
+
+(print "=== File I/O Tests ===")
+
+(print "Test: File.exists? - existing file")
+(define exists-readme (ocall File exists? "README.md"))
+(print "README.md exists:")
+(print exists-readme)
+
+(print "Test: File.exists? - non-existing file")
+(define exists-nonexistent (ocall File exists? "nonexistent_file_12345.mlisp"))
+(print "nonexistent file exists:")
+(print exists-nonexistent)
+
+(print "Test: File.read-all")
+(define content (ocall File read-all "README.md"))
+(print "README.md content length:")
+(print (ocall String length content))
+
+(print "Test: File.write and File.read-all")
+(ocall File write "test_output.txt" "Hello from MLisp!")
+(define read-back (ocall File read-all "test_output.txt"))
+(print "Written and read back:")
+(print read-back)
+(print "Match:")
+(print (== read-back "Hello from MLisp!"))
+
+(print "Test: File.read-lines")
+(ocall File write "test_lines.txt" "line1\nline2\nline3")
+(define lines (ocall File read-lines "test_lines.txt"))
+(print "Number of lines:")
+(print (ocall List length lines))
+(print "First line:")
+(print (ocall List nth lines 0))
+(print "Second line:")
+(print (ocall List nth lines 1))
+
+(print "=== File I/O Tests Complete ===")

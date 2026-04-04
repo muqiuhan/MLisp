@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  interpreter:
+    name: Interpreter (OCaml)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+          dune-cache: true
+
+      - name: Install dependencies
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          opam install . --deps-only
+
+      - name: Build
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          dune build
+
+      - name: Run tests
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          ./run_tests.sh
+
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+          dune-cache: true
+
+      - name: Install dependencies
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          opam install . --deps-only
+
+      - name: Build with coverage
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          dune build --profile coverage
+
+      - name: Run tests with coverage
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          BISECT_ENABLE=yes dune runtest
+
+      - name: Generate coverage report
+        working-directory: packages/interpreter
+        run: |
+          bisect-ppx-report html
+          bisect-ppx-report summary
+
+      - name: Check minimum coverage
+        working-directory: packages/interpreter
+        run: |
+          COVERAGE=$(bisect-ppx-report summary 2>/dev/null | grep "Coverage:" | sed 's/.*\([0-9]\+\)%.*/\1/')
+          echo "Current coverage: ${COVERAGE}%"
+          if [ "$COVERAGE" -lt 75 ]; then
+            echo "ERROR: Coverage is below minimum threshold of 75%"
+            exit 1
+          fi
+          echo "Coverage check passed!"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: packages/interpreter/_coverage/
+          retention-days: 14
+
+  vscode:
+    name: VSCode Extension (OCaml + js_of_ocaml)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+          dune-cache: true
+
+      - name: Build mlisp interpreter
+        working-directory: packages/interpreter
+        run: |
+          eval $(opam env)
+          opam install . --deps-only
+          dune build
+
+      - name: Install OCaml dependencies for vscode-ext
+        run: |
+          eval $(opam env)
+          opam install "js_of_ocaml>=6.0" gen_js_api ojs promise_jsoo yojson ppxlib dune
+
+      - name: Build extension
+        working-directory: packages/vscode-ext
+        run: |
+          eval $(opam env)
+          dune build
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install npm dependencies
+        working-directory: packages/vscode-ext
+        run: npm install
+
+      - name: Bundle extension
+        working-directory: packages/vscode-ext
+        run: npm run bundle
+
+      - name: Package extension
+        working-directory: packages/vscode-ext
+        run: npm run package

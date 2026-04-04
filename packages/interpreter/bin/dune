@@ -1,0 +1,6 @@
+(executable
+ (public_name mlisp)
+ (name mlisp)
+ (modes byte native)
+ (preprocess (pps bisect_ppx))
+ (libraries mlisp mlisp_version))

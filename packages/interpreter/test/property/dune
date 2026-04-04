@@ -1,0 +1,9 @@
+(executable
+ (name test_tokenizer)
+ (libraries qcheck mlisp_lexer mlisp_utils)
+ (modules test_tokenizer))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:test_tokenizer.exe})))

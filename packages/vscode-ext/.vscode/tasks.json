@@ -1,0 +1,116 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build OCaml",
+      "type": "shell",
+      "command": "dune",
+      "args": ["build"],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "problemMatcher": ["$ocaml"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Watch OCaml",
+      "type": "shell",
+      "command": "dune",
+      "args": ["build", "-w"],
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": ["$ocaml"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Bundle JS",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "bundle"],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "problemMatcher": ["$tsc"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Watch Bundle JS",
+      "type": "shell",
+      "command": "npx",
+      "args": ["esbuild", "_build/default/src/vscode_mlisp.bc.js", "--bundle", "--external:vscode", "--outdir=dist", "--platform=node", "--target=node18", "--watch"],
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": ["$tsc"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "Build All",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build OCaml", "Bundle JS"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch All",
+      "dependsOn": ["Watch OCaml", "Watch Bundle JS"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "dune",
+      "args": ["clean"],
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "fix"],
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Check Format",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "check"],
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

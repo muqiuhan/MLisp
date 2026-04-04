@@ -1,0 +1,35 @@
+opam-version: "2.0"
+name: "mlp"
+version: "0.1.0"
+synopsis: "MLisp Package Manager"
+description: "Package manager for MLisp - manage dependencies, build, and test MLisp projects"
+maintainer: "MLisp Team"
+authors: "MLisp Team"
+license: "MPL-2.0"
+depends: [
+  "ocaml" {>= "5.0"}
+  "dune" {>= "3.0"}
+  "core" {>= "0.15"}
+  "sexplib"
+  "fmt"
+  "logs"
+]
+build: [
+  ["dune" "subst"] {dev}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+  ]
+]
+install: [
+  ["dune" "install" "-p" name]
+]
+remove: [
+  ["dune" "remove" "-p" name]
+]

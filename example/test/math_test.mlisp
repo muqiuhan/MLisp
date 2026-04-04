@@ -1,0 +1,70 @@
+;; Example tests for math utilities
+;; Testing framework is auto-loaded via MLISP_STDLIB_PATH
+
+;; ============================================================================
+;; Inline Math Functions for Testing
+;; ============================================================================
+
+(defun factorial (n)
+  (if (<= n 1)
+    1
+    (* n (factorial (- n 1)))))
+
+(defun power (base exp)
+  (if (== exp 0)
+    1
+    (* base (power base (- exp 1)))))
+
+(defun is-even (n)
+  (== 0 (% n 2)))
+
+(defun is-odd (n)
+  (not. (is-even n)))
+
+;; ============================================================================
+;; Factorial Tests
+;; ============================================================================
+
+(module-test factorial
+  (deftest "factorial of 0 is 1"
+    (== (factorial 0) 1))
+
+  (deftest "factorial of 1 is 1"
+    (== (factorial 1) 1))
+
+  (deftest "factorial of 5 is 120"
+    (== (factorial 5) 120))
+
+  (deftest "factorial of 10 is 3628800"
+    (== (factorial 10) 3628800)))
+
+;; ============================================================================
+;; Power Tests
+;; ============================================================================
+
+(module-test power
+  (deftest "any number to power 0 is 1"
+    (== (power 5 0) 1))
+
+  (deftest "2 to power 10 is 1024"
+    (== (power 2 10) 1024))
+
+  (deftest "3 to power 4 is 81"
+    (== (power 3 4) 81)))
+
+;; ============================================================================
+;; Even/Odd Tests
+;; ============================================================================
+
+(module-test predicates
+  (deftest "0 is even"
+    (== (is-even 0) #t))
+
+  (deftest "2 is even"
+    (== (is-even 2) #t))
+
+  (deftest "3 is odd"
+    (== (is-odd 3) #t))
+
+  (deftest "4 is not odd"
+    (== (is-odd 4) #f)))

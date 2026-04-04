@@ -1,0 +1,98 @@
+# MLisp
+
+用 OCaml 实现的 Lisp 方言。
+
+[English](./README.md)
+
+## 这是什么？
+
+个人兴趣项目。一个简洁、实用的 Lisp 解释器。
+
+## 项目状态
+
+核心解释器：基本完成
+- S 表达式解析、词法作用域、闭包
+- 宏系统（quasiquote/unquote、gensym）
+- 模块系统
+- REPL 交互环境
+
+包管理器 (mlp)：基础功能完成
+- 项目初始化
+- 本地包安装
+- 测试框架（module-test 宏）
+
+VSCode 扩展：基础功能
+- 语法高亮
+- 代码求值
+
+## 项目结构
+
+```
+mlisp/
+├── packages/
+│   ├── interpreter/      # OCaml 解释器
+│   │   ├── bin/         # 入口点
+│   │   ├── lib/         # 核心模块
+│   │   └── stdlib/      # 标准库 (.mlisp)
+│   ├── mlp/             # 包管理器
+│   │   ├── src/         # CLI 入口
+│   │   └── lib/         # 核心逻辑
+│   ├── vscode-ext/      # VSCode 扩展 (OCaml → js_of_ocaml)
+│   └── shared/          # 共享资源（语法定义）
+├── docs/                # 文档
+│   └── language-spec.txt # 语言规范
+└── example/            # 示例项目
+```
+
+## 快速开始
+
+### 构建解释器
+
+```bash
+cd packages/interpreter
+opam install . --deps-only
+dune build
+
+# 运行 REPL
+dune exec mlisp
+
+# 运行文件
+dune exec mlisp -- file.mlisp
+```
+
+### 构建包管理器
+
+```bash
+cd packages/mlp
+dune build
+
+# 运行测试
+dune exec mlp -- test
+```
+
+### 构建 VSCode 扩展
+
+```bash
+cd packages/vscode-ext
+opam install . --deps-only
+npm install
+npm run build
+npm run package
+```
+
+## 文档
+
+详细语言规范见 [docs/language-spec.txt](./docs/language-spec.txt)，包括：
+
+- 数据类型
+- 表达式与控制流
+- 函数与闭包
+- 变量绑定
+- 模块系统
+- 宏系统
+- 标准库
+- OCaml 绑定
+
+## 许可证
+
+Mozilla Public License 2.0

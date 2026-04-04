@@ -1,0 +1,47 @@
+;; Testing Framework with module-test support
+;; Simple and clean - no discovery mode needed
+;; Outputs sexplib-compatible format: (true) / (false)
+
+;; ============================================================================
+;; Output Helpers
+;; ============================================================================
+
+;; Convert MLisp bool to sexplib-compatible string
+(defun bool->sexp (b)
+  (if b "true" "false"))
+
+;; Print test result
+(defun print-test-result (passed name)
+  (let ((passed-str (bool->sexp passed)))
+    (println (list 'TEST_RESULT passed-str name))))
+
+;; Print module start marker
+(defun print-module-start (name)
+  (println (list 'MODULE_START name)))
+
+;; Print module end marker
+(defun print-module-end (name)
+  (println (list 'MODULE_END name)))
+
+;; ============================================================================
+;; deftest Macro
+;; ============================================================================
+
+;; Define a named test case
+;; Executes body and prints result immediately
+(defmacro deftest (name body)
+  (list 'let (list (list 'result body))
+    (list 'print-test-result 'result (list 'quote name))))
+
+;; ============================================================================
+;; module-test Macro
+;; ============================================================================
+
+;; Define a test module containing test cases
+;; Usage: (module-test math
+;;          (deftest "factorial of 0" (== (factorial 0) 1)))
+(defmacro module-test (name &rest body)
+  (list 'begin
+    (list 'print-module-start (list 'quote name))
+    (cons 'begin body)
+    (list 'print-module-end (list 'quote name))))

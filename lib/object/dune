@@ -1,5 +1,0 @@
-(library
- (name mlisp_object)
- (preprocess
-  (pps ppx_string))
- (libraries core mlisp_error))
